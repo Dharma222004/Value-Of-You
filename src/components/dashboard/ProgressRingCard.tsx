@@ -1,27 +1,47 @@
 "use client";
 
-import React from "react";
-import { PieChart, Sliders } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { PieChart } from "lucide-react";
+import { getDashboardTelemetry, DashboardTelemetry } from "@/services/dashboardTelemetry";
 
 export const ProgressRingCard: React.FC = () => {
+  const [mounted, setMounted] = useState(false);
+  const [telemetry, setTelemetry] = useState<DashboardTelemetry>(() => getDashboardTelemetry());
+
+  useEffect(() => {
+    setMounted(true);
+    setTelemetry(getDashboardTelemetry());
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="glass-panel rounded-3xl p-6 border border-[var(--border-color)] space-y-4 text-left animate-pulse">
+        <div className="h-6 bg-slate-800 rounded w-1/2"></div>
+        <div className="h-32 bg-slate-900 rounded-full w-32 mx-auto"></div>
+      </div>
+    );
+  }
+
   const dimensions = [
-    { label: "Career Capital", score: 84, color: "bg-sky-400" },
-    { label: "Financial Health", score: 79, color: "bg-emerald-400" },
-    { label: "Skills Architecture", score: 88, color: "bg-indigo-400" },
-    { label: "Health & Lifestyle", score: 72, color: "bg-amber-400" },
-    { label: "Human Assessments", score: 81, color: "bg-purple-400" },
+    { label: "Personal & Professional Profile", score: telemetry.modules.module1.completionPercentage, color: "bg-sky-400" },
+    { label: "Financial Health", score: telemetry.modules.module2.completionPercentage, color: "bg-emerald-400" },
+    { label: "Skills & Professional Capital", score: telemetry.modules.module3.completionPercentage, color: "bg-indigo-400" },
+    { label: "Health & Lifestyle", score: telemetry.modules.module4.completionPercentage, color: "bg-amber-400" },
+    { label: "Human Assessments", score: telemetry.modules.module5.completionPercentage, color: "bg-purple-400" },
   ];
 
+  const overallPct = telemetry.overallCompletionPercentage;
+
   return (
-    <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+    <div className="glass-panel rounded-3xl p-6 border border-[var(--border)] space-y-4 text-left">
+      <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
         <div className="flex items-center gap-2">
           <PieChart className="w-4 h-4 text-sky-400" />
-          <h3 className="text-xs font-bold text-white font-mono uppercase tracking-wide">
+          <h3 className="text-xs font-bold text-[var(--foreground)] font-mono uppercase tracking-wide">
             DIMENSIONAL PROGRESS RING
           </h3>
         </div>
-        <span className="text-[10px] font-mono text-slate-400">5 Vector Distribution</span>
+        <span className="text-[10px] font-mono text-[var(--subtext)]">5 Vector Telemetry</span>
       </div>
 
       {/* Progress Ring Visual */}
@@ -36,14 +56,14 @@ export const ProgressRingCard: React.FC = () => {
               className="stroke-sky-400"
               strokeWidth="10"
               strokeDasharray={301.59}
-              strokeDashoffset={301.59 - (301.59 * 0.81)}
+              strokeDashoffset={301.59 - (301.59 * overallPct) / 100}
               strokeLinecap="round"
               fill="transparent"
             />
           </svg>
           <div className="absolute flex flex-col items-center">
-            <span className="text-2xl font-black font-mono text-white">81%</span>
-            <span className="text-[9px] font-mono text-slate-400 uppercase">OPTIMIZATION</span>
+            <span className="text-2xl font-black font-mono text-white">{overallPct}%</span>
+            <span className="text-[9px] font-mono text-slate-400 uppercase">COMPLETED</span>
           </div>
         </div>
       </div>
@@ -57,7 +77,7 @@ export const ProgressRingCard: React.FC = () => {
               <span className="text-white font-bold">{d.score}%</span>
             </div>
             <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden">
-              <div className={`h-full rounded-full ${d.color}`} style={{ width: `${d.score}%` }}></div>
+              <div className={`h-full rounded-full ${d.color} transition-all duration-500`} style={{ width: `${d.score}%` }}></div>
             </div>
           </div>
         ))}
@@ -65,3 +85,5 @@ export const ProgressRingCard: React.FC = () => {
     </div>
   );
 };
+
+export default ProgressRingCard;

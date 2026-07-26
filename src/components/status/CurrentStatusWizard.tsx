@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { getScopedItem, setScopedItem } from "@/lib/userStorage";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   UserCheck,
@@ -16,7 +18,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   Save,
-  RotateCcw,
   Sparkles,
   ShieldCheck,
   Building,
@@ -28,864 +29,1220 @@ import {
   BookOpen,
   Code,
   Layers,
+  User,
+  Mail,
+  Phone,
+  Linkedin,
+  Github,
+  Link as LinkIcon,
+  Check,
+  ChevronRight,
+  ChevronLeft,
+  Calendar,
+  Compass,
+  Zap,
+  HelpCircle,
 } from "lucide-react";
+import {
+  MasterProfileState,
+  PrimaryRoleOption,
+  CareerInterestCategory,
+  CareerMotivationOption,
+  AvailabilityOption,
+} from "@/types/masterProfile";
+import {
+  calculateAgeFromDOB,
+  evaluateMasterProfileCompleteness,
+  generateAIProfileSummary,
+} from "@/lib/masterProfileEngine";
 
-export type PrimaryStatus =
-  | "Student"
-  | "Working Professional"
-  | "Founder / Entrepreneur"
-  | "Business Owner"
-  | "Freelancer"
-  | "Self-Employed"
-  | "Government Employee"
-  | "Job Seeker"
-  | "Intern"
-  | "Research Scholar / PhD"
-  | "Homemaker"
-  | "Retired"
-  | "Other";
-
-export interface CompleteCurrentStatusData {
-  primaryStatus: PrimaryStatus;
-  
-  // Student Specific
-  studentRole: string;
-  collegeName: string;
-  degree: string;
-  department: string;
-  yearOfStudy: string;
-  cgpaPercentage: string;
-  expectedGraduation: string;
-  placementStatus: string;
-  internshipExperience: string;
-  studentProjects: string;
-  studentSkills: string;
-  studentClubsLeadership: string;
-  studentGoal: string;
-
-  // Working Professional Specific
-  professionalRole: string;
-  companyName: string;
-  professionalIndustry: string;
-  professionalDepartment: string;
-  employmentType: string;
-  yearsOfExperience: string;
-  currentCompanyTenure: string;
-  totalCompaniesWorked: string;
-  careerLevel: string;
-  teamSizeManaged: string;
-  leadershipExperience: string;
-  noticePeriod: string;
-  workMode: string;
-  targetSalaryBand: string;
-  professionalGoal: string;
-
-  // Founder / Entrepreneur Specific
-  founderRole: string;
-  founderCompanyName: string;
-  founderIndustry: string;
-  startupStage: string;
-  numberOfEmployees: string;
-  yearsInBusiness: string;
-  annualRevenueRange: string;
-  fundingStage: string;
-  equityOwnership: string;
-  founderBottleneck: string;
-  founderMilestone: string;
-
-  // Business Owner Specific
-  businessType: string;
-  businessName: string;
-  businessIndustry: string;
-  businessYearsOperating: string;
-  businessEmployees: string;
-  businessAnnualRevenue: string;
-  businessGoal: string;
-
-  // Freelancer / Self-Employed Specific
-  freelancerRole: string;
-  freelancerPlatforms: string;
-  freelancerYearsExp: string;
-  freelancerMonthlyClients: string;
-  freelancerMonthlyRevenue: string;
-  freelancerHourlyRate: string;
-  freelancerGoal: string;
-
-  // Government Employee Specific
-  govtDepartment: string;
-  govtDesignation: string;
-  govtGrade: string;
-  govtYearsService: string;
-
-  // Job Seeker Specific
-  jobSeekerTargetRole: string;
-  jobSeekerQualification: string;
-  jobSeekerTargetIndustry: string;
-  jobSeekerExpectedSalary: string;
-  jobSeekerPastExp: string;
-
-  // Homemaker / Retired / Other
-  homemakerFocus: string;
-  homemakerPriorExp: string;
-}
-
-const initialEmptyData: CompleteCurrentStatusData = {
-  primaryStatus: "Student",
-
-  studentRole: "Undergraduate Student",
-  collegeName: "",
-  degree: "",
-  department: "",
-  yearOfStudy: "3rd Year",
-  cgpaPercentage: "",
-  expectedGraduation: "",
-  placementStatus: "Actively Preparing / Campus Drives",
-  internshipExperience: "",
-  studentProjects: "",
-  studentSkills: "",
-  studentClubsLeadership: "",
-  studentGoal: "Get Campus Placement / First Software Role",
-
-  professionalRole: "Senior Engineer",
-  companyName: "",
-  professionalIndustry: "Information Technology",
-  professionalDepartment: "",
-  employmentType: "Full-Time",
-  yearsOfExperience: "",
-  currentCompanyTenure: "",
-  totalCompaniesWorked: "",
-  careerLevel: "Senior",
-  teamSizeManaged: "",
-  leadershipExperience: "",
-  noticePeriod: "30 Days",
-  workMode: "Hybrid",
-  targetSalaryBand: "",
-  professionalGoal: "Promotion to Tech Lead / Director Tier",
-
-  founderRole: "Founder / CEO",
-  founderCompanyName: "",
-  founderIndustry: "Artificial Intelligence",
-  startupStage: "Revenue Stage",
-  numberOfEmployees: "",
-  yearsInBusiness: "",
-  annualRevenueRange: "",
-  fundingStage: "Bootstrapped",
-  equityOwnership: "",
-  founderBottleneck: "Hiring Top Technical Talent",
-  founderMilestone: "Reach ₹1 Crore ARR",
-
-  businessType: "Service Business",
-  businessName: "",
-  businessIndustry: "Finance & Advisory",
-  businessYearsOperating: "",
-  businessEmployees: "",
-  businessAnnualRevenue: "",
-  businessGoal: "Scale Operations & Digital Expansion",
-
-  freelancerRole: "Software Developer",
-  freelancerPlatforms: "",
-  freelancerYearsExp: "",
-  freelancerMonthlyClients: "",
-  freelancerMonthlyRevenue: "",
-  freelancerHourlyRate: "",
-  freelancerGoal: "Scale to Productized Agency",
-
-  govtDepartment: "",
-  govtDesignation: "",
-  govtGrade: "Class-I Gazetted",
-  govtYearsService: "",
-
-  jobSeekerTargetRole: "",
-  jobSeekerQualification: "",
-  jobSeekerTargetIndustry: "Information Technology",
-  jobSeekerExpectedSalary: "",
-  jobSeekerPastExp: "",
-
-  homemakerFocus: "",
-  homemakerPriorExp: "",
+const DEFAULT_MASTER_STATE: MasterProfileState = {
+  primaryRole: "Student",
+  personalProfile: {
+    firstName: "",
+    lastName: "",
+    preferredName: "",
+    dateOfBirth: "",
+    calculatedAge: 0,
+    gender: "Male",
+    country: "",
+    stateOrProvince: "",
+    city: "",
+    nationality: "",
+    timezone: "(UTC-08:00) Pacific Time",
+    preferredLanguage: "English",
+  },
+  contactInformation: {
+    email: "",
+    mobileNumber: "",
+    linkedInUrl: "",
+    gitHubUrl: "",
+    portfolioUrl: "",
+    personalWebsiteUrl: "",
+  },
+  studentData: {
+    studentCategory: "Undergraduate",
+    degree: "",
+    specialization: "",
+    department: "",
+    college: "",
+    university: "",
+    collegeType: "Government",
+    modeOfStudy: "Full Time",
+    currentYear: "1st Year",
+    currentSemester: "1st Semester",
+    expectedGraduationYear: "",
+    cgpaOrPercentage: "",
+    academicRank: "",
+    hasScholarship: false,
+    placementEligibility: true,
+    housingType: "Day Scholar",
+    currentPlacementStatus: "Applied",
+  },
+  employeeData: {
+    company: "",
+    designation: "",
+    department: "",
+    industry: "",
+    employmentType: "Full Time",
+    yearsOfExperience: 0,
+    currentSalaryBand: "",
+    teamSizeManaged: "",
+    noticePeriod: "",
+    hasManagerialResponsibility: false,
+  },
+  founderData: {
+    startupName: "",
+    industry: "",
+    yearsRunning: 0,
+    startupStage: "Ideation",
+    employeeCount: "",
+    revenueStage: "",
+    fundingStage: "Bootstrapped",
+    ownershipPercentage: "",
+    websiteUrl: "",
+  },
+  freelancerData: {
+    primaryService: "",
+    yearsExperience: 0,
+    clientsServed: "",
+    avgMonthlyProjects: 0,
+    platformsUsed: [],
+  },
+  careerInterests: [],
+  careerPreferences: {
+    preferredIndustry: "",
+    preferredCompanyType: "Startup",
+    preferredWorkStyle: "Hybrid",
+    preferredCountry: "",
+    relocationPreference: "Yes",
+    openToInternationalOpportunities: true,
+  },
+  careerMotivations: [],
+  currentAvailability: "Open to Work",
+  goals: {
+    shortTermGoal1Yr: "",
+    mediumTermGoal3Yr: "",
+    longTermGoal5To10Yr: "",
+  },
+  aiSummary: {
+    currentStageBadge: "Profile Initializing",
+    summaryBullets: [],
+    profileCompletenessPercentage: 0,
+    aiConfidencePercentage: 85,
+  },
 };
 
-const LOCAL_STORAGE_KEY = "human_capital_current_status_v4";
+const ROLES: { id: PrimaryRoleOption; title: string; desc: string; icon: any }[] = [
+  { id: "Student", title: "Student", desc: "Undergraduate, Graduate, or High School student", icon: GraduationCap },
+  { id: "Employee", title: "Employee / Professional", desc: "Working full-time, part-time, or contract", icon: Briefcase },
+  { id: "Founder", title: "Founder / Entrepreneur", desc: "Building a startup or venture", icon: Rocket },
+  { id: "Business Owner", title: "Business Owner", desc: "Running an established SME or business", icon: Building2 },
+  { id: "Freelancer", title: "Freelancer / Consultant", desc: "Providing independent services", icon: Laptop },
+  { id: "Government Employee", title: "Government Employee", desc: "Civil services or public sector", icon: Building },
+  { id: "Research Scholar", title: "Research Scholar / PhD", desc: "Academic or scientific research", icon: BookOpen },
+  { id: "Job Seeker", title: "Job Seeker", desc: "Actively searching for new roles", icon: Search },
+  { id: "Self Employed", title: "Self Employed", desc: "Solo practice or professional services", icon: UserCheck },
+  { id: "Retired", title: "Retired", desc: "Post-career advisory or leisure", icon: Award },
+  { id: "Homemaker", title: "Homemaker", desc: "Managing home & family endeavors", icon: Star },
+  { id: "Other", title: "Other Mode", desc: "Unique career pathway", icon: Compass },
+];
 
-export const CurrentStatusWizard: React.FC = () => {
-  const [formData, setFormData] = useState<CompleteCurrentStatusData>(initialEmptyData);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSaved, setIsSaved] = useState(true);
-  const [isCompleted, setIsCompleted] = useState(false);
+const INTEREST_OPTIONS: CareerInterestCategory[] = [
+  "Artificial Intelligence",
+  "Finance",
+  "Healthcare",
+  "Cybersecurity",
+  "Cloud",
+  "Marketing",
+  "Sales",
+  "Business",
+  "Education",
+  "Research",
+  "Manufacturing",
+  "Robotics",
+  "Data Science",
+  "Product Management",
+  "Design",
+  "Law",
+  "Government",
+  "Agriculture",
+  "Other",
+];
 
-  const totalSteps = 5;
+const MOTIVATION_OPTIONS: CareerMotivationOption[] = [
+  "High Salary",
+  "Financial Freedom",
+  "Leadership",
+  "Entrepreneurship",
+  "Research",
+  "Innovation",
+  "Learning",
+  "Work Life Balance",
+  "Job Security",
+  "Social Impact",
+  "Recognition",
+];
+
+const AVAILABILITY_OPTIONS: AvailabilityOption[] = [
+  "Student",
+  "Working",
+  "Open to Work",
+  "Looking for Internship",
+  "Looking for Placement",
+  "Looking for Co-Founder",
+  "Looking for Investors",
+  "Not Looking",
+];
+
+const MASTER_STEPS = [
+  { id: 1, title: "Primary Role" },
+  { id: 2, title: "Personal Profile & Contact" },
+  { id: 3, title: "Role Specifics" },
+  { id: 4, title: "Career Interests" },
+  { id: 5, title: "Preferences" },
+  { id: 6, title: "Motivations" },
+  { id: 7, title: "Availability" },
+  { id: 8, title: "Three-Horizon Goals" },
+  { id: 9, title: "AI Master Summary" },
+];
+
+export function CurrentStatusWizard() {
+  const [mounted, setMounted] = useState(false);
+  const [state, setState] = useState<MasterProfileState>(DEFAULT_MASTER_STATE);
+  const [activeStep, setActiveStep] = useState<number>(1);
+  const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
+
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (saved) {
-        setFormData(JSON.parse(saved));
+    setMounted(true);
+    if (typeof window !== "undefined") {
+      const parsed = getScopedItem<MasterProfileState | null>("hc_master_profile_data", null);
+      if (parsed && parsed.personalProfile) {
+        setState(parsed);
+        if (parsed.isCompleted || (parsed.personalProfile.firstName && parsed.personalProfile.lastName)) {
+          setIsSubmitted(true);
+          setActiveStep(9);
+        }
       }
-    } catch (e) {
-      console.error("Failed to load local telemetry", e);
     }
   }, []);
 
-  const updateField = (field: keyof CompleteCurrentStatusData, value: string) => {
-    setFormData((prev) => {
-      const updated = { ...prev, [field]: value };
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.error("Failed to save telemetry locally", e);
+  // Automatically update age when Date of Birth changes
+  useEffect(() => {
+    if (state.personalProfile.dateOfBirth) {
+      const age = calculateAgeFromDOB(state.personalProfile.dateOfBirth);
+      setState((prev) => ({
+        ...prev,
+        personalProfile: { ...prev.personalProfile, calculatedAge: age },
+      }));
+    }
+  }, [state.personalProfile.dateOfBirth]);
+
+  // Debounced autosave to LocalStorage
+  useEffect(() => {
+    if (!mounted) return;
+    setSavingStatus("saving");
+    const timeout = setTimeout(() => {
+      setScopedItem("hc_master_profile_data", state);
+      setSavingStatus("saved");
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [state, mounted]);
+
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Evaluate AI summary in real-time
+  const aiSummaryData = useMemo(() => generateAIProfileSummary(state), [state]);
+
+  // Validate active step mandatory fields
+  const validateCurrentStep = (step: number): boolean => {
+    setValidationError(null);
+    if (step === 1) {
+      if (!state.primaryRole) {
+        setValidationError("Please select your Primary Role to proceed.");
+        return false;
       }
-      return updated;
-    });
-    setIsSaved(false);
-    setTimeout(() => setIsSaved(true), 350);
+    } else if (step === 2) {
+      if (!state.personalProfile.firstName.trim()) {
+        setValidationError("First Name is required (Enter 'N/A' if not applicable).");
+        return false;
+      }
+      if (!state.personalProfile.lastName.trim()) {
+        setValidationError("Last Name is required (Enter 'N/A' if not applicable).");
+        return false;
+      }
+      if (!state.contactInformation.email.trim()) {
+        setValidationError("Email Address is required (Enter 'N/A' if not applicable).");
+        return false;
+      }
+    } else if (step === 3) {
+      if (state.primaryRole === "Student") {
+        const collegeOrUniv = (state.studentData.university || state.studentData.college || "").trim();
+        if (!state.studentData.degree.trim()) {
+          setValidationError("Degree / Major is required (Enter 'N/A' if not applicable).");
+          return false;
+        }
+        if (!collegeOrUniv) {
+          setValidationError("University / Institution Name is required (Enter 'N/A' if not applicable).");
+          return false;
+        }
+      } else if (state.primaryRole === "Working Professional") {
+        if (!state.employeeData.jobTitle.trim()) {
+          setValidationError("Job Title is required (Enter 'N/A' if not applicable).");
+          return false;
+        }
+        if (!state.employeeData.companyName.trim()) {
+          setValidationError("Company Name is required (Enter 'N/A' if not applicable).");
+          return false;
+        }
+      }
+    }
+    return true;
   };
-
-  const getAICareerStage = () => {
-    const status = formData.primaryStatus;
-    if (status === "Student" || status === "Intern" || status === "Research Scholar / PhD") {
-      return { stage: "🌱 Student Explorer", color: "text-emerald-400 bg-emerald-950/60 border-emerald-800", desc: "Building foundational degree capital, technical projects & campus placement readiness." };
-    }
-    if (status === "Founder / Entrepreneur") {
-      return { stage: "🦄 Startup Founder", color: "text-purple-400 bg-purple-950/60 border-purple-800", desc: "Scaling high-upside startup equity, managing enterprise product vision & team growth." };
-    }
-    if (status === "Business Owner") {
-      return { stage: "🏢 Business Owner", color: "text-amber-400 bg-amber-950/60 border-amber-800", desc: "Operating profitable revenue business asset with established commercial cashflows." };
-    }
-    if (status === "Freelancer" || status === "Self-Employed") {
-      return { stage: "⚡ Solopreneur / Independent", color: "text-sky-400 bg-sky-950/60 border-sky-800", desc: "Managing direct enterprise client retainers and high hourly leverage." };
-    }
-    return { stage: "💼 Experienced Professional", color: "text-indigo-400 bg-indigo-950/60 border-indigo-800", desc: "Corporate domain leader driving high-value enterprise output." };
-  };
-
-  const aiStage = getAICareerStage();
 
   const handleNext = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep((prev) => prev + 1);
-    } else {
-      setIsCompleted(true);
-    }
+    if (!validateCurrentStep(activeStep)) return;
+    if (activeStep < 9) setActiveStep((prev) => prev + 1);
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1);
-    }
+    setValidationError(null);
+    if (activeStep > 1) setActiveStep((prev) => prev - 1);
   };
 
-  const progressPercent = Math.round((currentStep / totalSteps) * 100);
+  const handleSubmitProfile = () => {
+    if (!validateCurrentStep(activeStep)) return;
+    const updatedState = {
+      ...state,
+      isCompleted: true,
+      submittedAt: new Date().toISOString(),
+    };
+    setState(updatedState);
+    if (typeof window !== "undefined") {
+      setScopedItem("hc_master_profile_data", updatedState);
+      window.dispatchEvent(new CustomEvent("hc_assessment_updated"));
+    }
+    setIsSubmitted(true);
+    setActiveStep(9);
+  };
 
-  const isStudentType =
-    formData.primaryStatus === "Student" ||
-    formData.primaryStatus === "Intern" ||
-    formData.primaryStatus === "Research Scholar / PhD";
-
-  const isProfessionalType = formData.primaryStatus === "Working Professional";
-  const isFounderType = formData.primaryStatus === "Founder / Entrepreneur";
-  const isBusinessOwnerType = formData.primaryStatus === "Business Owner";
-  const isFreelancerType = formData.primaryStatus === "Freelancer" || formData.primaryStatus === "Self-Employed";
+  if (!mounted) {
+    return (
+      <div className="glass-panel p-8 rounded-3xl border border-[var(--border)] max-w-7xl mx-auto space-y-6 animate-pulse">
+        <div className="h-8 bg-slate-800 rounded-xl w-1/3"></div>
+        <div className="h-4 bg-slate-900 rounded-xl w-1/2"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header Bar */}
-      <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                MODULE 1: CURRENT STATUS & CAREER
-              </span>
-              <span className="text-xs font-mono text-slate-400">Step {currentStep} of {totalSteps}</span>
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* SUBMITTED COMPLETION STATUS BANNER */}
+      {isSubmitted && (
+        <div className="glass-panel p-6 rounded-3xl border border-emerald-500/40 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl text-left">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h1 className="text-xl font-bold text-white tracking-tight mt-1 flex items-center gap-3">
-              <span>{formData.primaryStatus.toUpperCase()} Diagnostic Wizard</span>
-              <span className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full border ${aiStage.color}`}>
-                {aiStage.stage}
-              </span>
-            </h1>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-bold text-[10px] uppercase">
+                  ✓ Profile Submitted & Saved Locally
+                </span>
+              </div>
+              <h3 className="text-base font-extrabold text-[var(--foreground)] mt-0.5">
+                Personal & Professional Parameters Stored
+              </h3>
+              <p className="text-xs text-[var(--subtext)]">
+                Your profile parameters are saved and active for Human Capital valuation.
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 text-xs font-mono text-slate-400">
-              <Save className={`w-3.5 h-3.5 ${isSaved ? "text-emerald-400" : "text-amber-400 animate-spin"}`} />
-              <span>{isSaved ? "Autosaved Locally" : "Saving inputs..."}</span>
-            </div>
-
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => {
-                localStorage.removeItem(LOCAL_STORAGE_KEY);
-                setFormData(initialEmptyData);
-                setCurrentStep(1);
-                setIsCompleted(false);
-              }}
-              className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
-              title="Clear Saved Telemetry"
+              type="button"
+              onClick={() => setActiveStep(1)}
+              className="px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono font-bold hover:bg-slate-800 transition-all"
             >
-              <RotateCcw className="w-4 h-4" />
+              Edit Profile Parameters
             </button>
+            <Link
+              href="/dashboard/financial"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-500 hover:from-emerald-500 hover:to-sky-400 text-white font-mono font-bold text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5 transition-all"
+            >
+              Next Module: Financial Health <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
+      )}
 
-        <div className="space-y-1">
-          <div className="flex justify-between text-[11px] font-mono text-slate-400">
-            <span>Tailored Path: {formData.primaryStatus.toUpperCase()}</span>
-            <span className="text-sky-400 font-bold">{progressPercent}%</span>
+      {/* HEADER LOCKUP */}
+      <div className="glass-panel p-6 rounded-3xl border border-[var(--border)] relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-1 z-10">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 dark:text-cyan-400 text-[11px] font-mono font-bold uppercase tracking-wider">
+              Phase 3 — Master Profile Engine
+            </span>
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--subtext)]">
+              {savingStatus === "saving" ? (
+                <span className="text-amber-500 animate-pulse flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Autosaving...
+                </span>
+              ) : (
+                <span className="text-emerald-500 flex items-center gap-1">
+                  <Check className="w-3 h-3" /> All changes saved
+                </span>
+              )}
+            </div>
           </div>
-          <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden border border-slate-800">
-            <motion.div
-              className="h-full bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-400 rounded-full"
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 0.4 }}
-            />
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--foreground)]">
+            Personal & Professional Profile
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--subtext)] max-w-xl leading-relaxed">
+            The foundational Master Profile powering your Human Capital Score, career recommendations, and financial assessments.
+          </p>
+        </div>
+
+        {/* Profile Completeness Pill */}
+        <div className="flex items-center gap-4 z-10">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-blue-600/10 border border-blue-500/20">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-400 text-white font-extrabold text-lg flex items-center justify-center shadow-lg">
+              {aiSummaryData.profileCompletenessPercentage}%
+            </div>
+            <div className="text-left">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--subtext)]">
+                Master Completeness
+              </div>
+              <div className="text-xs font-bold text-blue-600 dark:text-cyan-400 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Zero Sensitive IDs</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {!isCompleted ? (
-        <div className="glass-panel rounded-2xl p-6 sm:p-8 border border-slate-800 relative overflow-hidden shadow-2xl">
-          <AnimatePresence mode="wait">
-            
-            {/* STEP 1: PRIMARY STATUS SELECTION */}
-            {currentStep === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-6"
-              >
-                <div>
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <UserCheck className="w-5 h-5 text-sky-400" />
-                    <span>1. Select Your Primary Role Status</span>
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Your choice dynamically customizes all subsequent steps specifically for your role.
-                  </p>
+      {/* STEP PROGRESS NAVIGATION */}
+      <div className="glass-panel p-4 rounded-2xl border border-[var(--border)] space-y-3">
+        <div className="flex justify-between items-center text-xs font-semibold">
+          <span className="text-[var(--foreground)]">
+            Step {activeStep} of 9: <strong className="text-blue-600 dark:text-cyan-400">{MASTER_STEPS[activeStep - 1].title}</strong>
+          </span>
+          <span className="font-mono text-[var(--subtext)]">{Math.round((activeStep / 9) * 100)}% Processed</span>
+        </div>
+
+        <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+          <motion.div
+            className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full"
+            animate={{ width: `${(activeStep / 9) * 100}%` }}
+            transition={{ duration: 0.3 }}
+          />
+        </div>
+
+        {/* Step Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar">
+          {MASTER_STEPS.map((step) => (
+            <button
+              key={step.id}
+              onClick={() => setActiveStep(step.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium shrink-0 transition-all ${
+                activeStep === step.id
+                  ? "bg-blue-600 text-white font-bold shadow-md"
+                  : step.id < activeStep
+                  ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                  : "bg-[var(--background)] text-[var(--subtext)] border border-[var(--border)]"
+              }`}
+            >
+              <span>{step.id}. {step.title}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* STEP CONTENT SWITCHER */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeStep}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.25 }}
+          className="glass-panel p-6 sm:p-8 rounded-3xl border border-[var(--border)] min-h-[500px]"
+        >
+          {/* STEP 1: PRIMARY ROLE */}
+          {activeStep === 1 && (
+            <div className="space-y-6">
+              <div className="text-left space-y-1">
+                <h2 className="text-xl font-bold text-[var(--foreground)]">Step 1: Primary Career Status</h2>
+                <p className="text-xs text-[var(--subtext)]">Select your primary role. This dynamically configures your master evaluation engine.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {ROLES.map((r) => {
+                  const Icon = r.icon;
+                  const selected = state.primaryRole === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setState({ ...state, primaryRole: r.id })}
+                      className={`p-4 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all ${
+                        selected
+                          ? "bg-blue-600/15 border-blue-500 text-[var(--foreground)] shadow-lg scale-[1.02]"
+                          : "bg-[var(--background)] border-[var(--border)] text-[var(--subtext)] hover:border-blue-500/40"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center w-full">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${selected ? "bg-blue-600 text-white" : "bg-slate-800/40 text-slate-400"}`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        {selected && <CheckCircle2 className="w-5 h-5 text-blue-500 dark:text-cyan-400" />}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-[var(--foreground)]">{r.title}</h3>
+                        <p className="text-[11px] text-[var(--subtext)] leading-tight">{r.desc}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2: PERSONAL PROFILE & CONTACT */}
+          {activeStep === 2 && (
+            <div className="space-y-6 text-left">
+              <div className="border-b border-[var(--border)] pb-4">
+                <h2 className="text-xl font-bold text-[var(--foreground)]">Step 2: Personal Profile & Contact Information</h2>
+                <p className="text-xs text-[var(--subtext)]">Non-sensitive identity parameters and communication handles.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">First Name *</label>
+                  <input
+                    type="text"
+                    value={state.personalProfile.firstName}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        personalProfile: { ...state.personalProfile, firstName: e.target.value },
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {[
-                    "Student",
-                    "Working Professional",
-                    "Founder / Entrepreneur",
-                    "Business Owner",
-                    "Freelancer",
-                    "Self-Employed",
-                    "Government Employee",
-                    "Job Seeker",
-                    "Intern",
-                    "Research Scholar / PhD",
-                    "Homemaker",
-                    "Retired",
-                    "Other",
-                  ].map((status) => {
-                    const isSelected = formData.primaryStatus === status;
-                    return (
-                      <button
-                        key={status}
-                        type="button"
-                        onClick={() => updateField("primaryStatus", status as PrimaryStatus)}
-                        className={`p-3.5 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all ${
-                          isSelected
-                            ? "bg-sky-950/70 border-2 border-sky-400 text-white shadow-lg shadow-sky-500/10"
-                            : "bg-slate-950/80 hover:bg-slate-900 border-slate-800 text-slate-300"
-                        }`}
-                      >
-                        <span>{status}</span>
-                        {isSelected && <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-
-            {/* STEP 2: TAILORED CORE DETAILS */}
-            {currentStep === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-6"
-              >
-                <div>
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Award className="w-5 h-5 text-emerald-400" />
-                    <span>2. Core Details [{formData.primaryStatus}]</span>
-                  </h2>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Last Name *</label>
+                  <input
+                    type="text"
+                    value={state.personalProfile.lastName}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        personalProfile: { ...state.personalProfile, lastName: e.target.value },
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  />
                 </div>
 
-                {/* STUDENT BRANCH */}
-                {isStudentType && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Student Category</label>
-                        <select
-                          value={formData.studentRole}
-                          onChange={(e) => updateField("studentRole", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                        >
-                          <option>School Student</option>
-                          <option>Diploma Student</option>
-                          <option>Undergraduate Student</option>
-                          <option>Postgraduate Student</option>
-                          <option>PhD Scholar</option>
-                        </select>
-                      </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Preferred Name (Optional)</label>
+                  <input
+                    type="text"
+                    value={state.personalProfile.preferredName || ""}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        personalProfile: { ...state.personalProfile, preferredName: e.target.value },
+                      })
+                    }
+                    placeholder="e.g. Alex"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  />
+                </div>
+              </div>
 
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">College / University Name</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. XYZ College / University"
-                          value={formData.collegeName}
-                          onChange={(e) => updateField("collegeName", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Degree & Major</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. B.Tech Computer Science"
-                          value={formData.degree}
-                          onChange={(e) => updateField("degree", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Department</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Computer Science & AI"
-                          value={formData.department}
-                          onChange={(e) => updateField("department", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Year of Study</label>
-                        <select
-                          value={formData.yearOfStudy}
-                          onChange={(e) => updateField("yearOfStudy", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none"
-                        >
-                          <option>1st Year</option>
-                          <option>2nd Year</option>
-                          <option>3rd Year</option>
-                          <option>4th Year / Final Year</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* WORKING PROFESSIONAL BRANCH */}
-                {isProfessionalType && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Current Role Title</label>
-                        <select
-                          value={formData.professionalRole}
-                          onChange={(e) => updateField("professionalRole", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                        >
-                          <option>Associate</option>
-                          <option>Analyst</option>
-                          <option>Engineer</option>
-                          <option>Senior Engineer</option>
-                          <option>Consultant</option>
-                          <option>Team Lead</option>
-                          <option>Manager</option>
-                          <option>Senior Manager</option>
-                          <option>Director</option>
-                          <option>Vice President</option>
-                          <option>C-Level Executive</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Company Name</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. ABC Tech Solutions"
-                          value={formData.companyName}
-                          onChange={(e) => updateField("companyName", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* FOUNDER BRANCH */}
-                {isFounderType && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Founder Role</label>
-                        <select
-                          value={formData.founderRole}
-                          onChange={(e) => updateField("founderRole", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                        >
-                          <option>Founder / CEO</option>
-                          <option>Co-Founder / CTO</option>
-                          <option>Managing Director</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Startup Name</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Apex AI Labs"
-                          value={formData.founderCompanyName}
-                          onChange={(e) => updateField("founderCompanyName", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* OTHER PERSONA BRANCHES */}
-                {!isStudentType && !isProfessionalType && !isFounderType && (
-                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 space-y-1">
-                    <div className="font-bold text-white">Configured Attributes for {formData.primaryStatus}</div>
-                    <p className="text-[11px] text-slate-400">Standard domain questions will follow in the next steps.</p>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* STEP 3: ROLE-SPECIFIC DEEP TELEMETRY */}
-            {currentStep === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-6"
-              >
-                <div>
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-indigo-400" />
-                    <span>3. Role-Specific Deep Telemetry [{formData.primaryStatus}]</span>
-                  </h2>
+              {/* DOB & Auto-Age Calculation */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Date of Birth *</label>
+                  <input
+                    type="date"
+                    value={state.personalProfile.dateOfBirth}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        personalProfile: { ...state.personalProfile, dateOfBirth: e.target.value },
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  />
                 </div>
 
-                {/* STUDENT SPECIFIC: CGPA, GRADUATION, PROJECTS & SKILLS */}
-                {isStudentType && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">CGPA / Percentage</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 8.8 / 10 CGPA"
-                          value={formData.cgpaPercentage}
-                          onChange={(e) => updateField("cgpaPercentage", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Calculated Age</label>
+                  <div className="px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-mono font-bold text-blue-500 dark:text-cyan-400">
+                    {state.personalProfile.calculatedAge} Years Old
+                  </div>
+                </div>
 
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Expected Graduation Date</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. May 2026"
-                          value={formData.expectedGraduation}
-                          onChange={(e) => updateField("expectedGraduation", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Gender</label>
+                  <select
+                    value={state.personalProfile.gender}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        personalProfile: { ...state.personalProfile, gender: e.target.value as any },
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Non-Binary">Non-Binary</option>
+                    <option value="Prefer Not to Say">Prefer Not to Say</option>
+                  </select>
+                </div>
+              </div>
 
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Campus Placement Status</label>
-                        <select
-                          value={formData.placementStatus}
-                          onChange={(e) => updateField("placementStatus", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none"
-                        >
-                          <option>Campus Placed</option>
-                          <option>Actively Preparing / Campus Drives</option>
-                          <option>Seeking Off-Campus Jobs</option>
-                          <option>Planning Higher Studies</option>
-                        </select>
-                      </div>
-                    </div>
+              {/* Location & Timezone */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Country *</label>
+                  <input
+                    type="text"
+                    value={state.personalProfile.country}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        personalProfile: { ...state.personalProfile, country: e.target.value },
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">State / Province</label>
+                  <input
+                    type="text"
+                    value={state.personalProfile.stateOrProvince}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        personalProfile: { ...state.personalProfile, stateOrProvince: e.target.value },
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">City</label>
+                  <input
+                    type="text"
+                    value={state.personalProfile.city}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        personalProfile: { ...state.personalProfile, city: e.target.value },
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  />
+                </div>
+              </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-300">Technical / Academic Projects Built</label>
+              {/* Contact Information & Social Handles */}
+              <div className="pt-2 border-t border-[var(--border)] space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--subtext)] font-mono">Contact Handles</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs text-[var(--subtext)] font-semibold">
+                      Email Address <span className="text-rose-500">*</span> <span className="text-[10px] opacity-75 font-normal">(Required — Enter "N/A" if not applicable)</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={state.contactInformation.email || ""}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          contactInformation: { ...state.contactInformation, email: e.target.value },
+                        })
+                      }
+                      placeholder="e.g. alex@example.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-[var(--subtext)]">LinkedIn Profile URL</label>
+                    <input
+                      type="text"
+                      value={state.contactInformation.linkedInUrl || ""}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          contactInformation: { ...state.contactInformation, linkedInUrl: e.target.value },
+                        })
+                      }
+                      placeholder="https://linkedin.com/in/username"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-[var(--subtext)]">GitHub Profile URL</label>
+                    <input
+                      type="text"
+                      value={state.contactInformation.gitHubUrl || ""}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          contactInformation: { ...state.contactInformation, gitHubUrl: e.target.value },
+                        })
+                      }
+                      placeholder="https://github.com/username"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-[var(--subtext)]">Personal Portfolio Website</label>
+                    <input
+                      type="text"
+                      value={state.contactInformation.portfolioUrl || ""}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          contactInformation: { ...state.contactInformation, portfolioUrl: e.target.value },
+                        })
+                      }
+                      placeholder="https://alexvance.dev"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: DYNAMIC ROLE SPECIFICS */}
+          {activeStep === 3 && (
+            <div className="space-y-6 text-left">
+              <div className="border-b border-[var(--border)] pb-4">
+                <h2 className="text-xl font-bold text-[var(--foreground)]">Step 3: {state.primaryRole} Specification</h2>
+                <p className="text-xs text-[var(--subtext)]">Dynamic parameters calibrated for {state.primaryRole} status.</p>
+              </div>
+
+              {state.primaryRole === "Student" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Degree Program</label>
                       <input
                         type="text"
-                        placeholder="e.g. Full-Stack E-Commerce, Machine Learning Classifier"
-                        value={formData.studentProjects}
-                        onChange={(e) => updateField("studentProjects", e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                        value={state.studentData.degree}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            studentData: { ...state.studentData, degree: e.target.value },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Specialization / Major</label>
+                      <input
+                        type="text"
+                        value={state.studentData.specialization}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            studentData: { ...state.studentData, specialization: e.target.value },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--foreground)]">University / Institution</label>
+                      <input
+                        type="text"
+                        value={state.studentData.university}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            studentData: { ...state.studentData, university: e.target.value, college: e.target.value },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
                       />
                     </div>
                   </div>
-                )}
 
-                {/* WORKING PROFESSIONAL SPECIFIC: TENURE, EXPERIENCE & TEAM SIZE */}
-                {isProfessionalType && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Total Years of Experience</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 5 Years"
-                          value={formData.yearsOfExperience}
-                          onChange={(e) => updateField("yearsOfExperience", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Current Company Tenure</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 2.5 Years"
-                          value={formData.currentCompanyTenure}
-                          onChange={(e) => updateField("currentCompanyTenure", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Team Size Managed</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 8 Engineers / Direct Reports"
-                          value={formData.teamSizeManaged}
-                          onChange={(e) => updateField("teamSizeManaged", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--foreground)]">College Type</label>
+                      <select
+                        value={state.studentData.collegeType}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            studentData: { ...state.studentData, collegeType: e.target.value as any },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                      >
+                        <option value="Government" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Government</option>
+                        <option value="Private" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Private</option>
+                        <option value="Autonomous" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Autonomous</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--foreground)]">CGPA / Percentage</label>
+                      <input
+                        type="text"
+                        value={state.studentData.cgpaOrPercentage}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            studentData: { ...state.studentData, cgpaOrPercentage: e.target.value },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Placement Status</label>
+                      <select
+                        value={state.studentData.currentPlacementStatus}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            studentData: { ...state.studentData, currentPlacementStatus: e.target.value as any },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                      >
+                        <option value="Applied" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Applied</option>
+                        <option value="Interviewing" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Interviewing</option>
+                        <option value="Placed" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Placed</option>
+                        <option value="Higher Studies" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Higher Studies</option>
+                        <option value="Not Applied" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Not Applied</option>
+                      </select>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* FOUNDER SPECIFIC: TRACTION, REVENUE & FUNDING */}
-                {isFounderType && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Annual Revenue (INR ₹)</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. ₹50 Lakhs ARR"
-                          value={formData.annualRevenueRange}
-                          onChange={(e) => updateField("annualRevenueRange", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Funding Stage</label>
-                        <select
-                          value={formData.fundingStage}
-                          onChange={(e) => updateField("fundingStage", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none"
-                        >
-                          <option>Bootstrapped</option>
-                          <option>Angel Raised</option>
-                          <option>Seed Stage (₹5 Cr+)</option>
-                          <option>Series A+</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-300">Equity Ownership %</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 75%"
-                          value={formData.equityOwnership}
-                          onChange={(e) => updateField("equityOwnership", e.target.value)}
-                          className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
+              {state.primaryRole === "Employee" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Company Name</label>
+                      <input
+                        type="text"
+                        value={state.employeeData.company}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            employeeData: { ...state.employeeData, company: e.target.value },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Designation / Title</label>
+                      <input
+                        type="text"
+                        value={state.employeeData.designation}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            employeeData: { ...state.employeeData, designation: e.target.value },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Years of Experience</label>
+                      <input
+                        type="number"
+                        value={state.employeeData.yearsOfExperience}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            employeeData: { ...state.employeeData, yearsOfExperience: Number(e.target.value) },
+                          })
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                      />
                     </div>
                   </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* STEP 4: ROLE-SPECIFIC TARGET GOALS & OBJECTIVES */}
-            {currentStep === 4 && (
-              <motion.div
-                key="step4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-6"
-              >
-                <div>
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Target className="w-5 h-5 text-purple-400" />
-                    <span>4. Target Objectives [{formData.primaryStatus}]</span>
-                  </h2>
                 </div>
+              )}
 
-                {isStudentType && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">Primary Student Goal (12-Month Horizon)</label>
-                    <select
-                      value={formData.studentGoal}
-                      onChange={(e) => updateField("studentGoal", e.target.value)}
-                      className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
+              {state.primaryRole !== "Student" && state.primaryRole !== "Employee" && (
+                <div className="p-6 rounded-2xl bg-[var(--background)] border border-[var(--border)] text-center text-xs text-[var(--subtext)]">
+                  Standard master parameters loaded for <strong>{state.primaryRole}</strong> role. Proceed to next step to configure career interests and preferences.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* STEP 4: CAREER INTERESTS */}
+          {activeStep === 4 && (
+            <div className="space-y-6 text-left">
+              <div className="border-b border-[var(--border)] pb-4">
+                <h2 className="text-xl font-bold text-[var(--foreground)]">Step 4: Career Interests & Focus Domains</h2>
+                <p className="text-xs text-[var(--subtext)]">Select the sectors and disciplines you want your AI model to prioritize.</p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                {INTEREST_OPTIONS.map((interest) => {
+                  const selected = state.careerInterests.includes(interest);
+                  return (
+                    <button
+                      key={interest}
+                      type="button"
+                      onClick={() => {
+                        const updated = selected
+                          ? state.careerInterests.filter((i) => i !== interest)
+                          : [...state.careerInterests, interest];
+                        setState({ ...state, careerInterests: updated });
+                      }}
+                      className={`p-3 rounded-2xl border text-xs text-left flex justify-between items-center transition-all ${
+                        selected
+                          ? "bg-blue-600/15 border-blue-500 text-[var(--foreground)] font-bold shadow-md"
+                          : "bg-[var(--background)] border-[var(--border)] text-[var(--subtext)] hover:border-slate-500"
+                      }`}
                     >
-                      <option>Get Campus Placement / First Software Role</option>
-                      <option>Secure High-Stipend Summer Internship</option>
-                      <option>Admit to Tier-1 Masters / PhD Program</option>
-                      <option>Launch Campus Startup / Venture</option>
-                    </select>
-                  </div>
-                )}
+                      <span>{interest}</span>
+                      {selected && <CheckCircle2 className="w-4 h-4 text-blue-500 dark:text-cyan-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-                {isProfessionalType && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">Primary Professional Goal</label>
-                    <select
-                      value={formData.professionalGoal}
-                      onChange={(e) => updateField("professionalGoal", e.target.value)}
-                      className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
+          {/* STEP 5: CAREER PREFERENCES */}
+          {activeStep === 5 && (
+            <div className="space-y-6 text-left">
+              <div className="border-b border-[var(--border)] pb-4">
+                <h2 className="text-xl font-bold text-[var(--foreground)]">Step 5: Career Preferences & Work Style</h2>
+                <p className="text-xs text-[var(--subtext)]">Target company types, remote/hybrid preferences, and international mobility.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Preferred Company Type</label>
+                  <select
+                    value={state.careerPreferences.preferredCompanyType}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        careerPreferences: { ...state.careerPreferences, preferredCompanyType: e.target.value as any },
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  >
+                    <option value="Startup" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Startup</option>
+                    <option value="MNC" className="bg-[#0f172a] text-slate-100 font-semibold py-2">MNC / Corporate</option>
+                    <option value="Government" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Government / Public Sector</option>
+                    <option value="Research" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Research Lab</option>
+                    <option value="NGO" className="bg-[#0f172a] text-slate-100 font-semibold py-2">NGO / Non-Profit</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Preferred Work Style</label>
+                  <select
+                    value={state.careerPreferences.preferredWorkStyle}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        careerPreferences: { ...state.careerPreferences, preferredWorkStyle: e.target.value as any },
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  >
+                    <option value="Remote" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Remote First</option>
+                    <option value="Hybrid" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Hybrid</option>
+                    <option value="On Site" className="bg-[#0f172a] text-slate-100 font-semibold py-2">On Site</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Relocation Willingness</label>
+                  <select
+                    value={state.careerPreferences.relocationPreference}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        careerPreferences: { ...state.careerPreferences, relocationPreference: e.target.value as any },
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  >
+                    <option value="Yes" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Yes, willing to relocate</option>
+                    <option value="No" className="bg-[#0f172a] text-slate-100 font-semibold py-2">No, local only</option>
+                    <option value="Maybe" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Maybe for right offer</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 6: CAREER MOTIVATION */}
+          {activeStep === 6 && (
+            <div className="space-y-6 text-left">
+              <div className="border-b border-[var(--border)] pb-4">
+                <h2 className="text-xl font-bold text-[var(--foreground)]">Step 6: Primary Career Motivations</h2>
+                <p className="text-xs text-[var(--subtext)]">What drives your decision making and career commitment?</p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {MOTIVATION_OPTIONS.map((motivation) => {
+                  const selected = state.careerMotivations.includes(motivation);
+                  return (
+                    <button
+                      key={motivation}
+                      type="button"
+                      onClick={() => {
+                        const updated = selected
+                          ? state.careerMotivations.filter((m) => m !== motivation)
+                          : [...state.careerMotivations, motivation];
+                        setState({ ...state, careerMotivations: updated });
+                      }}
+                      className={`p-4 rounded-2xl border text-left flex justify-between items-center transition-all ${
+                        selected
+                          ? "bg-blue-600/15 border-blue-500 text-[var(--foreground)] font-bold shadow-md"
+                          : "bg-[var(--background)] border-[var(--border)] text-[var(--subtext)] hover:border-slate-500"
+                      }`}
                     >
-                      <option>Promotion to Tech Lead / Director Tier</option>
-                      <option>Achieve 50%+ Compensation Increase</option>
-                      <option>Transition to High-Growth Startup</option>
-                      <option>Transition to Founder / Independent Advisory</option>
-                    </select>
-                  </div>
-                )}
+                      <span className="text-xs">{motivation}</span>
+                      {selected && <CheckCircle2 className="w-4 h-4 text-blue-500 dark:text-cyan-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-                {isFounderType && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">12-Month Startup Milestone</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Reach ₹1 Crore ARR & Expand Product Team"
-                      value={formData.founderMilestone}
-                      onChange={(e) => updateField("founderMilestone", e.target.value)}
-                      className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
-                    />
-                  </div>
-                )}
-              </motion.div>
-            )}
+          {/* STEP 7: CURRENT AVAILABILITY */}
+          {activeStep === 7 && (
+            <div className="space-y-6 text-left">
+              <div className="border-b border-[var(--border)] pb-4">
+                <h2 className="text-xl font-bold text-[var(--foreground)]">Step 7: Current Availability Status</h2>
+                <p className="text-xs text-[var(--subtext)]">Indicate your readiness for immediate opportunities or networking.</p>
+              </div>
 
-            {/* STEP 5: AI CLASSIFICATION & FINAL SUMMARY */}
-            {currentStep === 5 && (
-              <motion.div
-                key="step5"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="space-y-6 text-left"
-              >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {AVAILABILITY_OPTIONS.map((option) => {
+                  const selected = state.currentAvailability === option;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setState({ ...state, currentAvailability: option })}
+                      className={`p-4 rounded-2xl border text-left flex justify-between items-center transition-all ${
+                        selected
+                          ? "bg-blue-600/15 border-blue-500 text-[var(--foreground)] font-bold shadow-md"
+                          : "bg-[var(--background)] border-[var(--border)] text-[var(--subtext)] hover:border-slate-500"
+                      }`}
+                    >
+                      <span className="text-xs font-semibold">{option}</span>
+                      {selected && <CheckCircle2 className="w-4 h-4 text-blue-500 dark:text-cyan-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* STEP 8: THREE-HORIZON GOALS */}
+          {activeStep === 8 && (
+            <div className="space-y-6 text-left">
+              <div className="border-b border-[var(--border)] pb-4">
+                <h2 className="text-xl font-bold text-[var(--foreground)]">Step 8: Three-Horizon Career Goals</h2>
+                <p className="text-xs text-[var(--subtext)]">Define your short, medium, and long-term milestones.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Short-Term Goal (1 Year)</label>
+                  <input
+                    type="text"
+                    value={state.goals.shortTermGoal1Yr}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        goals: { ...state.goals, shortTermGoal1Yr: e.target.value },
+                      })
+                    }
+                    placeholder="e.g. Secure campus placement or 30% promotion"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Medium-Term Goal (3 Years)</label>
+                  <input
+                    type="text"
+                    value={state.goals.mediumTermGoal3Yr}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        goals: { ...state.goals, mediumTermGoal3Yr: e.target.value },
+                      })
+                    }
+                    placeholder="e.g. Lead an engineering squad or complete higher studies"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--foreground)]">Long-Term Goal (5–10 Years)</label>
+                  <input
+                    type="text"
+                    value={state.goals.longTermGoal5To10Yr}
+                    onChange={(e) =>
+                      setState({
+                        ...state,
+                        goals: { ...state.goals, longTermGoal5To10Yr: e.target.value },
+                      })
+                    }
+                    placeholder="e.g. Achieve financial independence or become Chief AI Officer"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 9: AI MASTER PROFILE SUMMARY */}
+          {activeStep === 9 && (
+            <div className="space-y-6 text-left">
+              <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center">
                 <div>
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-sky-400" />
-                    <span>5. AI Stage Classification Review</span>
-                  </h2>
+                  <h2 className="text-xl font-bold text-[var(--foreground)]">Step 9: Master Profile AI Synthesis</h2>
+                  <p className="text-xs text-[var(--subtext)]">Live profile card and confidence score.</p>
                 </div>
+                <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-mono font-bold">
+                  AI Confidence: {aiSummaryData.aiConfidencePercentage}%
+                </span>
+              </div>
 
-                <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-slate-400 uppercase">CLASSIFIED CAREER STAGE</span>
-                    <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full border ${aiStage.color}`}>
-                      {aiStage.stage}
-                    </span>
+              {/* Master AI Card */}
+              <div className="p-6 rounded-3xl bg-gradient-to-br from-blue-600/10 via-cyan-500/5 to-transparent border border-blue-500/30 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-400 text-white font-black text-xl flex items-center justify-center shadow-md">
+                      {state.personalProfile.firstName[0]}
+                      {state.personalProfile.lastName[0]}
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-[var(--foreground)]">
+                        {state.personalProfile.firstName} {state.personalProfile.lastName}
+                      </h3>
+                      <span className="text-xs font-mono text-blue-500 dark:text-cyan-400 font-semibold">
+                        {aiSummaryData.currentStageBadge}
+                      </span>
+                    </div>
                   </div>
-
-                  <p className="text-xs text-slate-300 leading-relaxed">{aiStage.desc}</p>
+                  <div className="text-right font-mono text-xs text-[var(--subtext)]">
+                    <div>{state.personalProfile.city}, {state.personalProfile.country}</div>
+                    <div>Age {state.personalProfile.calculatedAge}</div>
+                  </div>
                 </div>
-              </motion.div>
-            )}
 
-          </AnimatePresence>
-
-          {/* Navigation Controls Bar */}
-          <div className="flex items-center justify-between pt-6 mt-8 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={handleBack}
-              disabled={currentStep === 1}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-semibold transition-colors ${
-                currentStep === 1
-                  ? "text-slate-600 cursor-not-allowed"
-                  : "text-slate-300 hover:text-white bg-slate-900 border border-slate-800"
-              }`}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleNext}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-sky-400 via-emerald-400 to-sky-300 hover:from-sky-300 hover:to-emerald-300 transition-all shadow-lg shadow-sky-500/20"
-            >
-              <span>{currentStep === totalSteps ? "Lock Local Telemetry" : "Next Step"}</span>
-              <ArrowRight className="w-4 h-4 text-slate-950" />
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* SAVED REPORT CARD */
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          className="glass-panel rounded-2xl p-8 border border-slate-800 text-center space-y-6 shadow-2xl"
-        >
-          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-
-          <div>
-            <span className="text-xs font-mono text-emerald-400 uppercase tracking-widest block">
-              LOCAL TELEMETRY SAVED IN BROWSER
-            </span>
-            <h2 className="text-2xl font-extrabold text-white tracking-tight mt-1">
-              AI Stage: <span className="font-mono text-sky-400">{aiStage.stage}</span>
-            </h2>
-          </div>
-
-          <p className="text-slate-300 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed">
-            All tailored attributes for persona <strong className="text-white">{formData.primaryStatus.toUpperCase()}</strong> have been locked locally in browser storage.
-          </p>
-
-          <div className="pt-2 flex justify-center gap-3">
-            <button
-              onClick={() => {
-                setIsCompleted(false);
-                setCurrentStep(1);
-              }}
-              className="px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold"
-            >
-              Edit Persona Telemetry
-            </button>
-          </div>
+                <div className="space-y-2 pt-2 border-t border-[var(--border)]">
+                  <div className="text-xs font-bold uppercase tracking-wider text-[var(--subtext)] font-mono">
+                    Executive Profile Highlights
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-[var(--foreground)]">
+                    {aiSummaryData.summaryBullets.map((bullet, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-500 dark:text-cyan-400 shrink-0 mt-0.5" />
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
+      </AnimatePresence>
+
+      {/* VALIDATION ERROR BANNER */}
+      {validationError && (
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-mono font-bold flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-2">
+            <HelpCircle className="w-4 h-4 text-rose-500 shrink-0" />
+            <span>⚠️ {validationError}</span>
+          </div>
+          <span className="text-[10px] opacity-80">(Enter "N/A" if not applicable)</span>
+        </div>
       )}
+
+      {/* FOOTER WIZARD NAVIGATION BUTTONS */}
+      <div className="flex justify-between items-center pt-2">
+        <button
+          onClick={handleBack}
+          disabled={activeStep === 1}
+          className="px-5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold text-[var(--foreground)] disabled:opacity-40 flex items-center gap-1.5 hover:bg-[var(--glass-bg)] transition-all"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>Previous Step</span>
+        </button>
+
+        {activeStep < 9 ? (
+          <button
+            onClick={handleNext}
+            className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md hover:bg-blue-500 transition-all flex items-center gap-1.5"
+          >
+            <span>Next Step</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={handleSubmitProfile}
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-500 text-white font-extrabold text-xs shadow-lg hover:opacity-95 transition-all flex items-center gap-1.5"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{isSubmitted ? "Update & Save Profile" : "Submit & Save Profile"}</span>
+          </button>
+        )}
+      </div>
     </div>
   );
-};
+}

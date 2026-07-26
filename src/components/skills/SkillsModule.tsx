@@ -1,2430 +1,1698 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { getScopedItem, setScopedItem } from "@/lib/userStorage";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   GraduationCap,
   Code,
   Briefcase,
-  Award,
-  BookOpen,
+  Laptop,
   Globe,
+  Award,
   FolderGit2,
-  Trophy,
   Users,
-  Flame,
-  Zap,
-  CheckCircle2,
-  Save,
+  Trophy,
+  BookOpen,
+  Target,
+  Sparkles,
+  Check,
   Plus,
   Trash2,
+  Clock,
+  ExternalLink,
   ChevronRight,
   ChevronLeft,
-  Sparkles,
-  ShieldCheck,
-  Activity,
-  BarChart3,
-  ExternalLink,
-  Star,
-  FileText,
-  Layout,
-  Search,
-  RotateCcw,
-  Check,
-  AlertCircle,
-  Target,
-  Cpu,
-  Layers,
-  Laptop,
-  Heart,
-  Lightbulb,
-  Radio,
-  Dumbbell,
-  Compass,
-  ArrowRight,
+  CheckCircle2,
   TrendingUp,
+  Cpu,
+  Brain,
+  ShieldCheck,
+  Zap,
+  Download,
+  Flame,
+  ArrowRight,
 } from "lucide-react";
+import {
+  ProfessionalCapitalState,
+  SkillLevelOption,
+  LanguageProficiencyOption,
+  WorkStyleOption,
+  CertCategoryOption,
+  ProjectCategoryOption,
+} from "@/types/professionalCapital";
+import {
+  defaultProfessionalCapitalState,
+  calculateProfessionalCapitalScore,
+} from "@/lib/professionalCapitalEngine";
 
-// --- DATA TYPES & INTERFACES ---
-
-export interface EducationData {
-  qualification: string;
-  degree: string;
-  university: string;
-  department: string;
-  cgpa: string;
-  gradYear: string;
-}
-
-export interface TechnicalSkill {
-  id: string;
-  name: string;
-  category: "Frontend" | "Backend" | "Cloud/DevOps" | "AI/ML" | "Database" | "Mobile" | "Security" | "Other";
-  level: "Beginner" | "Intermediate" | "Advanced" | "Expert";
-  yearsExp: number;
-  lastUsed: string;
-}
-
-export interface IndustrySkill {
-  id: string;
-  name: string;
-  domain: string;
-  proficiency: "Foundational" | "Practitioner" | "Specialist" | "Thought Leader";
-  yearsExp: number;
-}
-
-export interface DigitalSkill {
-  id: string;
-  name: string;
-  category: "Analytics" | "Design" | "Development" | "AI Tools" | "Productivity" | "Management";
-  level: "Basic" | "Proficient" | "Advanced" | "Master";
-  verified: boolean;
-}
-
-export interface SoftSkill {
-  name: string;
-  score: number; // 1 - 5
-  yearsApplied: number;
-  notes: string;
-}
-
-export interface LanguageItem {
-  id: string;
-  language: string;
-  read: boolean;
-  write: boolean;
-  speak: boolean;
-  proficiency: "Elementary" | "Professional" | "Native / Fluent";
-}
-
-export interface CertificationItem {
-  id: string;
-  name: string;
-  provider: string;
-  issueDate: string;
-  expiry: string;
-  credentialId: string;
-  verificationUrl: string;
-}
-
-export interface ProjectItem {
-  id: string;
-  name: string;
-  description: string;
-  technology: string[];
-  role: string;
-  github: string;
-  demo: string;
-  year: string;
-}
-
-export interface WorkExperienceItem {
-  id: string;
-  company: string;
-  role: string;
-  years: number;
-  industry: string;
-  responsibilities: string;
-  achievements: string;
-  period: string;
-}
-
-export interface SportsItem {
-  id: string;
-  sport: string;
-  level: "School" | "College" | "District" | "State" | "National" | "International";
-  years: number;
-  achievements: string;
-}
-
-export interface LeadershipItem {
-  id: string;
-  category: "College Clubs" | "Student Council" | "NSS" | "NCC" | "NGO" | "Mentoring" | "Public Speaking";
-  roleTitle: string;
-  organization: string;
-  achievements: string;
-}
-
-export interface AwardItem {
-  id: string;
-  name: string;
-  category: "Academic" | "Sports" | "Hackathons" | "Innovation" | "Scholarships" | "Recognition";
-  issuer: string;
-  year: string;
-  description: string;
-}
-
-export interface ContinuousLearningData {
-  booksCount: number;
-  coursesCompleted: number;
-  podcastsListened: number;
-  conferencesAttended: number;
-  weeklyLearningHours: number;
-  recentTopics: string[];
-}
-
-export interface SkillsModuleState {
-  education: EducationData;
-  technicalSkills: TechnicalSkill[];
-  selectedIndustry: string;
-  industrySkills: IndustrySkill[];
-  digitalSkills: DigitalSkill[];
-  softSkills: Record<string, SoftSkill>;
-  languages: LanguageItem[];
-  certifications: CertificationItem[];
-  projects: ProjectItem[];
-  workExperience: WorkExperienceItem[];
-  sports: SportsItem[];
-  leadership: LeadershipItem[];
-  awards: AwardItem[];
-  continuousLearning: ContinuousLearningData;
-}
-
-// --- DEFAULT INITIAL STATE ---
-
-const defaultSkillsState: SkillsModuleState = {
-  education: {
-    qualification: "Master's Degree",
-    degree: "M.S. Computer Science & Artificial Intelligence",
-    university: "Stanford University",
-    department: "Department of Computer Science",
-    cgpa: "3.92 / 4.0",
-    gradYear: "2023",
-  },
-  technicalSkills: [
-    { id: "tech-1", name: "Python & PyTorch", category: "AI/ML", level: "Expert", yearsExp: 5, lastUsed: "2026" },
-    { id: "tech-2", name: "TypeScript & React / Next.js", category: "Frontend", level: "Expert", yearsExp: 6, lastUsed: "2026" },
-    { id: "tech-3", name: "Node.js & Microservices", category: "Backend", level: "Advanced", yearsExp: 4, lastUsed: "2026" },
-    { id: "tech-4", name: "Kubernetes & AWS Cloud", category: "Cloud/DevOps", level: "Advanced", yearsExp: 3, lastUsed: "2025" },
-    { id: "tech-5", name: "PostgreSQL & VectorDB", category: "Database", level: "Advanced", yearsExp: 4, lastUsed: "2026" },
-  ],
-  selectedIndustry: "AI",
-  industrySkills: [
-    { id: "ind-1", name: "LLM Fine-Tuning & RAG Architecture", domain: "AI", proficiency: "Specialist", yearsExp: 3 },
-    { id: "ind-2", name: "Prompt Optimization & Evaluation", domain: "AI", proficiency: "Thought Leader", yearsExp: 2 },
-    { id: "ind-3", name: "Quantitative Financial Modeling", domain: "Finance", proficiency: "Practitioner", yearsExp: 2 },
-  ],
-  digitalSkills: [
-    { id: "dig-1", name: "Excel & Advanced Formulas", category: "Analytics", level: "Advanced", verified: true },
-    { id: "dig-2", name: "Power BI / Tableau", category: "Analytics", level: "Proficient", verified: true },
-    { id: "dig-3", name: "Figma & UI Prototyping", category: "Design", level: "Advanced", verified: true },
-    { id: "dig-4", name: "Git & GitHub Workflow", category: "Development", level: "Master", verified: true },
-    { id: "dig-5", name: "ChatGPT / Claude / Gemini APIs", category: "AI Tools", level: "Master", verified: true },
-    { id: "dig-6", name: "Jira & Notion Workspaces", category: "Management", level: "Master", verified: true },
-  ],
-  softSkills: {
-    Communication: { name: "Communication", score: 5, yearsApplied: 6, notes: "Delivered keynote presentations & executive briefings" },
-    Leadership: { name: "Leadership", score: 4, yearsApplied: 4, notes: "Led a cross-functional engineering squad of 8 members" },
-    Teamwork: { name: "Teamwork", score: 5, yearsApplied: 6, notes: "Active open-source contributor and peer mentor" },
-    "Critical Thinking": { name: "Critical Thinking", score: 5, yearsApplied: 5, notes: "Architected resilient distributed systems under high load" },
-    "Emotional Intelligence": { name: "Emotional Intelligence", score: 4, yearsApplied: 4, notes: "Effective conflict resolution and empathetic coaching" },
-    Negotiation: { name: "Negotiation", score: 4, yearsApplied: 3, notes: "Vendor contract reviews & project roadmap alignment" },
-    Creativity: { name: "Creativity", score: 5, yearsApplied: 5, notes: "Designed innovative human capital scoring algorithms" },
-    Adaptability: { name: "Adaptability", score: 5, yearsApplied: 6, notes: "Rapidly adopted emerging AI frameworks & market shifts" },
-  },
-  languages: [
-    { id: "lang-1", language: "English", read: true, write: true, speak: true, proficiency: "Native / Fluent" },
-    { id: "lang-2", language: "Spanish", read: true, write: true, speak: true, proficiency: "Professional" },
-    { id: "lang-3", language: "German", read: true, write: false, speak: false, proficiency: "Elementary" },
-  ],
-  certifications: [
-    {
-      id: "cert-1",
-      name: "AWS Certified Solutions Architect – Professional",
-      provider: "Amazon Web Services",
-      issueDate: "2023-08",
-      expiry: "2026-08",
-      credentialId: "AWS-PROF-981204",
-      verificationUrl: "https://aws.amazon.com/verification/AWS-PROF-981204",
-    },
-    {
-      id: "cert-2",
-      name: "Generative AI Engineering Specialist",
-      provider: "DeepLearning.AI & Stanford",
-      issueDate: "2024-02",
-      expiry: "Lifetime",
-      credentialId: "DLAI-GENAI-772910",
-      verificationUrl: "https://coursera.org/verify/DLAI-GENAI-772910",
-    },
-  ],
-  projects: [
-    {
-      id: "proj-1",
-      name: "Autonomous AI Agent Swarm",
-      description: "Distributed multi-agent pipeline executing real-time data analysis and code generation.",
-      technology: ["Python", "LangChain", "FastAPI", "React", "Docker"],
-      role: "Lead Architect & Developer",
-      github: "https://github.com/example/ai-agent-swarm",
-      demo: "https://ai-swarm-demo.internal",
-      year: "2025",
-    },
-    {
-      id: "proj-2",
-      name: "Enterprise Capital Analytics Engine",
-      description: "Financial & Human Capital scoring platform providing real-time valuation insights.",
-      technology: ["TypeScript", "Next.js", "TailwindCSS", "PostgreSQL"],
-      role: "Full Stack Engineer",
-      github: "https://github.com/example/capital-engine",
-      demo: "https://capital-analytics.example.com",
-      year: "2024",
-    },
-  ],
-  workExperience: [
-    {
-      id: "work-1",
-      company: "Apex Nexus AI Labs",
-      role: "Senior AI Solutions Engineer",
-      years: 3,
-      industry: "Artificial Intelligence",
-      responsibilities: "Designed and scaled enterprise LLM applications, mentored junior developers, and reduced latency by 45%.",
-      achievements: "Spearheaded patent filing for dynamic RAG compression; awarded Employee of the Year 2025.",
-      period: "2023 - Present",
-    },
-    {
-      id: "work-2",
-      company: "Quantum Vantage Systems",
-      role: "Full Stack Developer",
-      years: 2,
-      industry: "Software & Cloud",
-      responsibilities: "Developed microservices architecture, improved CI/CD deployment throughput, and managed cloud infrastructure.",
-      achievements: "Built high-frequency data pipeline processing over 10M events daily with 99.99% uptime.",
-      period: "2021 - 2023",
-    },
-  ],
-  sports: [
-    {
-      id: "sport-1",
-      sport: "Marathon Running",
-      level: "State",
-      years: 4,
-      achievements: "Completed 5 full marathons; personal best of 3h 12m.",
-    },
-    {
-      id: "sport-2",
-      sport: "Competitive Chess",
-      level: "National",
-      years: 6,
-      achievements: "FIDE rated 1890; 1st Runner Up in Inter-University Championship.",
-    },
-  ],
-  leadership: [
-    {
-      id: "lead-1",
-      category: "Student Council",
-      roleTitle: "President & Technical Head",
-      organization: "Stanford Computer Science Society",
-      achievements: "Organized annual hackathon with 1,200+ participants and $50k in sponsor grants.",
-    },
-    {
-      id: "lead-2",
-      category: "Mentoring",
-      roleTitle: "AI & Tech Mentor",
-      organization: "TechStars Diversity Initiative",
-      achievements: "Mentored 15+ underrepresented founders in product strategy and AI integration.",
-    },
-  ],
-  awards: [
-    {
-      id: "award-1",
-      name: "Global AI Hackathon Grand Champion",
-      category: "Hackathons",
-      issuer: "OpenAI & Microsoft",
-      year: "2024",
-      description: "First place out of 800 international teams for real-time multimodal accessibility copilot.",
-    },
-    {
-      id: "award-2",
-      name: "Presidential Merit Scholarship",
-      category: "Scholarships",
-      issuer: "Stanford University",
-      year: "2021",
-      description: "Full academic scholarship awarded for top 1% academic performance and research promise.",
-    },
-  ],
-  continuousLearning: {
-    booksCount: 22,
-    coursesCompleted: 14,
-    podcastsListened: 48,
-    conferencesAttended: 6,
-    weeklyLearningHours: 12,
-    recentTopics: ["Quantum Machine Learning", "Agentic Systems Architecture", "Systematic Asset Valuation"],
-  },
-};
-
-// --- PRESET SELECTION LISTS ---
-
-const INDUSTRY_OPTIONS = [
-  "Finance",
-  "Healthcare",
-  "Marketing",
-  "AI",
-  "Manufacturing",
-  "Legal",
-  "Education",
-  "Sales",
-  "Operations",
+const SECTIONS = [
+  { id: 1, name: "Academic Capital", icon: GraduationCap },
+  { id: 2, name: "Technical Skills", icon: Code },
+  { id: 3, name: "Industry Expertise", icon: Briefcase },
+  { id: 4, name: "Digital Competencies", icon: Laptop },
+  { id: 5, name: "Communication & Languages", icon: Globe },
+  { id: 6, name: "Certifications", icon: Award },
+  { id: 7, name: "Projects & Portfolio", icon: FolderGit2 },
+  { id: 8, name: "Work Experience", icon: Briefcase },
+  { id: 9, name: "Leadership & Impact", icon: Users },
+  { id: 10, name: "Sports & Extracurricular", icon: Trophy },
+  { id: 11, name: "Awards & Recognition", icon: Award },
+  { id: 12, name: "Continuous Learning", icon: BookOpen },
+  { id: 13, name: "Career Vision & Audit", icon: Target },
 ];
-
-const PRESET_INDUSTRY_SKILLS: Record<string, string[]> = {
-  Finance: ["Financial Modeling", "Valuation & M&A", "Risk Management", "Portfolio Optimization", "Algorithmic Trading"],
-  Healthcare: ["Clinical Data Analysis", "HIPAA Compliance", "Medical Imaging AI", "Health Informatics", "Biostatistics"],
-  Marketing: ["Growth Hacking", "SEO & Content Strategy", "Performance Marketing", "Brand Positioning", "Marketing Automation"],
-  AI: ["LLM Fine-Tuning", "RAG & Vector Search", "Computer Vision", "Model Alignment & RLHF", "MLOps Pipeline"],
-  Manufacturing: ["Six Sigma & Lean", "Supply Chain Optimization", "IoT Sensor Integration", "CAD/CAM Design", "Quality Assurance"],
-  Legal: ["Contract Law & Analysis", "IP & Patent Filing", "Regulatory Compliance", "GDPR & Privacy", "Legal Tech Automation"],
-  Education: ["Curriculum Design", "EdTech Platform Design", "Pedagogy & Assessment", "Interactive E-Learning", "Student Analytics"],
-  Sales: ["Enterprise B2B Sales", "Pipeline Management", "Solution Selling", "CRM Strategy (Salesforce)", "Contract Negotiation"],
-  Operations: ["Process Automation", "Agile & Scrum Operations", "Vendor Management", "Logistics & Fulfillment", "Cost Optimization"],
-};
-
-const PRESET_DIGITAL_SKILLS = [
-  { name: "Excel", category: "Analytics" as const },
-  { name: "Power BI", category: "Analytics" as const },
-  { name: "Tableau", category: "Analytics" as const },
-  { name: "Canva", category: "Design" as const },
-  { name: "Photoshop", category: "Design" as const },
-  { name: "Figma", category: "Design" as const },
-  { name: "Git", category: "Development" as const },
-  { name: "GitHub", category: "Development" as const },
-  { name: "ChatGPT", category: "AI Tools" as const },
-  { name: "Claude", category: "AI Tools" as const },
-  { name: "Gemini", category: "AI Tools" as const },
-  { name: "Notion", category: "Productivity" as const },
-  { name: "Jira", category: "Management" as const },
-];
-
-const WIZARD_STEPS = [
-  { id: 1, name: "Education", icon: GraduationCap, short: "Edu" },
-  { id: 2, name: "Technical Skills", icon: Code, short: "Tech" },
-  { id: 3, name: "Industry Skills", icon: Briefcase, short: "Industry" },
-  { id: 4, name: "Digital Skills", icon: Laptop, short: "Digital" },
-  { id: 5, name: "Soft Skills", icon: Heart, short: "Soft" },
-  { id: 6, name: "Languages", icon: Globe, short: "Lang" },
-  { id: 7, name: "Certifications", icon: Award, short: "Certs" },
-  { id: 8, name: "Projects", icon: FolderGit2, short: "Projects" },
-  { id: 9, name: "Work Experience", icon: Activity, short: "Work" },
-  { id: 10, name: "Sports", icon: Dumbbell, short: "Sports" },
-  { id: 11, name: "Leadership", icon: Users, short: "Leader" },
-  { id: 12, name: "Awards", icon: Trophy, short: "Awards" },
-  { id: 13, name: "Continuous Learning", icon: BookOpen, short: "Learning" },
-  { id: 14, name: "Skills Capital Matrix", icon: Sparkles, short: "Summary" },
-];
-
-const LOCAL_STORAGE_KEY = "human_capital_skills_module_v7";
 
 export const SkillsModule: React.FC = () => {
-  // --- STATE ---
-  const [data, setData] = useState<SkillsModuleState>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (saved) return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to load skills module data from localStorage", e);
-      }
-    }
-    return defaultSkillsState;
-  });
+  const [mounted, setMounted] = useState(false);
+  const [data, setData] = useState<ProfessionalCapitalState>(defaultProfessionalCapitalState);
+  const [activeStep, setActiveStep] = useState<number>(1);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [lastSavedTime, setLastSavedTime] = useState<string>("Just now");
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
-  // --- AUTOSAVE ENGINE ---
   useEffect(() => {
-    setIsSaving(true);
-    const timer = setTimeout(() => {
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-          const now = new Date();
-          setLastSavedTime(now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-        } catch (e) {
-          console.error("Error saving skills module data", e);
+    setMounted(true);
+    if (typeof window !== "undefined") {
+      const parsed = getScopedItem<any>("hc_skills_module_data", null);
+      if (parsed && parsed.academic) {
+        const mergedData = {
+          ...defaultProfessionalCapitalState,
+          ...parsed,
+          academic: { ...defaultProfessionalCapitalState.academic, ...(parsed.academic || {}) },
+          workExperience: { ...defaultProfessionalCapitalState.workExperience, ...(parsed.workExperience || {}) },
+          continuousLearning: { ...defaultProfessionalCapitalState.continuousLearning, ...(parsed.continuousLearning || {}) },
+          careerVision: { ...defaultProfessionalCapitalState.careerVision, ...(parsed.careerVision || {}) },
+        };
+        setData(mergedData);
+        if (parsed.isCompleted || (mergedData.academic && mergedData.academic.degree)) {
+          setIsSubmitted(true);
+          setActiveStep(13);
         }
       }
-      setIsSaving(false);
-    }, 400);
+    }
+  }, []);
+  const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
 
-    return () => clearTimeout(timer);
-  }, [data]);
+  // Debounced Autosave
+  useEffect(() => {
+    if (!mounted) return;
+    setSavingStatus("saving");
+    const timeout = setTimeout(() => {
+      setScopedItem("hc_skills_module_data", data);
+      setSavingStatus("saved");
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [data, mounted]);
 
-  // --- SCORE CALCULATIONS ---
-  const scores = useMemo(() => {
-    // 1. Technical Score (0 - 100)
-    const techSkillCount = data.technicalSkills.length;
-    const expertTechCount = data.technicalSkills.filter((s) => s.level === "Expert").length;
-    const advTechCount = data.technicalSkills.filter((s) => s.level === "Advanced").length;
-    const digitalCount = data.digitalSkills.length;
-    const projectCount = data.projects.length;
+  // Real-Time Engine Calculation
+  const metrics = useMemo(() => calculateProfessionalCapitalScore(data), [data]);
 
-    let rawTech = 40 + techSkillCount * 6 + expertTechCount * 8 + advTechCount * 4 + digitalCount * 3 + projectCount * 5;
-    const technicalScore = Math.min(100, Math.max(0, Math.round(rawTech)));
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-    // 2. Leadership Score (0 - 100)
-    const leadershipEntries = data.leadership.length;
-    const leadershipSoftScore = data.softSkills.Leadership?.score || 3;
-    const teamworkSoftScore = data.softSkills.Teamwork?.score || 3;
-    const workYearsTotal = data.workExperience.reduce((sum, w) => sum + (w.years || 0), 0);
-    const sportsLevelBonus = data.sports.filter((s) => s.level === "State" || s.level === "National" || s.level === "International").length * 5;
+  const validateCurrentStep = (step: number): boolean => {
+    setValidationError(null);
+    if (step === 1) {
+      if (!data.academic.degree.trim()) {
+        setValidationError("Degree Level is required (Enter 'N/A' if not applicable).");
+        return false;
+      }
+    } else if (step === 2) {
+      if (!data.technicalSkills || data.technicalSkills.length === 0) {
+        setValidationError("Please add at least 1 Technical Skill to proceed (Enter 'N/A' if none).");
+        return false;
+      }
+    }
+    return true;
+  };
 
-    let rawLeadership = 35 + leadershipEntries * 12 + (leadershipSoftScore + teamworkSoftScore) * 5 + Math.min(20, workYearsTotal * 3) + sportsLevelBonus;
-    const leadershipScore = Math.min(100, Math.max(0, Math.round(rawLeadership)));
+  const handleNext = () => {
+    if (!validateCurrentStep(activeStep)) return;
+    if (activeStep < 13) setActiveStep((prev) => prev + 1);
+  };
 
-    // 3. Communication Score (0 - 100)
-    const commSoftScore = data.softSkills.Communication?.score || 3;
-    const eqSoftScore = data.softSkills["Emotional Intelligence"]?.score || 3;
-    const negSoftScore = data.softSkills.Negotiation?.score || 3;
-    const langCount = data.languages.length;
-    const fluentLangCount = data.languages.filter((l) => l.proficiency === "Native / Fluent" || l.proficiency === "Professional").length;
-    const publicSpeakingBonus = data.leadership.some((l) => l.category === "Public Speaking" || l.category === "Mentoring") ? 10 : 0;
+  const handleBack = () => {
+    setValidationError(null);
+    if (activeStep > 1) setActiveStep((prev) => prev - 1);
+  };
 
-    let rawComm = 40 + (commSoftScore + eqSoftScore + negSoftScore) * 5 + langCount * 4 + fluentLangCount * 6 + publicSpeakingBonus;
-    const communicationScore = Math.min(100, Math.max(0, Math.round(rawComm)));
+  const handleSubmitSkills = () => {
+    if (!validateCurrentStep(activeStep)) return;
+    const updatedData = {
+      ...data,
+      isCompleted: true,
+      submittedAt: new Date().toISOString(),
+    };
+    setData(updatedData);
+    if (typeof window !== "undefined") {
+      setScopedItem("hc_skills_module_data", updatedData);
+      window.dispatchEvent(new CustomEvent("hc_assessment_updated"));
+    }
+    setSavingStatus("saved");
+    setIsSubmitted(true);
+    setActiveStep(13);
+  };
 
-    // 4. Learning Score (0 - 100)
-    const cl = data.continuousLearning;
-    const certCount = data.certifications.length;
-    const adaptSoftScore = data.softSkills.Adaptability?.score || 3;
-    const critSoftScore = data.softSkills["Critical Thinking"]?.score || 3;
-
-    let rawLearning =
-      30 +
-      Math.min(25, cl.weeklyLearningHours * 2) +
-      Math.min(15, cl.booksCount * 1) +
-      Math.min(15, cl.coursesCompleted * 2) +
-      certCount * 8 +
-      (adaptSoftScore + critSoftScore) * 4;
-    const learningScore = Math.min(100, Math.max(0, Math.round(rawLearning)));
-
-    // 5. Career Readiness Score (0 - 100)
-    const hasDegree = data.education.degree.length > 3 ? 15 : 5;
-    const hasUniv = data.education.university.length > 3 ? 10 : 5;
-    const workCount = data.workExperience.length;
-    const awardsCount = data.awards.length;
-    const projWithLinks = data.projects.filter((p) => p.github.length > 5 || p.demo.length > 5).length;
-
-    let rawCareer = 25 + hasDegree + hasUniv + workCount * 10 + projectCount * 6 + projWithLinks * 5 + awardsCount * 7 + certCount * 5;
-    const careerReadinessScore = Math.min(100, Math.max(0, Math.round(rawCareer)));
-
-    // 6. Overall Skills Score (0 - 100)
-    const overallSkillsScore = Math.round(
-      technicalScore * 0.25 +
-        leadershipScore * 0.2 +
-        communicationScore * 0.15 +
-        learningScore * 0.15 +
-        careerReadinessScore * 0.25
+  if (!mounted) {
+    return (
+      <div className="glass-panel p-8 rounded-3xl border border-[var(--border)] max-w-7xl mx-auto space-y-4 animate-pulse">
+        <div className="h-8 bg-slate-800 rounded-xl w-1/3"></div>
+        <div className="h-4 bg-slate-900 rounded-xl w-1/2"></div>
+      </div>
     );
-
-    return {
-      technicalScore,
-      leadershipScore,
-      communicationScore,
-      learningScore,
-      careerReadinessScore,
-      overallSkillsScore,
-    };
-  }, [data]);
-
-  // --- STEP VALIDATION CHECKER ---
-  const validateStep = (stepNum: number): boolean => {
-    const errors: Record<string, string> = {};
-
-    if (stepNum === 1) {
-      if (!data.education.qualification) errors.qualification = "Qualification is required";
-      if (!data.education.degree) errors.degree = "Degree is required";
-      if (!data.education.university) errors.university = "University is required";
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleNextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(WIZARD_STEPS.length, prev + 1));
-    }
-  };
-
-  const handlePrevStep = () => {
-    setCurrentStep((prev) => Math.max(1, prev - 1));
-  };
-
-  const resetToDefaultData = () => {
-    if (window.confirm("Reset all skills and career data to initial demo benchmarks?")) {
-      setData(defaultSkillsState);
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
-    }
-  };
-
-  // --- FORMS & ITEM HANDLERS ---
-
-  // Technical Skill Add Form State
-  const [techInput, setTechInput] = useState({
-    name: "",
-    category: "Frontend" as TechnicalSkill["category"],
-    level: "Advanced" as TechnicalSkill["level"],
-    yearsExp: 3,
-    lastUsed: "2026",
-  });
-
-  const addTechnicalSkill = () => {
-    if (!techInput.name.trim()) return;
-    const newSkill: TechnicalSkill = {
-      id: `tech-${Date.now()}`,
-      ...techInput,
-    };
-    setData((prev) => ({ ...prev, technicalSkills: [...prev.technicalSkills, newSkill] }));
-    setTechInput({ name: "", category: "Frontend", level: "Advanced", yearsExp: 3, lastUsed: "2026" });
-  };
-
-  const removeTechnicalSkill = (id: string) => {
-    setData((prev) => ({ ...prev, technicalSkills: prev.technicalSkills.filter((s) => s.id !== id) }));
-  };
-
-  // Industry Skill Add Form State
-  const [indInput, setIndInput] = useState({
-    name: "",
-    proficiency: "Practitioner" as IndustrySkill["proficiency"],
-    yearsExp: 2,
-  });
-
-  const addIndustrySkill = () => {
-    if (!indInput.name.trim()) return;
-    const newSkill: IndustrySkill = {
-      id: `ind-${Date.now()}`,
-      name: indInput.name,
-      domain: data.selectedIndustry,
-      proficiency: indInput.proficiency,
-      yearsExp: indInput.yearsExp,
-    };
-    setData((prev) => ({ ...prev, industrySkills: [...prev.industrySkills, newSkill] }));
-    setIndInput({ name: "", proficiency: "Practitioner", yearsExp: 2 });
-  };
-
-  const removeIndustrySkill = (id: string) => {
-    setData((prev) => ({ ...prev, industrySkills: prev.industrySkills.filter((s) => s.id !== id) }));
-  };
-
-  // Digital Skill Add / Toggle State
-  const [customDigitalName, setCustomDigitalName] = useState("");
-
-  const togglePresetDigitalSkill = (preset: { name: string; category: DigitalSkill["category"] }) => {
-    const existing = data.digitalSkills.find((d) => d.name.toLowerCase() === preset.name.toLowerCase());
-    if (existing) {
-      setData((prev) => ({ ...prev, digitalSkills: prev.digitalSkills.filter((d) => d.id !== existing.id) }));
-    } else {
-      const newDig: DigitalSkill = {
-        id: `dig-${Date.now()}`,
-        name: preset.name,
-        category: preset.category,
-        level: "Proficient",
-        verified: true,
-      };
-      setData((prev) => ({ ...prev, digitalSkills: [...prev.digitalSkills, newDig] }));
-    }
-  };
-
-  const addCustomDigitalSkill = () => {
-    if (!customDigitalName.trim()) return;
-    const newDig: DigitalSkill = {
-      id: `dig-${Date.now()}`,
-      name: customDigitalName.trim(),
-      category: "Tools" as any,
-      level: "Proficient",
-      verified: false,
-    };
-    setData((prev) => ({ ...prev, digitalSkills: [...prev.digitalSkills, newDig] }));
-    setCustomDigitalName("");
-  };
-
-  const removeDigitalSkill = (id: string) => {
-    setData((prev) => ({ ...prev, digitalSkills: prev.digitalSkills.filter((d) => d.id !== id) }));
-  };
-
-  // Language Add / Toggle State
-  const [langInput, setLangInput] = useState({
-    language: "",
-    read: true,
-    write: true,
-    speak: true,
-    proficiency: "Professional" as LanguageItem["proficiency"],
-  });
-
-  const addLanguage = () => {
-    if (!langInput.language.trim()) return;
-    const newLang: LanguageItem = {
-      id: `lang-${Date.now()}`,
-      ...langInput,
-    };
-    setData((prev) => ({ ...prev, languages: [...prev.languages, newLang] }));
-    setLangInput({ language: "", read: true, write: true, speak: true, proficiency: "Professional" });
-  };
-
-  const removeLanguage = (id: string) => {
-    setData((prev) => ({ ...prev, languages: prev.languages.filter((l) => l.id !== id) }));
-  };
-
-  // Certification Add Form State
-  const [certInput, setCertInput] = useState({
-    name: "",
-    provider: "",
-    issueDate: "",
-    expiry: "Lifetime",
-    credentialId: "",
-    verificationUrl: "",
-  });
-
-  const addCertification = () => {
-    if (!certInput.name.trim() || !certInput.provider.trim()) return;
-    const newCert: CertificationItem = {
-      id: `cert-${Date.now()}`,
-      ...certInput,
-    };
-    setData((prev) => ({ ...prev, certifications: [...prev.certifications, newCert] }));
-    setCertInput({ name: "", provider: "", issueDate: "", expiry: "Lifetime", credentialId: "", verificationUrl: "" });
-  };
-
-  const removeCertification = (id: string) => {
-    setData((prev) => ({ ...prev, certifications: prev.certifications.filter((c) => c.id !== id) }));
-  };
-
-  // Project Add Form State
-  const [projInput, setProjInput] = useState({
-    name: "",
-    description: "",
-    techString: "",
-    role: "",
-    github: "",
-    demo: "",
-    year: "2026",
-  });
-
-  const addProject = () => {
-    if (!projInput.name.trim() || !projInput.description.trim()) return;
-    const newProj: ProjectItem = {
-      id: `proj-${Date.now()}`,
-      name: projInput.name,
-      description: projInput.description,
-      technology: projInput.techString
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-      role: projInput.role || "Developer",
-      github: projInput.github,
-      demo: projInput.demo,
-      year: projInput.year || "2026",
-    };
-    setData((prev) => ({ ...prev, projects: [...prev.projects, newProj] }));
-    setProjInput({ name: "", description: "", techString: "", role: "", github: "", demo: "", year: "2026" });
-  };
-
-  const removeProject = (id: string) => {
-    setData((prev) => ({ ...prev, projects: prev.projects.filter((p) => p.id !== id) }));
-  };
-
-  // Work Experience Form State
-  const [workInput, setWorkInput] = useState({
-    company: "",
-    role: "",
-    years: 2,
-    industry: "Technology",
-    responsibilities: "",
-    achievements: "",
-    period: "2024 - Present",
-  });
-
-  const addWorkExperience = () => {
-    if (!workInput.company.trim() || !workInput.role.trim()) return;
-    const newWork: WorkExperienceItem = {
-      id: `work-${Date.now()}`,
-      ...workInput,
-    };
-    setData((prev) => ({ ...prev, workExperience: [...prev.workExperience, newWork] }));
-    setWorkInput({
-      company: "",
-      role: "",
-      years: 2,
-      industry: "Technology",
-      responsibilities: "",
-      achievements: "",
-      period: "2024 - Present",
-    });
-  };
-
-  const removeWorkExperience = (id: string) => {
-    setData((prev) => ({ ...prev, workExperience: prev.workExperience.filter((w) => w.id !== id) }));
-  };
-
-  // Sports Add Form State
-  const [sportInput, setSportInput] = useState({
-    sport: "",
-    level: "College" as SportsItem["level"],
-    years: 3,
-    achievements: "",
-  });
-
-  const addSport = () => {
-    if (!sportInput.sport.trim()) return;
-    const newSport: SportsItem = {
-      id: `sport-${Date.now()}`,
-      ...sportInput,
-    };
-    setData((prev) => ({ ...prev, sports: [...prev.sports, newSport] }));
-    setSportInput({ sport: "", level: "College", years: 3, achievements: "" });
-  };
-
-  const removeSport = (id: string) => {
-    setData((prev) => ({ ...prev, sports: prev.sports.filter((s) => s.id !== id) }));
-  };
-
-  // Leadership Add Form State
-  const [leadInput, setLeadInput] = useState({
-    category: "College Clubs" as LeadershipItem["category"],
-    roleTitle: "",
-    organization: "",
-    achievements: "",
-  });
-
-  const addLeadership = () => {
-    if (!leadInput.roleTitle.trim() || !leadInput.organization.trim()) return;
-    const newLead: LeadershipItem = {
-      id: `lead-${Date.now()}`,
-      ...leadInput,
-    };
-    setData((prev) => ({ ...prev, leadership: [...prev.leadership, newLead] }));
-    setLeadInput({ category: "College Clubs", roleTitle: "", organization: "", achievements: "" });
-  };
-
-  const removeLeadership = (id: string) => {
-    setData((prev) => ({ ...prev, leadership: prev.leadership.filter((l) => l.id !== id) }));
-  };
-
-  // Award Add Form State
-  const [awardInput, setAwardInput] = useState({
-    name: "",
-    category: "Academic" as AwardItem["category"],
-    issuer: "",
-    year: "2025",
-    description: "",
-  });
-
-  const addAward = () => {
-    if (!awardInput.name.trim() || !awardInput.issuer.trim()) return;
-    const newAward: AwardItem = {
-      id: `award-${Date.now()}`,
-      ...awardInput,
-    };
-    setData((prev) => ({ ...prev, awards: [...prev.awards, newAward] }));
-    setAwardInput({ name: "", category: "Academic", issuer: "", year: "2025", description: "" });
-  };
-
-  const removeAward = (id: string) => {
-    setData((prev) => ({ ...prev, awards: prev.awards.filter((a) => a.id !== id) }));
-  };
-
-  // Step Completion Tracker
-  const stepProgressPercentage = Math.round((currentStep / WIZARD_STEPS.length) * 100);
+  }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans">
-      {/* HEADER BANNER & AUTOSAVE STATUS */}
-      <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 bg-gradient-to-r from-[#0a0f1d] via-[#0d1428] to-[#0a0f1d] relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
-                PHASE 7 · SKILLS & CAREER CAPITAL MODULE
-              </span>
-              <span className="text-[11px] font-mono text-slate-400">Multi-Step Wizard Engine</span>
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* SUBMITTED COMPLETION STATUS BANNER */}
+      {isSubmitted && (
+        <div className="glass-panel p-6 rounded-3xl border border-emerald-500/40 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl text-left">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
-              Professional Capabilities & Skills Architecture
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
-              Measure technical mastery, leadership depth, soft skill EQ, continuous learning velocity, and employability metrics.
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-bold text-[10px] uppercase">
+                  ✓ Skills Capital Completed & Saved Locally
+                </span>
+                <span className="text-xs font-mono text-emerald-400 font-bold">
+                  Score: {metrics.professionalCapitalScore} / 100
+                </span>
+              </div>
+              <h3 className="text-base font-extrabold text-[var(--foreground)] mt-0.5">
+                Technical Mastery & Professional Capital Stored
+              </h3>
+              <p className="text-xs text-[var(--subtext)]">
+                AI Readiness: <strong className="text-indigo-400 font-mono">{metrics.aiReadinessScore}%</strong> • Employability Index: <strong className="text-sky-400 font-mono">{metrics.employabilityIndex}/100</strong>
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={resetToDefaultData}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 text-xs font-mono border border-slate-800 transition-colors"
-              title="Reset data to default benchmarks"
+              type="button"
+              onClick={() => setActiveStep(1)}
+              className="px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono font-bold hover:bg-slate-800 transition-all"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-              <span>Reset Defaults</span>
+              Edit Skills Inputs
             </button>
-
-            <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-mono">
-              <Save className={`w-3.5 h-3.5 ${isSaving ? "text-amber-400 animate-spin" : "text-emerald-400"}`} />
-              <span className="text-slate-300">
-                {isSaving ? "Autosaving..." : `Autosaved (${lastSavedTime})`}
-              </span>
-            </div>
+            <Link
+              href="/dashboard/health"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-500 hover:from-emerald-500 hover:to-sky-400 text-white font-mono font-bold text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5 transition-all"
+            >
+              Next Module: Health & Lifestyle <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
+      )}
 
-        {/* OVERALL SCORE SUMMARY CARDS */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-5 border-t border-slate-800/80">
-          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">TECHNICAL SCORE</span>
-            <div className="text-xl font-black font-mono text-sky-400">{scores.technicalScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-              <div className="bg-sky-400 h-full rounded-full transition-all duration-500" style={{ width: `${scores.technicalScore}%` }} />
+      {/* --- TOP HEADER LOCKUP --- */}
+      <div className="glass-panel p-6 rounded-3xl border border-[var(--border)] relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-1 z-10">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[11px] font-mono font-bold uppercase tracking-wider">
+              Module 3 — Professional Capital Intelligence
+            </span>
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--subtext)]">
+              {savingStatus === "saving" ? (
+                <span className="text-amber-500 animate-pulse flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Autosaving...
+                </span>
+              ) : (
+                <span className="text-emerald-500 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> All changes saved
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">LEADERSHIP</span>
-            <div className="text-xl font-black font-mono text-indigo-400">{scores.leadershipScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-              <div className="bg-indigo-400 h-full rounded-full transition-all duration-500" style={{ width: `${scores.leadershipScore}%` }} />
-            </div>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--foreground)]">
+            Professional Capital Wizard
+          </h1>
+          <p className="text-xs text-[var(--subtext)]">
+            LinkedIn Premium x Coursera x GitHub level career valuation, technical mastery, & AI readiness platform.
+          </p>
+        </div>
 
-          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">COMMUNICATION</span>
-            <div className="text-xl font-black font-mono text-emerald-400">{scores.communicationScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-              <div className="bg-emerald-400 h-full rounded-full transition-all duration-500" style={{ width: `${scores.communicationScore}%` }} />
+        {/* Real-Time Score Quick Badge */}
+        <div className="flex items-center gap-3 z-10">
+          <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-[var(--border)] flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+              <Sparkles className="w-5 h-5" />
             </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">LEARNING AGILITY</span>
-            <div className="text-xl font-black font-mono text-purple-400">{scores.learningScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-              <div className="bg-purple-400 h-full rounded-full transition-all duration-500" style={{ width: `${scores.learningScore}%` }} />
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">CAREER READINESS</span>
-            <div className="text-xl font-black font-mono text-amber-400">{scores.careerReadinessScore} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-              <div className="bg-amber-400 h-full rounded-full transition-all duration-500" style={{ width: `${scores.careerReadinessScore}%` }} />
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-gradient-to-br from-indigo-950/80 to-purple-950/80 border border-indigo-500/30 space-y-1">
-            <span className="text-[10px] font-mono text-indigo-300 font-bold uppercase tracking-wider">SKILLS SCORE</span>
-            <div className="text-xl font-black font-mono text-white">{scores.overallSkillsScore} <span className="text-xs text-indigo-300 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-              <div className="bg-gradient-to-r from-sky-400 to-indigo-400 h-full rounded-full transition-all duration-500" style={{ width: `${scores.overallSkillsScore}%` }} />
+            <div>
+              <div className="text-[10px] font-mono text-[var(--subtext)] uppercase">Capital Score</div>
+              <div className="text-xl font-black font-mono text-white">{metrics.professionalCapitalScore} / 100</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* MULTI-STEP WIZARD NAVIGATION BAR */}
-      <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
-        <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-          <span>WIZARD STEP {currentStep} OF {WIZARD_STEPS.length}: <strong className="text-white">{WIZARD_STEPS[currentStep - 1].name}</strong></span>
-          <span>{stepProgressPercentage}% COMPLETE</span>
+      {/* --- STEP PROGRESS BAR & NAVIGATION TABS --- */}
+      <div className="glass-panel p-4 rounded-3xl border border-[var(--border)] space-y-3">
+        <div className="flex justify-between items-center text-xs font-mono">
+          <span className="text-[var(--subtext)]">
+            Step {activeStep} of 13 — <strong className="text-[var(--foreground)]">{SECTIONS[activeStep - 1].name}</strong>
+          </span>
+          <span className="text-sky-400 font-bold">{Math.round((activeStep / 13) * 100)}% Complete</span>
         </div>
 
-        {/* Wizard Step Progress Bar */}
-        <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden p-[1px] border border-slate-800">
+        <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 rounded-full"
-            animate={{ width: `${stepProgressPercentage}%` }}
+            className="h-full bg-gradient-to-r from-sky-400 via-indigo-500 to-purple-500"
+            initial={{ width: 0 }}
+            animate={{ width: `${(activeStep / 13) * 100}%` }}
             transition={{ duration: 0.3 }}
           />
         </div>
 
-        {/* Step Buttons horizontal scrollable list */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar scroll-smooth">
-          {WIZARD_STEPS.map((step) => {
-            const Icon = step.icon;
-            const isActive = currentStep === step.id;
-            const isCompleted = currentStep > step.id;
+        {/* Tab Quick Selector */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-1 scrollbar-none">
+          {SECTIONS.map((sec) => {
+            const Icon = sec.icon;
+            const isCurrent = activeStep === sec.id;
             return (
               <button
-                key={step.id}
-                onClick={() => setCurrentStep(step.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border border-indigo-400/50"
-                    : isCompleted
-                    ? "bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700"
-                    : "bg-slate-950/40 text-slate-500 border border-slate-900 hover:text-slate-400"
+                key={sec.id}
+                onClick={() => setActiveStep(sec.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 flex items-center gap-1.5 transition-all ${
+                  isCurrent
+                    ? "bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 font-bold shadow-md"
+                    : "bg-slate-900/60 border border-[var(--border)] text-[var(--subtext)] hover:text-white"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : isCompleted ? "text-emerald-400" : "text-slate-500"}`} />
-                <span>{step.short}</span>
-                {isCompleted && <Check className="w-3 h-3 text-emerald-400 ml-0.5" />}
+                <Icon className="w-3.5 h-3.5" />
+                <span>{sec.id}. {sec.name}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* STEP CONTENT RENDERER WITH ANIMATION */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2 }}
-          className="space-y-6"
-        >
-          {/* STEP 1: EDUCATION */}
-          {currentStep === 1 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
-                  <GraduationCap className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 1: Educational Qualification</h2>
-                  <p className="text-xs text-slate-400">Record your academic foundation, institution pedigree, and CGPA metrics.</p>
-                </div>
-              </div>
+      {/* --- 2-COLUMN MAIN LAYOUT: WIZARD (LEFT) & RIGHT TELEMETRY PANEL (RIGHT) --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* ================= LEFT COLUMN: WIZARD STEP CONTAINER (8 COLS) ================= */}
+        <div className="lg:col-span-8 glass-panel p-6 sm:p-8 rounded-3xl border border-[var(--border)] min-h-[540px] flex flex-col justify-between">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeStep}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+              {/* ================= SECTION 1: ACADEMIC CAPITAL ================= */}
+              {activeStep === 1 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4">
+                    <h2 className="text-xl font-bold text-[var(--foreground)]">Section 1: Academic & Educational Capital</h2>
+                    <p className="text-xs text-[var(--subtext)] font-sans">Degrees, university prestige, CGPA, research publications, & patents.</p>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300">Highest Qualification *</label>
-                  <select
-                    value={data.education.qualification}
-                    onChange={(e) =>
-                      setData({ ...data, education: { ...data.education, qualification: e.target.value } })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  >
-                    <option value="High School">High School / Secondary</option>
-                    <option value="Diploma">Diploma / Associate Degree</option>
-                    <option value="Bachelor's Degree">Bachelor's Degree</option>
-                    <option value="Master's Degree">Master's Degree</option>
-                    <option value="Doctorate (Ph.D.)">Doctorate (Ph.D.)</option>
-                    <option value="Post-Doctoral">Post-Doctoral</option>
-                  </select>
-                  {validationErrors.qualification && (
-                    <span className="text-[11px] text-rose-400 font-mono">{validationErrors.qualification}</span>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300">Degree & Specialization *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. M.S. Computer Science & Artificial Intelligence"
-                    value={data.education.degree}
-                    onChange={(e) =>
-                      setData({ ...data, education: { ...data.education, degree: e.target.value } })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                  {validationErrors.degree && (
-                    <span className="text-[11px] text-rose-400 font-mono">{validationErrors.degree}</span>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300">University / College *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Stanford University"
-                    value={data.education.university}
-                    onChange={(e) =>
-                      setData({ ...data, education: { ...data.education, university: e.target.value } })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                  {validationErrors.university && (
-                    <span className="text-[11px] text-rose-400 font-mono">{validationErrors.university}</span>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300">Department / Faculty</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. School of Engineering"
-                    value={data.education.department}
-                    onChange={(e) =>
-                      setData({ ...data, education: { ...data.education, department: e.target.value } })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300">CGPA / Percentage Score</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 3.92 / 4.0 or 92%"
-                    value={data.education.cgpa}
-                    onChange={(e) =>
-                      setData({ ...data, education: { ...data.education, cgpa: e.target.value } })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300">Graduation Year</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 2023"
-                    value={data.education.gradYear}
-                    onChange={(e) =>
-                      setData({ ...data, education: { ...data.education, gradYear: e.target.value } })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: TECHNICAL SKILLS */}
-          {currentStep === 2 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                  <Code className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 2: Technical Skills Inventory</h2>
-                  <p className="text-xs text-slate-400">Add unlimited core engineering, software, and technical competencies.</p>
-                </div>
-              </div>
-
-              {/* Add New Technical Skill Bar */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider font-mono">Add Technical Skill</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Skill Name (e.g. Python, Rust)"
-                    value={techInput.name}
-                    onChange={(e) => setTechInput({ ...techInput, name: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                  />
-
-                  <select
-                    value={techInput.category}
-                    onChange={(e) => setTechInput({ ...techInput, category: e.target.value as any })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none"
-                  >
-                    <option value="Frontend">Frontend</option>
-                    <option value="Backend">Backend</option>
-                    <option value="Cloud/DevOps">Cloud/DevOps</option>
-                    <option value="AI/ML">AI/ML</option>
-                    <option value="Database">Database</option>
-                    <option value="Mobile">Mobile</option>
-                    <option value="Security">Security</option>
-                    <option value="Other">Other</option>
-                  </select>
-
-                  <select
-                    value={techInput.level}
-                    onChange={(e) => setTechInput({ ...techInput, level: e.target.value as any })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none"
-                  >
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                    <option value="Expert">Expert</option>
-                  </select>
-
-                  <input
-                    type="number"
-                    placeholder="Years Exp"
-                    value={techInput.yearsExp}
-                    onChange={(e) => setTechInput({ ...techInput, yearsExp: parseInt(e.target.value) || 0 })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-white placeholder-slate-500 focus:outline-none"
-                  />
-
-                  <button
-                    onClick={addTechnicalSkill}
-                    className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-indigo-600/20"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Skill</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Technical Skill Chips & Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {data.technicalSkills.map((skill) => (
-                  <div key={skill.id} className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2.5 relative group">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                        {skill.category}
-                      </span>
-                      <button
-                        onClick={() => removeTechnicalSkill(skill.id)}
-                        className="text-slate-600 hover:text-rose-400 transition-colors p-1"
-                        title="Delete skill"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Highest Qualification</label>
+                      <input
+                        type="text"
+                        value={data.academic.highestQualification}
+                        onChange={(e) => setData({ ...data, academic: { ...data.academic, highestQualification: e.target.value } })}
+                        placeholder="e.g. Master of Science"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
                     </div>
 
-                    <div className="font-bold text-sm text-white">{skill.name}</div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Degree Title & Major</label>
+                      <input
+                        type="text"
+                        value={data.academic.degree}
+                        onChange={(e) => setData({ ...data, academic: { ...data.academic, degree: e.target.value } })}
+                        placeholder="e.g. B.S. Computer Science & AI"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
+                    </div>
 
-                    <div className="flex items-center justify-between text-xs font-mono text-slate-400 pt-2 border-t border-slate-900">
-                      <span>Level: <strong className="text-sky-400">{skill.level}</strong></span>
-                      <span>{skill.yearsExp} Yrs Exp</span>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">University / Institution</label>
+                      <input
+                        type="text"
+                        value={data.academic.university}
+                        onChange={(e) => setData({ ...data, academic: { ...data.academic, university: e.target.value } })}
+                        placeholder="e.g. Stanford University"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">College / School</label>
+                      <input
+                        type="text"
+                        value={data.academic.college}
+                        onChange={(e) => setData({ ...data, academic: { ...data.academic, college: e.target.value } })}
+                        placeholder="e.g. School of Engineering"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">CGPA / GPA</label>
+                      <input
+                        type="text"
+                        value={data.academic.cgpa}
+                        onChange={(e) => setData({ ...data, academic: { ...data.academic, cgpa: e.target.value } })}
+                        placeholder="e.g. 3.9 / 4.0"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Graduation Year</label>
+                      <input
+                        type="text"
+                        value={data.academic.graduationYear}
+                        onChange={(e) => setData({ ...data, academic: { ...data.academic, graduationYear: e.target.value } })}
+                        placeholder="e.g. 2025"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* STEP 3: INDUSTRY SKILLS */}
-          {currentStep === 3 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                  <Briefcase className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 3: Industry & Domain Skills</h2>
-                  <p className="text-xs text-slate-400">Dynamic skills tailored specifically to your core industry vertical.</p>
-                </div>
-              </div>
-
-              {/* Industry Selector */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300">Select Primary Industry</label>
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 scroll-smooth">
-                  {INDUSTRY_OPTIONS.map((ind) => (
-                    <button
-                      key={ind}
-                      onClick={() => setData({ ...data, selectedIndustry: ind })}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                        data.selectedIndustry === ind
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-md"
-                          : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
-                      }`}
-                    >
-                      {ind}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Suggested Skills Pill Recommendations */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                <span className="text-[11px] font-mono text-slate-400">Suggested {data.selectedIndustry} Domain Skills (Click to quick add):</span>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {(PRESET_INDUSTRY_SKILLS[data.selectedIndustry] || []).map((presetName) => {
-                    const isAdded = data.industrySkills.some((s) => s.name === presetName);
-                    return (
-                      <button
-                        key={presetName}
-                        disabled={isAdded}
-                        onClick={() => {
-                          const newSkill: IndustrySkill = {
-                            id: `ind-${Date.now()}`,
-                            name: presetName,
-                            domain: data.selectedIndustry,
-                            proficiency: "Practitioner",
-                            yearsExp: 3,
-                          };
-                          setData((prev) => ({ ...prev, industrySkills: [...prev.industrySkills, newSkill] }));
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all flex items-center gap-1.5 ${
-                          isAdded
-                            ? "bg-emerald-950 text-emerald-400 border border-emerald-800 cursor-default"
-                            : "bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700 hover:text-white"
-                        }`}
-                      >
-                        {isAdded ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3 text-emerald-400" />}
-                        <span>{presetName}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Custom Industry Skill Add Form */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  placeholder="Custom Industry Skill Name"
-                  value={indInput.name}
-                  onChange={(e) => setIndInput({ ...indInput, name: e.target.value })}
-                  className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                />
-
-                <select
-                  value={indInput.proficiency}
-                  onChange={(e) => setIndInput({ ...indInput, proficiency: e.target.value as any })}
-                  className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none"
-                >
-                  <option value="Foundational">Foundational</option>
-                  <option value="Practitioner">Practitioner</option>
-                  <option value="Specialist">Specialist</option>
-                  <option value="Thought Leader">Thought Leader</option>
-                </select>
-
-                <button
-                  onClick={addIndustrySkill}
-                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-600/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Industry Skill</span>
-                </button>
-              </div>
-
-              {/* Added Industry Skills List */}
-              <div className="space-y-2">
-                {data.industrySkills.map((s) => (
-                  <div key={s.id} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        {s.domain}
-                      </span>
-                      <span className="font-bold text-white">{s.name}</span>
+                  <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Research Publications Count</label>
+                      <input
+                        type="number"
+                        value={data.academic.researchPublicationsCount || ""}
+                        onChange={(e) => setData({ ...data, academic: { ...data.academic, researchPublicationsCount: Number(e.target.value) } })}
+                        placeholder="0"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
                     </div>
 
-                    <div className="flex items-center gap-4">
-                      <span className="text-slate-400 font-mono">{s.proficiency}</span>
-                      <button
-                        onClick={() => removeIndustrySkill(s.id)}
-                        className="text-slate-600 hover:text-rose-400 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Patents Count</label>
+                      <input
+                        type="number"
+                        value={data.academic.patentsCount || ""}
+                        onChange={(e) => setData({ ...data, academic: { ...data.academic, patentsCount: Number(e.target.value) } })}
+                        placeholder="0"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 4: DIGITAL SKILLS */}
-          {currentStep === 4 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
-                  <Laptop className="w-6 h-6" />
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 4: Digital Tools & Software Skills</h2>
-                  <p className="text-xs text-slate-400">Proficiency in key software, design tools, analytics suites, and AI models.</p>
-                </div>
-              </div>
+              )}
 
-              {/* Preset Digital Tool Chips */}
-              <div className="space-y-3">
-                <span className="text-xs font-semibold text-slate-300">Preset Digital Stack (Click to Toggle):</span>
-                <div className="flex flex-wrap gap-2.5">
-                  {PRESET_DIGITAL_SKILLS.map((preset) => {
-                    const isSelected = data.digitalSkills.some((d) => d.name.toLowerCase() === preset.name.toLowerCase());
-                    return (
-                      <button
-                        key={preset.name}
-                        onClick={() => togglePresetDigitalSkill(preset)}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-mono flex items-center gap-2 transition-all ${
-                          isSelected
-                            ? "bg-purple-600 text-white font-bold shadow-lg shadow-purple-600/30 border border-purple-400/50"
-                            : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
-                        }`}
-                      >
-                        {isSelected ? <CheckCircle2 className="w-4 h-4 text-purple-200" /> : <Plus className="w-3.5 h-3.5" />}
-                        <span>{preset.name}</span>
-                        <span className="text-[9px] text-slate-400 uppercase font-sans">({preset.category})</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Custom Tool Input */}
-              <div className="flex items-center gap-3 pt-2">
-                <input
-                  type="text"
-                  placeholder="Add custom digital tool (e.g. Webflow, Blender, SAP)..."
-                  value={customDigitalName}
-                  onChange={(e) => setCustomDigitalName(e.target.value)}
-                  className="flex-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                />
-                <button
-                  onClick={addCustomDigitalSkill}
-                  className="px-4 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-purple-600/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Tool</span>
-                </button>
-              </div>
-
-              {/* Active Digital Stack Table / Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pt-2">
-                {data.digitalSkills.map((d) => (
-                  <div key={d.id} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+              {/* ================= SECTION 2: TECHNICAL SKILLS ================= */}
+              {activeStep === 2 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center">
                     <div>
-                      <div className="font-bold text-white">{d.name}</div>
-                      <div className="text-[10px] text-purple-400 font-mono">{d.level}</div>
+                      <h2 className="text-xl font-bold text-[var(--foreground)]">Section 2: Technical Skills Intelligence</h2>
+                      <p className="text-xs text-[var(--subtext)]">Track tech stack, level, years experience, confidence, & AI demand.</p>
                     </div>
                     <button
-                      onClick={() => removeDigitalSkill(d.id)}
-                      className="text-slate-600 hover:text-rose-400 transition-colors"
+                      onClick={() => {
+                        const newItem = {
+                          id: `skill_${Date.now()}`,
+                          name: "",
+                          category: "AI/ML" as const,
+                          level: "Advanced" as const,
+                          yearsExp: 2,
+                          projectsCount: 3,
+                          lastUsedYear: "2026",
+                          confidenceScore: 4,
+                          marketDemand: "High" as const,
+                          learningStatus: "Active" as const,
+                          maturityScore: 85,
+                          relevanceScore: 90,
+                          futureDemandScore: 95,
+                        };
+                        setData({ ...data, technicalSkills: [...data.technicalSkills, newItem] });
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Plus className="w-4 h-4" /> Add Skill
                     </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* STEP 5: SOFT SKILLS */}
-          {currentStep === 5 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
-                  <Heart className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 5: Soft Skills & Emotional Intelligence</h2>
-                  <p className="text-xs text-slate-400">Evaluate interpersonal effectiveness, leadership potential, and collaboration skills.</p>
-                </div>
-              </div>
+                  {data.technicalSkills.length === 0 ? (
+                    <div className="p-8 rounded-2xl border border-dashed border-[var(--border)] text-center space-y-3">
+                      <Code className="w-8 h-8 text-sky-400 mx-auto opacity-70" />
+                      <div className="text-xs font-semibold text-[var(--foreground)]">No technical skills added yet</div>
+                      <p className="text-[11px] text-[var(--subtext)] max-w-sm mx-auto">
+                        Add skills like Python, Next.js, PyTorch, Kubernetes, or SQL to calculate technical capital.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {data.technicalSkills.map((sk, idx) => (
+                        <div key={sk.id} className="p-4 rounded-2xl bg-slate-900/70 border border-[var(--border)] grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                          <div className="sm:col-span-3 space-y-1">
+                            <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Skill Name</label>
+                            <input
+                              type="text"
+                              value={sk.name}
+                              onChange={(e) => {
+                                const updated = [...data.technicalSkills];
+                                updated[idx].name = e.target.value;
+                                setData({ ...data, technicalSkills: updated });
+                              }}
+                              placeholder="e.g. PyTorch"
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            />
+                          </div>
 
-              {/* Soft Skills Rating Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {Object.keys(data.softSkills).map((skillKey) => {
-                  const item = data.softSkills[skillKey];
-                  return (
-                    <div key={skillKey} className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-white">{skillKey}</span>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              onClick={() =>
-                                setData({
-                                  ...data,
-                                  softSkills: {
-                                    ...data.softSkills,
-                                    [skillKey]: { ...item, score: star },
-                                  },
-                                })
-                              }
-                              className={`p-1 transition-transform hover:scale-125 ${
-                                star <= item.score ? "text-amber-400" : "text-slate-700"
-                              }`}
+                          <div className="sm:col-span-3 space-y-1">
+                            <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Category</label>
+                            <select
+                              value={sk.category}
+                              onChange={(e) => {
+                                const updated = [...data.technicalSkills];
+                                updated[idx].category = e.target.value as any;
+                                setData({ ...data, technicalSkills: updated });
+                              }}
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
                             >
-                              <Star className="w-4 h-4 fill-current" />
+                              {["AI/ML", "Frontend", "Backend", "Cloud/DevOps", "Data & Analytics", "Cybersecurity", "Mobile", "Other"].map((cat) => (
+                                <option key={cat} value={cat} className="bg-[#0f172a] text-slate-100">{cat}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="sm:col-span-2 space-y-1">
+                            <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Level</label>
+                            <select
+                              value={sk.level}
+                              onChange={(e) => {
+                                const updated = [...data.technicalSkills];
+                                updated[idx].level = e.target.value as SkillLevelOption;
+                                setData({ ...data, technicalSkills: updated });
+                              }}
+                              className="w-full px-2 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            >
+                              <option value="Beginner" className="bg-[#0f172a]">Beginner</option>
+                              <option value="Intermediate" className="bg-[#0f172a]">Intermediate</option>
+                              <option value="Advanced" className="bg-[#0f172a]">Advanced</option>
+                              <option value="Expert" className="bg-[#0f172a]">Expert</option>
+                            </select>
+                          </div>
+
+                          <div className="sm:col-span-2 space-y-1">
+                            <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Years Exp</label>
+                            <input
+                              type="number"
+                              value={sk.yearsExp || ""}
+                              onChange={(e) => {
+                                const updated = [...data.technicalSkills];
+                                updated[idx].yearsExp = Number(e.target.value);
+                                setData({ ...data, technicalSkills: updated });
+                              }}
+                              placeholder="Yrs"
+                              className="w-full px-2 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2 flex items-center justify-end pt-3 sm:pt-0">
+                            <button
+                              onClick={() => {
+                                const updated = data.technicalSkills.filter((_, i) => i !== idx);
+                                setData({ ...data, technicalSkills: updated });
+                              }}
+                              className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
-                          ))}
+                          </div>
                         </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-mono text-slate-400">Contextual Application Notes / Evidence</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Led cross-functional teams, resolved vendor disputes..."
-                          value={item.notes}
-                          onChange={(e) =>
-                            setData({
-                              ...data,
-                              softSkills: {
-                                ...data.softSkills,
-                                [skillKey]: { ...item, notes: e.target.value },
-                              },
-                            })
-                          }
-                          className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 6: LANGUAGES */}
-          {currentStep === 6 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
-                  <Globe className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 6: Languages & Communication Matrix</h2>
-                  <p className="text-xs text-slate-400">Multi-language fluency across reading, writing, and spoken communication.</p>
-                </div>
-              </div>
-
-              {/* Add Language Form */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <span className="text-xs font-bold text-sky-400 uppercase tracking-wider font-mono">Add Language</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-center">
-                  <input
-                    type="text"
-                    placeholder="Language (e.g. English, French, Japanese)"
-                    value={langInput.language}
-                    onChange={(e) => setLangInput({ ...langInput, language: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-
-                  <select
-                    value={langInput.proficiency}
-                    onChange={(e) => setLangInput({ ...langInput, proficiency: e.target.value as any })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none"
-                  >
-                    <option value="Elementary">Elementary</option>
-                    <option value="Professional">Professional</option>
-                    <option value="Native / Fluent">Native / Fluent</option>
-                  </select>
-
-                  <div className="flex items-center justify-around px-2 text-xs text-slate-300 font-mono">
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={langInput.read}
-                        onChange={(e) => setLangInput({ ...langInput, read: e.target.checked })}
-                      />
-                      <span>Read</span>
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={langInput.write}
-                        onChange={(e) => setLangInput({ ...langInput, write: e.target.checked })}
-                      />
-                      <span>Write</span>
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={langInput.speak}
-                        onChange={(e) => setLangInput({ ...langInput, speak: e.target.checked })}
-                      />
-                      <span>Speak</span>
-                    </label>
-                  </div>
-
-                  <div className="lg:col-span-2">
-                    <button
-                      onClick={addLanguage}
-                      className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-sky-600/20"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Language</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Language List */}
-              <div className="space-y-3">
-                {data.languages.map((l) => (
-                  <div key={l.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span className="font-bold text-white text-sm">{l.language}</span>
-                      <span className="text-xs font-mono px-2.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                        {l.proficiency}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
-                        <span>Read: <strong className={l.read ? "text-emerald-400" : "text-slate-600"}>{l.read ? "Yes" : "No"}</strong></span>
-                        <span>Write: <strong className={l.write ? "text-emerald-400" : "text-slate-600"}>{l.write ? "Yes" : "No"}</strong></span>
-                        <span>Speak: <strong className={l.speak ? "text-emerald-400" : "text-slate-600"}>{l.speak ? "Yes" : "No"}</strong></span>
-                      </div>
-
-                      <button
-                        onClick={() => removeLanguage(l.id)}
-                        className="text-slate-600 hover:text-rose-400 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 7: CERTIFICATIONS */}
-          {currentStep === 7 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                  <Award className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 7: Certifications & Industry Credentials</h2>
-                  <p className="text-xs text-slate-400">Add verified certificates, professional licensing, and credential links.</p>
-                </div>
-              </div>
-
-              {/* Add Certification Form */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono">Add Certification Entry</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Certificate Name *"
-                    value={certInput.name}
-                    onChange={(e) => setCertInput({ ...certInput, name: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Issuing Provider (e.g. AWS, Coursera) *"
-                    value={certInput.provider}
-                    onChange={(e) => setCertInput({ ...certInput, provider: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Issue Date (e.g. 2024-02)"
-                    value={certInput.issueDate}
-                    onChange={(e) => setCertInput({ ...certInput, issueDate: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Expiry Date or Lifetime"
-                    value={certInput.expiry}
-                    onChange={(e) => setCertInput({ ...certInput, expiry: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Credential ID"
-                    value={certInput.credentialId}
-                    onChange={(e) => setCertInput({ ...certInput, credentialId: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Verification URL"
-                    value={certInput.verificationUrl}
-                    onChange={(e) => setCertInput({ ...certInput, verificationUrl: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                </div>
-                <button
-                  onClick={addCertification}
-                  className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-amber-600/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Certification</span>
-                </button>
-              </div>
-
-              {/* Certification Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {data.certifications.map((c) => (
-                  <div key={c.id} className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-bold text-white text-sm">{c.name}</div>
-                        <div className="text-xs text-amber-400 font-mono mt-0.5">{c.provider}</div>
-                      </div>
-                      <button
-                        onClick={() => removeCertification(c.id)}
-                        className="text-slate-600 hover:text-rose-400 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-slate-900">
-                      <span>Issued: {c.issueDate || "N/A"} · Expires: {c.expiry}</span>
-                      {c.credentialId && <span>ID: {c.credentialId}</span>}
-                    </div>
-
-                    {c.verificationUrl && (
-                      <a
-                        href={c.verificationUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-mono text-sky-400 hover:underline"
-                      >
-                        <span>Verify Credential</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 8: PROJECTS */}
-          {currentStep === 8 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400">
-                  <FolderGit2 className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 8: Key Projects Portfolio</h2>
-                  <p className="text-xs text-slate-400">Showcase unlimited software, research, or product implementations.</p>
-                </div>
-              </div>
-
-              {/* Add Project Form */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <span className="text-xs font-bold text-teal-400 uppercase tracking-wider font-mono">Add Project Entry</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Project Name *"
-                    value={projInput.name}
-                    onChange={(e) => setProjInput({ ...projInput, name: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Your Role (e.g. Lead Architect, Full Stack)"
-                    value={projInput.role}
-                    onChange={(e) => setProjInput({ ...projInput, role: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Technologies (comma separated: Python, React, AWS)"
-                    value={projInput.techString}
-                    onChange={(e) => setProjInput({ ...projInput, techString: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none sm:col-span-2"
-                  />
-                  <input
-                    type="text"
-                    placeholder="GitHub Repository URL"
-                    value={projInput.github}
-                    onChange={(e) => setProjInput({ ...projInput, github: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Live Demo / Website URL"
-                    value={projInput.demo}
-                    onChange={(e) => setProjInput({ ...projInput, demo: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <textarea
-                    placeholder="Project Description & Key Impact *"
-                    rows={2}
-                    value={projInput.description}
-                    onChange={(e) => setProjInput({ ...projInput, description: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none sm:col-span-2"
-                  />
-                </div>
-                <button
-                  onClick={addProject}
-                  className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-teal-600/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Project</span>
-                </button>
-              </div>
-
-              {/* Projects List */}
-              <div className="space-y-4">
-                {data.projects.map((p) => (
-                  <div key={p.id} className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-bold text-white text-base">{p.name}</h3>
-                        <span className="text-xs font-mono text-teal-400">{p.role} · {p.year}</span>
-                      </div>
-                      <button
-                        onClick={() => removeProject(p.id)}
-                        className="text-slate-600 hover:text-rose-400 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <p className="text-xs text-slate-300">{p.description}</p>
-
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                      {p.technology.map((tech, idx) => (
-                        <span key={idx} className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-800">
-                          {tech}
-                        </span>
                       ))}
                     </div>
+                  )}
+                </div>
+              )}
 
-                    <div className="flex items-center gap-4 text-xs font-mono pt-2 border-t border-slate-900">
-                      {p.github && (
-                        <a href={p.github} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline flex items-center gap-1">
-                          <Globe className="w-3.5 h-3.5" />
-                          <span>GitHub Repo</span>
-                        </a>
-                      )}
-                      {p.demo && (
-                        <a href={p.demo} target="_blank" rel="noreferrer" className="text-teal-400 hover:underline flex items-center gap-1">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Live Demo</span>
-                        </a>
-                      )}
+              {/* ================= SECTION 3: INDUSTRY EXPERTISE ================= */}
+              {activeStep === 3 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-xl font-bold text-[var(--foreground)]">Section 3: Industry Expertise</h2>
+                      <p className="text-xs text-[var(--subtext)]">Domain experience across AI, FinTech, Healthcare, Cloud, SaaS, etc.</p>
                     </div>
+                    <button
+                      onClick={() => {
+                        const newItem = {
+                          id: `ind_${Date.now()}`,
+                          industryDomain: "Artificial Intelligence",
+                          yearsExp: 3,
+                          projectsCount: 5,
+                          expertiseLevel: "Advanced" as const,
+                        };
+                        setData({ ...data, industryExpertise: [...data.industryExpertise, newItem] });
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md"
+                    >
+                      <Plus className="w-4 h-4" /> Add Domain
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* STEP 9: WORK EXPERIENCE */}
-          {currentStep === 9 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
-                  <Activity className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 9: Work Experience Timeline</h2>
-                  <p className="text-xs text-slate-400">Dynamic work history, responsibilities, and quantifiable career achievements.</p>
-                </div>
-              </div>
+                  {data.industryExpertise.length === 0 ? (
+                    <div className="p-8 rounded-2xl border border-dashed border-[var(--border)] text-center space-y-3">
+                      <Briefcase className="w-8 h-8 text-sky-400 mx-auto opacity-70" />
+                      <div className="text-xs font-semibold text-[var(--foreground)]">No industry domains added</div>
+                      <p className="text-[11px] text-[var(--subtext)] max-w-sm mx-auto">
+                        Add domain expertise like AI & Deep Learning, FinTech, Healthcare, Cloud Infrastructure, or E-Commerce.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {data.industryExpertise.map((item, idx) => (
+                        <div key={item.id} className="p-4 rounded-2xl bg-slate-900/70 border border-[var(--border)] grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                          <div className="sm:col-span-5 space-y-1">
+                            <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Domain Name</label>
+                            <input
+                              type="text"
+                              value={item.industryDomain}
+                              onChange={(e) => {
+                                const updated = [...data.industryExpertise];
+                                updated[idx].industryDomain = e.target.value;
+                                setData({ ...data, industryExpertise: updated });
+                              }}
+                              placeholder="e.g. Artificial Intelligence"
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            />
+                          </div>
 
-              {/* Add Work Form */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider font-mono">Add Work Experience</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Company Name *"
-                    value={workInput.company}
-                    onChange={(e) => setWorkInput({ ...workInput, company: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Role / Title *"
-                    value={workInput.role}
-                    onChange={(e) => setWorkInput({ ...workInput, role: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Years at Company"
-                    value={workInput.years}
-                    onChange={(e) => setWorkInput({ ...workInput, years: parseFloat(e.target.value) || 0 })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Period (e.g. 2023 - Present)"
-                    value={workInput.period}
-                    onChange={(e) => setWorkInput({ ...workInput, period: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <textarea
-                    placeholder="Key Responsibilities..."
-                    rows={2}
-                    value={workInput.responsibilities}
-                    onChange={(e) => setWorkInput({ ...workInput, responsibilities: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none sm:col-span-2"
-                  />
-                  <textarea
-                    placeholder="Quantifiable Achievements..."
-                    rows={2}
-                    value={workInput.achievements}
-                    onChange={(e) => setWorkInput({ ...workInput, achievements: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none sm:col-span-2"
-                  />
-                </div>
-                <button
-                  onClick={addWorkExperience}
-                  className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Experience</span>
-                </button>
-              </div>
+                          <div className="sm:col-span-3 space-y-1">
+                            <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Years Experience</label>
+                            <input
+                              type="number"
+                              value={item.yearsExp || ""}
+                              onChange={(e) => {
+                                const updated = [...data.industryExpertise];
+                                updated[idx].yearsExp = Number(e.target.value);
+                                setData({ ...data, industryExpertise: updated });
+                              }}
+                              placeholder="Yrs"
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            />
+                          </div>
 
-              {/* Experience Timeline Cards */}
-              <div className="relative pl-6 border-l-2 border-slate-800 space-y-6">
-                {data.workExperience.map((w) => (
-                  <div key={w.id} className="relative group">
-                    <div className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-blue-500 border-4 border-slate-950" />
-                    <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-bold text-white text-base">{w.role}</h3>
-                          <div className="text-xs font-mono text-blue-400">{w.company} · {w.period} ({w.years} Yrs)</div>
+                          <div className="sm:col-span-3 space-y-1">
+                            <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Expertise Level</label>
+                            <select
+                              value={item.expertiseLevel}
+                              onChange={(e) => {
+                                const updated = [...data.industryExpertise];
+                                updated[idx].expertiseLevel = e.target.value as SkillLevelOption;
+                                setData({ ...data, industryExpertise: updated });
+                              }}
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            >
+                              <option value="Beginner" className="bg-[#0f172a]">Beginner</option>
+                              <option value="Intermediate" className="bg-[#0f172a]">Intermediate</option>
+                              <option value="Advanced" className="bg-[#0f172a]">Advanced</option>
+                              <option value="Expert" className="bg-[#0f172a]">Expert</option>
+                            </select>
+                          </div>
+
+                          <div className="sm:col-span-1 flex items-center justify-end pt-3 sm:pt-0">
+                            <button
+                              onClick={() => {
+                                const updated = data.industryExpertise.filter((_, i) => i !== idx);
+                                setData({ ...data, industryExpertise: updated });
+                              }}
+                              className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ================= SECTION 4: DIGITAL COMPETENCIES ================= */}
+              {activeStep === 4 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4">
+                    <h2 className="text-xl font-bold text-[var(--foreground)]">Section 4: Digital Competencies & Tools</h2>
+                    <p className="text-xs text-[var(--subtext)]">Select tool suites (Excel, Figma, GitHub, Docker, ChatGPT, Notion, VS Code).</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {data.digitalCompetencies.map((tool, idx) => (
+                      <button
+                        key={tool.id}
+                        type="button"
+                        onClick={() => {
+                          const updated = [...data.digitalCompetencies];
+                          updated[idx].selected = !updated[idx].selected;
+                          setData({ ...data, digitalCompetencies: updated });
+                        }}
+                        className={`p-3.5 rounded-2xl border text-xs text-left flex justify-between items-center transition-all ${
+                          tool.selected
+                            ? "bg-indigo-600/20 border-indigo-500 text-[var(--foreground)] font-bold shadow-md"
+                            : "bg-slate-900/60 border border-[var(--border)] text-[var(--subtext)] hover:border-slate-500"
+                        }`}
+                      >
+                        <div>
+                          <div className="font-bold">{tool.name}</div>
+                          <span className="text-[10px] font-mono text-[var(--subtext)]">{tool.category}</span>
+                        </div>
+                        {tool.selected && <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ================= SECTION 5: COMMUNICATION & LANGUAGES ================= */}
+              {activeStep === 5 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-xl font-bold text-[var(--foreground)]">Section 5: Communication & Languages</h2>
+                      <p className="text-xs text-[var(--subtext)]">Multilingual capabilities, public speaking, & presentation ratings.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newItem = {
+                          id: `lang_${Date.now()}`,
+                          language: "English",
+                          read: true,
+                          write: true,
+                          speak: true,
+                          proficiency: "Native" as const,
+                        };
+                        setData({ ...data, languages: [...data.languages, newItem] });
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md"
+                    >
+                      <Plus className="w-4 h-4" /> Add Language
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {data.languages.map((lng, idx) => (
+                      <div key={lng.id} className="p-4 rounded-2xl bg-slate-900/70 border border-[var(--border)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <input
+                          type="text"
+                          value={lng.language}
+                          onChange={(e) => {
+                            const updated = [...data.languages];
+                            updated[idx].language = e.target.value;
+                            setData({ ...data, languages: updated });
+                          }}
+                          placeholder="e.g. English"
+                          className="px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        />
+                        <select
+                          value={lng.proficiency}
+                          onChange={(e) => {
+                            const updated = [...data.languages];
+                            updated[idx].proficiency = e.target.value as LanguageProficiencyOption;
+                            setData({ ...data, languages: updated });
+                          }}
+                          className="px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        >
+                          <option value="Native" className="bg-[#0f172a]">Native</option>
+                          <option value="Professional" className="bg-[#0f172a]">Professional</option>
+                          <option value="Intermediate" className="bg-[#0f172a]">Intermediate</option>
+                          <option value="Basic" className="bg-[#0f172a]">Basic</option>
+                        </select>
                         <button
-                          onClick={() => removeWorkExperience(w.id)}
-                          className="text-slate-600 hover:text-rose-400 transition-colors"
+                          onClick={() => {
+                            const updated = data.languages.filter((_, i) => i !== idx);
+                            setData({ ...data, languages: updated });
+                          }}
+                          className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-
-                      {w.responsibilities && (
-                        <div className="text-xs text-slate-300">
-                          <strong className="text-slate-400">Responsibilities:</strong> {w.responsibilities}
-                        </div>
-                      )}
-
-                      {w.achievements && (
-                        <div className="text-xs text-emerald-400 bg-emerald-950/30 p-2.5 rounded-xl border border-emerald-800/40">
-                          <strong className="text-emerald-300">Key Achievement:</strong> {w.achievements}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 10: SPORTS */}
-          {currentStep === 10 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                  <Dumbbell className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 10: Sports & Physical Discipline</h2>
-                  <p className="text-xs text-slate-400">Track athletic achievements, competition levels, and long-term physical grit.</p>
-                </div>
-              </div>
-
-              {/* Add Sport Form */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono">Add Sport Entry</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Sport Name (e.g. Tennis, Chess, Marathon)"
-                    value={sportInput.sport}
-                    onChange={(e) => setSportInput({ ...sportInput, sport: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <select
-                    value={sportInput.level}
-                    onChange={(e) => setSportInput({ ...sportInput, level: e.target.value as any })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none"
-                  >
-                    <option value="School">School Level</option>
-                    <option value="College">College Level</option>
-                    <option value="District">District Level</option>
-                    <option value="State">State Level</option>
-                    <option value="National">National Level</option>
-                    <option value="International">International Level</option>
-                  </select>
-                  <input
-                    type="number"
-                    placeholder="Years Played"
-                    value={sportInput.years}
-                    onChange={(e) => setSportInput({ ...sportInput, years: parseInt(e.target.value) || 0 })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none"
-                  />
-                  <button
-                    onClick={addSport}
-                    className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-600/20"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Sport</span>
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Achievements (e.g. 1st Place Inter-University Tournament)"
-                  value={sportInput.achievements}
-                  onChange={(e) => setSportInput({ ...sportInput, achievements: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Sports Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {data.sports.map((s) => (
-                  <div key={s.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-white text-sm">{s.sport}</span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        {s.level} Level
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-400">{s.years} Years active</div>
-                    {s.achievements && <div className="text-xs text-slate-300 pt-2 border-t border-slate-900">{s.achievements}</div>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 11: LEADERSHIP */}
-          {currentStep === 11 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                  <Users className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 11: Leadership & Social Impact</h2>
-                  <p className="text-xs text-slate-400">College clubs, Student Council, NSS, NCC, NGO initiatives, Mentoring, and Public Speaking.</p>
-                </div>
-              </div>
-
-              {/* Add Leadership Form */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider font-mono">Add Leadership Entry</span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <select
-                    value={leadInput.category}
-                    onChange={(e) => setLeadInput({ ...leadInput, category: e.target.value as any })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none"
-                  >
-                    <option value="College Clubs">College Clubs</option>
-                    <option value="Student Council">Student Council</option>
-                    <option value="NSS">NSS</option>
-                    <option value="NCC">NCC</option>
-                    <option value="NGO">NGO</option>
-                    <option value="Mentoring">Mentoring</option>
-                    <option value="Public Speaking">Public Speaking</option>
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="Role Title (e.g. President, Lead Mentor)"
-                    value={leadInput.roleTitle}
-                    onChange={(e) => setLeadInput({ ...leadInput, roleTitle: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Organization Name"
-                    value={leadInput.organization}
-                    onChange={(e) => setLeadInput({ ...leadInput, organization: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                </div>
-                <textarea
-                  placeholder="Key Leadership Impact & Initiatives..."
-                  rows={2}
-                  value={leadInput.achievements}
-                  onChange={(e) => setLeadInput({ ...leadInput, achievements: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                />
-                <button
-                  onClick={addLeadership}
-                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Leadership Entry</span>
-                </button>
-              </div>
-
-              {/* Leadership List */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {data.leadership.map((l) => (
-                  <div key={l.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                        {l.category}
-                      </span>
-                      <button onClick={() => removeLeadership(l.id)} className="text-slate-600 hover:text-rose-400">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="font-bold text-white text-sm">{l.roleTitle}</div>
-                    <div className="text-xs text-slate-400 font-mono">{l.organization}</div>
-                    <p className="text-xs text-slate-300 pt-2 border-t border-slate-900">{l.achievements}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 12: AWARDS */}
-          {currentStep === 12 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400">
-                  <Trophy className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 12: Honors, Awards & Recognition</h2>
-                  <p className="text-xs text-slate-400">Academic honors, sports medals, hackathon wins, innovation grants, and scholarships.</p>
-                </div>
-              </div>
-
-              {/* Add Award Form */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <span className="text-xs font-bold text-yellow-400 uppercase tracking-wider font-mono">Add Award / Honor</span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Award Name *"
-                    value={awardInput.name}
-                    onChange={(e) => setAwardInput({ ...awardInput, name: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                  <select
-                    value={awardInput.category}
-                    onChange={(e) => setAwardInput({ ...awardInput, category: e.target.value as any })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none"
-                  >
-                    <option value="Academic">Academic</option>
-                    <option value="Sports">Sports</option>
-                    <option value="Hackathons">Hackathons</option>
-                    <option value="Innovation">Innovation</option>
-                    <option value="Scholarships">Scholarships</option>
-                    <option value="Recognition">Recognition</option>
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="Issuer (e.g. IEEE, Microsoft) *"
-                    value={awardInput.issuer}
-                    onChange={(e) => setAwardInput({ ...awardInput, issuer: e.target.value })}
-                    className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                  />
-                </div>
-                <textarea
-                  placeholder="Award Description..."
-                  rows={2}
-                  value={awardInput.description}
-                  onChange={(e) => setAwardInput({ ...awardInput, description: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
-                />
-                <button
-                  onClick={addAward}
-                  className="px-4 py-2.5 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-yellow-600/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Award</span>
-                </button>
-              </div>
-
-              {/* Awards List */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {data.awards.map((a) => (
-                  <div key={a.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-                        {a.category}
-                      </span>
-                      <button onClick={() => removeAward(a.id)} className="text-slate-600 hover:text-rose-400">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="font-bold text-white text-sm">{a.name}</div>
-                    <div className="text-xs text-slate-400 font-mono">{a.issuer} · {a.year}</div>
-                    <p className="text-xs text-slate-300 pt-2 border-t border-slate-900">{a.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 13: CONTINUOUS LEARNING */}
-          {currentStep === 13 && (
-            <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
-                  <BookOpen className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">Section 13: Continuous Learning & Upskilling Velocity</h2>
-                  <p className="text-xs text-slate-400">Quantify annual reading volume, online courses, podcasts, conferences, and weekly study hours.</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <label className="text-xs font-semibold text-slate-300">Books Read Per Year</label>
-                  <input
-                    type="number"
-                    value={data.continuousLearning.booksCount}
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        continuousLearning: {
-                          ...data.continuousLearning,
-                          booksCount: parseInt(e.target.value) || 0,
-                        },
-                      })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm font-mono text-white focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-500 font-mono">Industry benchmark: 12-24 books/yr</p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <label className="text-xs font-semibold text-slate-300">Online Courses Completed</label>
-                  <input
-                    type="number"
-                    value={data.continuousLearning.coursesCompleted}
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        continuousLearning: {
-                          ...data.continuousLearning,
-                          coursesCompleted: parseInt(e.target.value) || 0,
-                        },
-                      })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm font-mono text-white focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-500 font-mono">Coursera, edX, Udemy, Stanford Online</p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <label className="text-xs font-semibold text-slate-300">Podcasts / Technical Lectures</label>
-                  <input
-                    type="number"
-                    value={data.continuousLearning.podcastsListened}
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        continuousLearning: {
-                          ...data.continuousLearning,
-                          podcastsListened: parseInt(e.target.value) || 0,
-                        },
-                      })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm font-mono text-white focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-500 font-mono">Episodes / tech talks listened</p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                  <label className="text-xs font-semibold text-slate-300">Conferences Attended</label>
-                  <input
-                    type="number"
-                    value={data.continuousLearning.conferencesAttended}
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        continuousLearning: {
-                          ...data.continuousLearning,
-                          conferencesAttended: parseInt(e.target.value) || 0,
-                        },
-                      })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm font-mono text-white focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-500 font-mono">Keynotes, summits, hackathons</p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 sm:col-span-2">
-                  <label className="text-xs font-semibold text-slate-300">Weekly Upskilling & Learning Hours</label>
-                  <input
-                    type="number"
-                    value={data.continuousLearning.weeklyLearningHours}
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        continuousLearning: {
-                          ...data.continuousLearning,
-                          weeklyLearningHours: parseInt(e.target.value) || 0,
-                        },
-                      })
-                    }
-                    className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm font-mono text-white focus:outline-none"
-                  />
-                  <p className="text-[10px] text-purple-400 font-mono">Target: 10+ hours per week for high growth velocity</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 14: SUMMARY ANALYTICS & SKILLS CAPITAL MATRIX DASHBOARD */}
-          {currentStep === 14 && (
-            <div className="space-y-6">
-              <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/30 via-slate-950 to-purple-950/30 space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-indigo-400" />
-                      <h2 className="text-xl font-black text-white">Skills Capital & Employability Intelligence Matrix</h2>
-                    </div>
-                    <p className="text-xs text-slate-400">Comprehensive score analysis generated across all 13 assessment sections.</p>
+                    ))}
                   </div>
 
-                  <div className="px-4 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-mono font-bold">
-                    MARKET MATCH RATING: TOP 3%
-                  </div>
-                </div>
-
-                {/* SVG RADAR CHART & METRIC BREAKDOWN GRID */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                  {/* Radar Chart */}
-                  <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-xs font-mono text-slate-400 uppercase tracking-wider mb-4">5-Axis Skills Radar Chart</span>
-                    <svg viewBox="0 0 300 300" className="w-full max-w-[280px] h-auto">
-                      {/* Pentagon Grid Rings */}
-                      {[0.2, 0.4, 0.6, 0.8, 1.0].map((r, idx) => (
-                        <polygon
-                          key={idx}
-                          points={[
-                            [150, 150 - 110 * r],
-                            [150 + 104 * r, 150 - 34 * r],
-                            [150 + 64 * r, 150 + 89 * r],
-                            [150 - 64 * r, 150 + 89 * r],
-                            [150 - 104 * r, 150 - 34 * r],
-                          ]
-                            .map((p) => p.join(","))
-                            .join(" ")}
-                          fill="none"
-                          stroke="#1e293b"
-                          strokeWidth="1"
-                        />
-                      ))}
-
-                      {/* Axis Lines */}
+                  {/* Communication Rating Sliders */}
+                  <div className="pt-2 space-y-3 border-t border-[var(--border)]">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-sky-400 font-mono">Communication Skills Self-Rating (1-5)</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {[
-                        [150, 40],
-                        [254, 116],
-                        [214, 239],
-                        [86, 239],
-                        [46, 116],
-                      ].map((p, idx) => (
-                        <line key={idx} x1="150" y1="150" x2={p[0]} y2={p[1]} stroke="#334155" strokeWidth="1" strokeDasharray="2 2" />
-                      ))}
-
-                      {/* Radar Polygon Filled */}
-                      {(() => {
-                        const t = scores.technicalScore / 100;
-                        const l = scores.leadershipScore / 100;
-                        const c = scores.communicationScore / 100;
-                        const lr = scores.learningScore / 100;
-                        const cr = scores.careerReadinessScore / 100;
-
-                        const pts = [
-                          [150, 150 - 110 * t],
-                          [150 + 104 * l, 150 - 34 * l],
-                          [150 + 64 * c, 150 + 89 * c],
-                          [150 - 64 * lr, 150 + 89 * lr],
-                          [150 - 104 * cr, 150 - 34 * cr],
-                        ];
-                        const pointsString = pts.map((p) => p.join(",")).join(" ");
+                        { key: "communicationConfidence", label: "General Communication Confidence" },
+                        { key: "presentationSkills", label: "Executive Presentation Skills" },
+                        { key: "publicSpeaking", label: "Public Speaking & Keynote Ability" },
+                        { key: "businessWriting", label: "Business Writing & Tech Specs" },
+                      ].map((item) => {
+                        const val = (data.communication as any)[item.key] || 3;
                         return (
-                          <g>
-                            <polygon points={pointsString} fill="rgba(99, 102, 241, 0.35)" stroke="#6366f1" strokeWidth="2.5" />
-                            {pts.map((p, idx) => (
-                              <circle key={idx} cx={p[0]} cy={p[1]} r="4" fill="#a5b4fc" stroke="#4338ca" strokeWidth="2" />
-                            ))}
-                          </g>
+                          <div key={item.key} className="p-3.5 rounded-2xl bg-slate-900/60 border border-[var(--border)] space-y-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="font-semibold text-[var(--foreground)]">{item.label}</span>
+                              <span className="font-mono font-bold text-sky-400">{val}/5</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {[1, 2, 3, 4, 5].map((lvl) => (
+                                <button
+                                  key={lvl}
+                                  type="button"
+                                  onClick={() =>
+                                    setData({
+                                      ...data,
+                                      communication: { ...data.communication, [item.key]: lvl },
+                                    })
+                                  }
+                                  className={`flex-1 py-1 rounded-xl text-xs font-bold transition-all ${
+                                    val === lvl
+                                      ? "bg-sky-500 text-slate-950"
+                                      : "bg-[var(--background)] border border-[var(--border)] text-[var(--subtext)] hover:text-white"
+                                  }`}
+                                >
+                                  {lvl}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         );
-                      })()}
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                      {/* Labels */}
-                      <text x="150" y="25" textAnchor="middle" fill="#38bdf8" fontSize="10" fontWeight="bold" fontFamily="monospace">TECHNICAL</text>
-                      <text x="260" y="115" textAnchor="start" fill="#818cf8" fontSize="10" fontWeight="bold" fontFamily="monospace">LEADERSHIP</text>
-                      <text x="220" y="255" textAnchor="start" fill="#34d399" fontSize="10" fontWeight="bold" fontFamily="monospace">COMMUNICATION</text>
-                      <text x="80" y="255" textAnchor="end" fill="#c084fc" fontSize="10" fontWeight="bold" fontFamily="monospace">LEARNING</text>
-                      <text x="40" y="115" textAnchor="end" fill="#fbbf24" fontSize="10" fontWeight="bold" fontFamily="monospace">READINESS</text>
-                    </svg>
+              {/* ================= SECTION 6: CERTIFICATIONS ================= */}
+              {activeStep === 6 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-xl font-bold text-[var(--foreground)]">Section 6: Professional Certifications</h2>
+                      <p className="text-xs text-[var(--subtext)]">AWS, Google Cloud, CFA, PMP, DeepLearning.AI, & verified credentials.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newItem = {
+                          id: `cert_${Date.now()}`,
+                          name: "",
+                          provider: "Amazon Web Services",
+                          category: "Cloud & DevOps" as const,
+                          issueDate: "2024",
+                          expiryDate: "Lifetime",
+                          credentialId: "",
+                          verificationUrl: "",
+                        };
+                        setData({ ...data, certifications: [...data.certifications, newItem] });
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md"
+                    >
+                      <Plus className="w-4 h-4" /> Add Certification
+                    </button>
                   </div>
 
-                  {/* Dimension Cards */}
+                  {data.certifications.length === 0 ? (
+                    <div className="p-8 rounded-2xl border border-dashed border-[var(--border)] text-center space-y-3">
+                      <Award className="w-8 h-8 text-sky-400 mx-auto opacity-70" />
+                      <div className="text-xs font-semibold text-[var(--foreground)]">No certifications added</div>
+                      <p className="text-[11px] text-[var(--subtext)] max-w-sm mx-auto">
+                        Add cloud, AI, finance, or management certifications to boost your professional capital score.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {data.certifications.map((crt, idx) => (
+                        <div key={crt.id} className="p-4 rounded-2xl bg-slate-900/70 border border-[var(--border)] grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                          <div className="sm:col-span-4 space-y-1">
+                            <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Certification Name</label>
+                            <input
+                              type="text"
+                              value={crt.name}
+                              onChange={(e) => {
+                                const updated = [...data.certifications];
+                                updated[idx].name = e.target.value;
+                                setData({ ...data, certifications: updated });
+                              }}
+                              placeholder="e.g. AWS Solutions Architect"
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-3 space-y-1">
+                            <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Issuing Provider</label>
+                            <input
+                              type="text"
+                              value={crt.provider}
+                              onChange={(e) => {
+                                const updated = [...data.certifications];
+                                updated[idx].provider = e.target.value;
+                                setData({ ...data, certifications: updated });
+                              }}
+                              placeholder="e.g. Amazon Web Services"
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-4 space-y-1">
+                            <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Verification Link</label>
+                            <input
+                              type="text"
+                              value={crt.verificationUrl}
+                              onChange={(e) => {
+                                const updated = [...data.certifications];
+                                updated[idx].verificationUrl = e.target.value;
+                                setData({ ...data, certifications: updated });
+                              }}
+                              placeholder="https://..."
+                              className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-1 flex items-center justify-end pt-3 sm:pt-0">
+                            <button
+                              onClick={() => {
+                                const updated = data.certifications.filter((_, i) => i !== idx);
+                                setData({ ...data, certifications: updated });
+                              }}
+                              className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ================= SECTION 7: PROJECTS & PORTFOLIO ================= */}
+              {activeStep === 7 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-xl font-bold text-[var(--foreground)]">Section 7: Projects & Portfolio</h2>
+                      <p className="text-xs text-[var(--subtext)] font-sans">Open-source software, research systems, YC startup apps, & hackathons.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newItem = {
+                          id: `proj_${Date.now()}`,
+                          name: "",
+                          role: "Lead Architect",
+                          durationMonths: 6,
+                          category: "Professional" as const,
+                          techStack: [],
+                          description: "",
+                          teamSize: 3,
+                          impact: "",
+                          githubUrl: "",
+                          liveDemoUrl: "",
+                        };
+                        setData({ ...data, projects: [...data.projects, newItem] });
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md"
+                    >
+                      <Plus className="w-4 h-4" /> Add Project
+                    </button>
+                  </div>
+
+                  {data.projects.length === 0 ? (
+                    <div className="p-8 rounded-2xl border border-dashed border-[var(--border)] text-center space-y-3">
+                      <FolderGit2 className="w-8 h-8 text-sky-400 mx-auto opacity-70" />
+                      <div className="text-xs font-semibold text-[var(--foreground)]">No projects added yet</div>
+                      <p className="text-[11px] text-[var(--subtext)] max-w-sm mx-auto">
+                        Add production projects, research apps, or open-source repositories with GitHub and Live demo links.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {data.projects.map((prj, idx) => (
+                        <div key={prj.id} className="p-4 rounded-2xl bg-slate-900/70 border border-[var(--border)] space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                            <div className="sm:col-span-4 space-y-1">
+                              <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Project Name</label>
+                              <input
+                                type="text"
+                                value={prj.name}
+                                onChange={(e) => {
+                                  const updated = [...data.projects];
+                                  updated[idx].name = e.target.value;
+                                  setData({ ...data, projects: updated });
+                                }}
+                                placeholder="e.g. Human Capital Platform"
+                                className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-4 space-y-1">
+                              <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Role / Responsibility</label>
+                              <input
+                                type="text"
+                                value={prj.role}
+                                onChange={(e) => {
+                                  const updated = [...data.projects];
+                                  updated[idx].role = e.target.value;
+                                  setData({ ...data, projects: updated });
+                                }}
+                                placeholder="e.g. Lead Fullstack Architect"
+                                className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-3 space-y-1">
+                              <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Category</label>
+                              <select
+                                value={prj.category}
+                                onChange={(e) => {
+                                  const updated = [...data.projects];
+                                  updated[idx].category = e.target.value as ProjectCategoryOption;
+                                  setData({ ...data, projects: updated });
+                                }}
+                                className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                              >
+                                {["Research", "Open Source", "Hackathon", "Professional", "Startup", "Academic"].map((cat) => (
+                                  <option key={cat} value={cat} className="bg-[#0f172a]">{cat}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="sm:col-span-1 flex items-center justify-end pt-3 sm:pt-0">
+                              <button
+                                onClick={() => {
+                                  const updated = data.projects.filter((_, i) => i !== idx);
+                                  setData({ ...data, projects: updated });
+                                }}
+                                className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              value={prj.githubUrl || ""}
+                              onChange={(e) => {
+                                const updated = [...data.projects];
+                                updated[idx].githubUrl = e.target.value;
+                                setData({ ...data, projects: updated });
+                              }}
+                              placeholder="GitHub Repository URL"
+                              className="px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            />
+                            <input
+                              type="text"
+                              value={prj.liveDemoUrl || ""}
+                              onChange={(e) => {
+                                const updated = [...data.projects];
+                                updated[idx].liveDemoUrl = e.target.value;
+                                setData({ ...data, projects: updated });
+                              }}
+                              placeholder="Live Production Demo URL"
+                              className="px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ================= SECTION 8: WORK EXPERIENCE ================= */}
+              {activeStep === 8 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4">
+                    <h2 className="text-xl font-bold text-[var(--foreground)]">Section 8: Work Experience & Career History</h2>
+                    <p className="text-xs text-[var(--subtext)]">Student internships, full-time employment, founder startup, or freelance practice.</p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {(["Employee", "Student", "Founder", "Freelancer"] as const).map((persona) => (
+                      <button
+                        key={persona}
+                        type="button"
+                        onClick={() =>
+                          setData({
+                            ...data,
+                            workExperience: { ...data.workExperience, persona },
+                          })
+                        }
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                          data.workExperience.persona === persona
+                            ? "bg-indigo-600 text-white shadow-md"
+                            : "bg-slate-900 border border-[var(--border)] text-[var(--subtext)]"
+                        }`}
+                      >
+                        {persona} Mode
+                      </button>
+                    ))}
+                  </div>
+
+                  {data.workExperience.persona === "Employee" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Company Name</label>
+                        <input
+                          type="text"
+                          value={data.workExperience.employee.company}
+                          onChange={(e) =>
+                            setData({
+                              ...data,
+                              workExperience: {
+                                ...data.workExperience,
+                                employee: { ...data.workExperience.employee, company: e.target.value },
+                              },
+                            })
+                          }
+                          placeholder="e.g. Apex Systems"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Current Role / Designation</label>
+                        <input
+                          type="text"
+                          value={data.workExperience.employee.role}
+                          onChange={(e) =>
+                            setData({
+                              ...data,
+                              workExperience: {
+                                ...data.workExperience,
+                                employee: { ...data.workExperience.employee, role: e.target.value },
+                              },
+                            })
+                          }
+                          placeholder="e.g. Senior AI Solutions Architect"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Total Years Experience</label>
+                        <input
+                          type="number"
+                          value={data.workExperience.employee.totalYearsExp || ""}
+                          onChange={(e) =>
+                            setData({
+                              ...data,
+                              workExperience: {
+                                ...data.workExperience,
+                                employee: { ...data.workExperience.employee, totalYearsExp: Number(e.target.value) },
+                              },
+                            })
+                          }
+                          placeholder="Years"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Promotions Earned</label>
+                        <input
+                          type="number"
+                          value={data.workExperience.employee.promotionsCount || ""}
+                          onChange={(e) =>
+                            setData({
+                              ...data,
+                              workExperience: {
+                                ...data.workExperience,
+                                employee: { ...data.workExperience.employee, promotionsCount: Number(e.target.value) },
+                              },
+                            })
+                          }
+                          placeholder="0"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {data.workExperience.persona === "Student" && (
+                    <div className="space-y-3 pt-2">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Internships & Work Training</label>
+                        <input
+                          type="text"
+                          value={data.workExperience.student.internships}
+                          onChange={(e) =>
+                            setData({
+                              ...data,
+                              workExperience: {
+                                ...data.workExperience,
+                                student: { ...data.workExperience.student, internships: e.target.value },
+                              },
+                            })
+                          }
+                          placeholder="e.g. Software Engineering Intern at Meta"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {data.workExperience.persona === "Founder" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Startup Name</label>
+                        <input
+                          type="text"
+                          value={data.workExperience.founder.startupName}
+                          onChange={(e) =>
+                            setData({
+                              ...data,
+                              workExperience: {
+                                ...data.workExperience,
+                                founder: { ...data.workExperience.founder, startupName: e.target.value },
+                              },
+                            })
+                          }
+                          placeholder="e.g. ValuationAI"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Revenue / ARR Stage</label>
+                        <input
+                          type="text"
+                          value={data.workExperience.founder.revenueStage}
+                          onChange={(e) =>
+                            setData({
+                              ...data,
+                              workExperience: {
+                                ...data.workExperience,
+                                founder: { ...data.workExperience.founder, revenueStage: e.target.value },
+                              },
+                            })
+                          }
+                          placeholder="e.g. $500k ARR"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ================= SECTION 9: LEADERSHIP & IMPACT ================= */}
+              {activeStep === 9 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4">
+                    <h2 className="text-xl font-bold text-[var(--foreground)]">Section 9: Leadership & Social Impact</h2>
+                    <p className="text-xs text-[var(--subtext)]">Team management, Toastmasters, volunteering, mentoring, & community impact.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Leadership & Team Scope</label>
+                      <input
+                        type="text"
+                        value={data.leadership.leadershipPositions}
+                        onChange={(e) => setData({ ...data, leadership: { ...data.leadership, leadershipPositions: e.target.value } })}
+                        placeholder="e.g. Managed squad of 8 engineers"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Community & Volunteer Mentoring</label>
+                      <input
+                        type="text"
+                        value={data.leadership.mentoringExperience}
+                        onChange={(e) => setData({ ...data, leadership: { ...data.leadership, mentoringExperience: e.target.value } })}
+                        placeholder="e.g. Mentored 20+ junior developers"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= SECTION 10: SPORTS ================= */}
+              {activeStep === 10 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4">
+                    <h2 className="text-xl font-bold text-[var(--foreground)]">Section 10: Sports & Extracurricular</h2>
+                    <p className="text-xs text-[var(--subtext)]">Competitive sports, state/national representation, captaincy, & fitness.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Sport Discipline</label>
+                      <input
+                        type="text"
+                        value={data.sports.sportName}
+                        onChange={(e) => setData({ ...data, sports: { ...data.sports, sportName: e.target.value } })}
+                        placeholder="e.g. Basketball / Tennis"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Competition Level</label>
+                      <select
+                        value={data.sports.competitionLevel}
+                        onChange={(e) => setData({ ...data, sports: { ...data.sports, competitionLevel: e.target.value as any } })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] font-semibold"
+                      >
+                        <option value="College / Local" className="bg-[#0f172a]">College / Local</option>
+                        <option value="State Level" className="bg-[#0f172a]">State Level</option>
+                        <option value="National Level" className="bg-[#0f172a]">National Level</option>
+                        <option value="International Level" className="bg-[#0f172a]">International Level</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ================= SECTION 11: AWARDS ================= */}
+              {activeStep === 11 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-xl font-bold text-[var(--foreground)]">Section 11: Awards & Recognition</h2>
+                      <p className="text-xs text-[var(--subtext)]">Industry honors, hackathon victories, & excellence awards.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newItem = {
+                          id: `awd_${Date.now()}`,
+                          name: "",
+                          year: "2025",
+                          organization: "Ministry of Technology",
+                          category: "Innovation",
+                          description: "",
+                        };
+                        setData({ ...data, awards: [...data.awards, newItem] });
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md"
+                    >
+                      <Plus className="w-4 h-4" /> Add Award
+                    </button>
+                  </div>
+
                   <div className="space-y-3">
-                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-mono text-sky-400 font-bold uppercase">1. TECHNICAL SCORE</span>
-                        <div className="text-sm font-bold text-white">Engineering & Software Stack</div>
+                    {data.awards.map((aw, idx) => (
+                      <div key={aw.id} className="p-4 rounded-2xl bg-slate-900/70 border border-[var(--border)] grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                        <div className="sm:col-span-5 space-y-1">
+                          <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Award Title</label>
+                          <input
+                            type="text"
+                            value={aw.name}
+                            onChange={(e) => {
+                              const updated = [...data.awards];
+                              updated[idx].name = e.target.value;
+                              setData({ ...data, awards: updated });
+                            }}
+                            placeholder="e.g. National Innovation Excellence Award"
+                            className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-4 space-y-1">
+                          <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Issuing Organization</label>
+                          <input
+                            type="text"
+                            value={aw.organization}
+                            onChange={(e) => {
+                              const updated = [...data.awards];
+                              updated[idx].organization = e.target.value;
+                              setData({ ...data, awards: updated });
+                            }}
+                            placeholder="e.g. Google AI Hackathon"
+                            className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2 space-y-1">
+                          <label className="text-[10px] text-[var(--subtext)] uppercase font-mono">Year</label>
+                          <input
+                            type="text"
+                            value={aw.year}
+                            onChange={(e) => {
+                              const updated = [...data.awards];
+                              updated[idx].year = e.target.value;
+                              setData({ ...data, awards: updated });
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-1 flex items-center justify-end pt-3 sm:pt-0">
+                          <button
+                            onClick={() => {
+                              const updated = data.awards.filter((_, i) => i !== idx);
+                              setData({ ...data, awards: updated });
+                            }}
+                            className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-xl font-black font-mono text-sky-400">{scores.technicalScore} / 100</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ================= SECTION 12: CONTINUOUS LEARNING ================= */}
+              {activeStep === 12 && (
+                <div className="space-y-6 text-left">
+                  <div className="border-b border-[var(--border)] pb-4">
+                    <h2 className="text-xl font-bold text-[var(--foreground)]">Section 12: Continuous Learning & Velocity</h2>
+                    <p className="text-xs text-[var(--subtext)]">Learning hours/week, books, courses, conferences, & tech research velocity.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Learning Hours / Week</label>
+                      <input
+                        type="number"
+                        value={data.continuousLearning.learningHoursPerWeek || ""}
+                        onChange={(e) =>
+                          setData({
+                            ...data,
+                            continuousLearning: { ...data.continuousLearning, learningHoursPerWeek: Number(e.target.value) },
+                          })
+                        }
+                        placeholder="Hours"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-mono text-indigo-400 font-bold uppercase">2. LEADERSHIP SCORE</span>
-                        <div className="text-sm font-bold text-white">Initiative, Council & Clubs</div>
-                      </div>
-                      <div className="text-xl font-black font-mono text-indigo-400">{scores.leadershipScore} / 100</div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Courses Completed / Year</label>
+                      <input
+                        type="number"
+                        value={data.continuousLearning.coursesCompleted || ""}
+                        onChange={(e) =>
+                          setData({
+                            ...data,
+                            continuousLearning: { ...data.continuousLearning, coursesCompleted: Number(e.target.value) },
+                          })
+                        }
+                        placeholder="Courses"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase">3. COMMUNICATION SCORE</span>
-                        <div className="text-sm font-bold text-white">Soft Skills & Language Fluency</div>
-                      </div>
-                      <div className="text-xl font-black font-mono text-emerald-400">{scores.communicationScore} / 100</div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Books Read / Year</label>
+                      <input
+                        type="number"
+                        value={data.continuousLearning.booksPerYear || ""}
+                        onChange={(e) =>
+                          setData({
+                            ...data,
+                            continuousLearning: { ...data.continuousLearning, booksPerYear: Number(e.target.value) },
+                          })
+                        }
+                        placeholder="Books"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-mono text-purple-400 font-bold uppercase">4. LEARNING SCORE</span>
-                        <div className="text-sm font-bold text-white">Upskilling & Certifications</div>
-                      </div>
-                      <div className="text-xl font-black font-mono text-purple-400">{scores.learningScore} / 100</div>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-mono text-amber-400 font-bold uppercase">5. CAREER READINESS</span>
-                        <div className="text-sm font-bold text-white">Degree, Projects & Experience</div>
-                      </div>
-                      <div className="text-xl font-black font-mono text-amber-400">{scores.careerReadinessScore} / 100</div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Hackathons Attended</label>
+                      <input
+                        type="number"
+                        value={data.continuousLearning.hackathonsAttended || ""}
+                        onChange={(e) =>
+                          setData({
+                            ...data,
+                            continuousLearning: { ...data.continuousLearning, hackathonsAttended: Number(e.target.value) },
+                          })
+                        }
+                        placeholder="Count"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* OVERALL COMPOSITE HIGHLIGHT */}
-                <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-900/40 via-purple-900/40 to-indigo-900/40 border border-indigo-500/40 flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <span className="text-xs font-mono font-bold text-indigo-300 uppercase">OVERALL SKILLS CAPITAL SCORE</span>
-                    <h3 className="text-3xl font-black text-white">{scores.overallSkillsScore} <span className="text-base text-indigo-300 font-normal">/ 100</span></h3>
-                    <p className="text-xs text-slate-300">Composite score calculated with weighted AI algorithms across all 13 sections.</p>
+              {/* ================= SECTION 13: CAREER VISION & AI REPORT ================= */}
+              {activeStep === 13 && (
+                <div className="space-y-6 text-left">
+                  {/* Success Completion Notification Banner */}
+                  <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Module 3 — Professional Capital Audit Completed!</h4>
+                      <p className="text-xs text-emerald-300">All responses have been successfully saved and calculated in your Neural Telemetry Profile.</p>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setCurrentStep(1)}
-                    className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/30"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>Review Wizard Answers</span>
-                  </button>
+
+                  <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-2xl font-black text-[var(--foreground)]">Section 13: Career Vision & Executive Audit Report</h2>
+                      <p className="text-xs text-[var(--subtext)]">10-Year career goals and full Professional Capital Audit Report.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Dream Target Role</label>
+                      <input
+                        type="text"
+                        value={data.careerVision?.dreamRole || ""}
+                        onChange={(e) =>
+                          setData({
+                            ...data,
+                            careerVision: { ...(data.careerVision || defaultProfessionalCapitalState.careerVision), dreamRole: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. Chief AI Officer / VP Engineering"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-[var(--foreground)]">Dream Target Company</label>
+                      <input
+                        type="text"
+                        value={data.careerVision?.dreamCompany || ""}
+                        onChange={(e) =>
+                          setData({
+                            ...data,
+                            careerVision: { ...(data.careerVision || defaultProfessionalCapitalState.careerVision), dreamCompany: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. OpenAI / Google DeepMind"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Readiness Badges */}
+                  <div className="p-4 rounded-2xl bg-slate-900 border border-[var(--border)] space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 font-mono">AI Career Readiness Classifications</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                      <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                        <span className="text-[10px] font-mono text-[var(--subtext)]">Promotion</span>
+                        <div className="text-xs font-bold text-emerald-400">{metrics.promotionReadiness}</div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                        <span className="text-[10px] font-mono text-[var(--subtext)]">Startup</span>
+                        <div className="text-xs font-bold text-sky-400">{metrics.startupReadiness}</div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                        <span className="text-[10px] font-mono text-[var(--subtext)]">Leadership</span>
+                        <div className="text-xs font-bold text-indigo-400">{metrics.leadershipReadiness}</div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                        <span className="text-[10px] font-mono text-[var(--subtext)]">Global Mobility</span>
+                        <div className="text-xs font-bold text-purple-400">{metrics.internationalEmployability}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* AI Strategic Insights */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
+                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs font-mono uppercase">
+                        <CheckCircle2 className="w-4 h-4" /> Top Strengths Identified
+                      </div>
+                      <ul className="space-y-1 text-xs text-[var(--foreground)] list-disc list-inside">
+                        {metrics.topStrengths.map((str, i) => (
+                          <li key={i}>{str}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-2">
+                      <div className="flex items-center gap-2 text-rose-400 font-bold text-xs font-mono uppercase">
+                        <Sparkles className="w-4 h-4" /> Recommended Skill Gaps & Upskilling
+                      </div>
+                      <ul className="space-y-1 text-xs text-[var(--foreground)] list-disc list-inside">
+                        {metrics.skillGaps.map((sg, i) => (
+                          <li key={i}>{sg}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+              )}
+            </motion.div>
+          </AnimatePresence>
 
-      {/* FOOTER WIZARD CONTROLS */}
-      <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
-        <button
-          onClick={handlePrevStep}
-          disabled={currentStep === 1}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            currentStep === 1
-              ? "opacity-40 cursor-not-allowed bg-slate-900 text-slate-600 border border-slate-800"
-              : "bg-slate-900 hover:bg-slate-800 text-white border border-slate-700"
-          }`}
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Previous Step</span>
-        </button>
+          {/* Step Navigation Buttons */}
+          <div className="flex items-center justify-between pt-8 border-t border-[var(--border)] mt-6">
+            <button
+              onClick={handleBack}
+              disabled={activeStep === 1}
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                activeStep === 1
+                  ? "opacity-40 cursor-not-allowed bg-slate-900 text-[var(--subtext)]"
+                  : "bg-slate-900 hover:bg-slate-800 text-white border border-[var(--border)]"
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" /> Previous Step
+            </button>
 
-        <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-400">
-          <span>Step {currentStep} of {WIZARD_STEPS.length}</span>
+            {activeStep < 13 ? (
+              <button
+                onClick={handleNext}
+                className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-indigo-500/20 transition-all"
+              >
+                Next Step <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmitSkills}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-500 text-white font-extrabold text-xs shadow-lg hover:opacity-95 transition-all flex items-center gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{isSubmitted ? "Update & Save Skills Data" : "Submit & Save Skills Data"}</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {currentStep < WIZARD_STEPS.length ? (
-          <button
-            onClick={handleNextStep}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all shadow-lg shadow-indigo-600/30"
-          >
-            <span>Next Section</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        ) : (
-          <button
-            onClick={() => setCurrentStep(1)}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-lg shadow-emerald-600/30"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Finish & Restart Wizard</span>
-          </button>
-        )}
+        {/* ================= RIGHT COLUMN: PERSISTENT TELEMETRY PANEL (4 COLS) ================= */}
+        <div className="lg:col-span-4 space-y-4">
+          {/* Master Score Dial Card */}
+          <div className="glass-panel p-6 rounded-3xl border border-[var(--border)] text-center space-y-4 shadow-xl">
+            <span className="text-[10px] font-mono text-[var(--subtext)] uppercase tracking-widest">PROFESSIONAL CAPITAL INDEX</span>
+            <div className="flex items-center justify-center">
+              <div className="relative w-36 h-36 flex items-center justify-center">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="48" className="stroke-slate-800" strokeWidth="10" fill="transparent" />
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="48"
+                    className="stroke-indigo-400"
+                    strokeWidth="10"
+                    strokeDasharray={301.59}
+                    strokeDashoffset={301.59 - (301.59 * metrics.professionalCapitalScore) / 100}
+                    strokeLinecap="round"
+                    fill="transparent"
+                  />
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className="text-4xl font-black font-mono text-white">{metrics.professionalCapitalScore}</span>
+                  <span className="text-[9px] font-mono text-indigo-400 uppercase tracking-wider">OUT OF 100</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-xs font-semibold text-emerald-400 flex items-center justify-center gap-1">
+              <TrendingUp className="w-3.5 h-3.5" /> High Career Growth Trajectory
+            </div>
+          </div>
+
+          {/* Real-Time Indices Panel */}
+          <div className="glass-panel p-5 rounded-3xl border border-[var(--border)] space-y-3 text-left">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-sky-400 font-mono flex items-center gap-2">
+              <Zap className="w-4 h-4 text-sky-400" /> Real-Time Telemetry Indices
+            </h3>
+
+            <div className="space-y-2.5 text-xs font-mono">
+              <div>
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span className="text-[var(--subtext)]">Employability Index</span>
+                  <span className="text-white font-bold">{metrics.employabilityIndex} / 100</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden">
+                  <div className="h-full bg-emerald-400 rounded-full" style={{ width: `${metrics.employabilityIndex}%` }}></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span className="text-[var(--subtext)]">AI Readiness Score</span>
+                  <span className="text-white font-bold">{metrics.aiReadinessScore} / 100</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden">
+                  <div className="h-full bg-sky-400 rounded-full" style={{ width: `${metrics.aiReadinessScore}%` }}></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span className="text-[var(--subtext)]">Learning Velocity Index</span>
+                  <span className="text-white font-bold">{metrics.learningIndex} / 100</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden">
+                  <div className="h-full bg-purple-400 rounded-full" style={{ width: `${metrics.learningIndex}%` }}></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span className="text-[var(--subtext)]">Leadership & Impact</span>
+                  <span className="text-white font-bold">{metrics.leadershipIndex} / 100</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden">
+                  <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${metrics.leadershipIndex}%` }}></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span className="text-[var(--subtext)]">Future Market Demand</span>
+                  <span className="text-white font-bold">{metrics.futureDemandIndex} / 100</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden">
+                  <div className="h-full bg-amber-400 rounded-full" style={{ width: `${metrics.futureDemandIndex}%` }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 12 Weighted Vector Breakdown Accordion */}
+          <div className="glass-panel p-5 rounded-3xl border border-[var(--border)] space-y-3 text-left">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 font-mono">
+              12 Vector Sub-Scores Breakdown
+            </h3>
+            <div className="space-y-2 max-h-56 overflow-y-auto scrollbar-none pr-1">
+              {[
+                { name: "Academic Capital", score: metrics.scores.academic, weight: "10%" },
+                { name: "Technical Skills", score: metrics.scores.technical, weight: "20%" },
+                { name: "Industry Expertise", score: metrics.scores.industry, weight: "10%" },
+                { name: "Projects & Portfolio", score: metrics.scores.projects, weight: "10%" },
+                { name: "Work Experience", score: metrics.scores.experience, weight: "10%" },
+                { name: "Leadership Impact", score: metrics.scores.leadership, weight: "10%" },
+                { name: "Communication", score: metrics.scores.communication, weight: "10%" },
+                { name: "Certifications", score: metrics.scores.certifications, weight: "10%" },
+                { name: "Continuous Learning", score: metrics.scores.learning, weight: "5%" },
+                { name: "Awards & Honors", score: metrics.scores.awards, weight: "5%" },
+                { name: "Sports & Extracurricular", score: metrics.scores.sports, weight: "5%" },
+                { name: "Career Vision", score: metrics.scores.vision, weight: "5%" },
+              ].map((v) => (
+                <div key={v.name} className="flex justify-between items-center text-[11px] font-mono p-1.5 rounded-lg bg-slate-900/60">
+                  <span className="text-[var(--subtext)]">{v.name} ({v.weight})</span>
+                  <span className="font-bold text-white">{v.score} / 100</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

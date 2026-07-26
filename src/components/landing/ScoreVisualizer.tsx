@@ -20,10 +20,10 @@ export const ScoreVisualizer: React.FC = () => {
   // Weighted calculation for 0-100 score
   const totalScore = Math.round(
     scores.career * 0.25 +
-      scores.finance * 0.25 +
-      scores.skills * 0.2 +
-      scores.health * 0.15 +
-      scores.assessments * 0.15
+    scores.finance * 0.25 +
+    scores.skills * 0.2 +
+    scores.health * 0.15 +
+    scores.assessments * 0.15
   );
 
   const getTier = (s: number) => {
@@ -42,7 +42,7 @@ export const ScoreVisualizer: React.FC = () => {
   return (
     <section id="visualizer" className="py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-mono font-semibold uppercase tracking-wider">
@@ -56,13 +56,13 @@ export const ScoreVisualizer: React.FC = () => {
             </span>
           </h2>
           <p className="text-slate-400 text-base sm:text-lg">
-            Adjust your input metrics across the 5 dimensions to simulate how changes in your financial, health, or career capital directly impact your unified score.
+            Adjust your input metrics across the 5 dimensions to simulate how changes in your financial, health, or Personal & Professional Profile directly impact your unified score.
           </p>
         </div>
 
         {/* Terminal Container */}
         <div className="glass-panel rounded-2xl border border-slate-700/80 p-6 sm:p-10 shadow-2xl space-y-8">
-          
+
           {/* Top Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
             <div className="flex items-center gap-3">
@@ -88,14 +88,14 @@ export const ScoreVisualizer: React.FC = () => {
 
           {/* Grid Layout: Sliders Left, Result Right */}
           <div className="grid lg:grid-cols-12 gap-8 items-center">
-            
+
             {/* Sliders Area (7 Cols) */}
             <div className="lg:col-span-7 space-y-6">
-              
+
               {/* Slider 1: Career */}
               <div className="space-y-2 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
                 <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-slate-300 font-semibold">1. CAREER CAPITAL (25%)</span>
+                  <span className="text-slate-300 font-semibold">1. Personal & Professional Profile (25%)</span>
                   <span className="text-sky-400 font-bold">{scores.career}/100</span>
                 </div>
                 <input
@@ -197,7 +197,7 @@ export const ScoreVisualizer: React.FC = () => {
                 <div className="flex items-start gap-2 text-slate-300">
                   <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                   <span>
-                    Highest Leverage area: <strong className="text-sky-400">{scores.skills > scores.career ? "Skills Capital" : "Career Capital"}</strong>.
+                    Highest Leverage area: <strong className="text-sky-400">{scores.skills > scores.career ? "Skills Capital" : "Personal & Professional Profile"}</strong>.
                   </span>
                 </div>
                 <div className="flex items-start gap-2 text-slate-300">

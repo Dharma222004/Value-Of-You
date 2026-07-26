@@ -19,7 +19,7 @@ const dimensions = [
   {
     id: "career",
     title: "1. Current Status & Career Mobility",
-    shortName: "Career Capital",
+    shortName: "Personal & Professional Profile",
     icon: Briefcase,
     color: "sky",
     badge: "CAREER MOBILITY",
@@ -119,7 +119,7 @@ export const FiveDimensions: React.FC = () => {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-900/10 blur-[140px] pointer-events-none rounded-full" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xs font-mono font-semibold uppercase tracking-wider">
@@ -146,11 +146,10 @@ export const FiveDimensions: React.FC = () => {
               <button
                 key={dim.id}
                 onClick={() => setActiveTab(idx)}
-                className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  isActive
+                className={`flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive
                     ? "bg-slate-800 text-white border border-sky-500/40 shadow-lg shadow-sky-500/10"
                     : "bg-slate-900/80 text-slate-300 hover:text-white border border-slate-800 hover:bg-slate-800/60"
-                }`}
+                  }`}
               >
                 <DimIcon className={`w-4 h-4 ${isActive ? "text-sky-400" : "text-slate-400"}`} />
                 <span>{dim.shortName}</span>

@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import AuthCard from "@/components/auth/AuthCard";
+import PasswordInput from "@/components/auth/PasswordInput";
 import PasswordStrengthMeter from "@/components/auth/PasswordStrengthMeter";
-import { Lock, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { validatePassword } from "@/lib/auth/validation";
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -17,10 +19,12 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setError(null);
 
-    if (!password || password.length < 8) {
-      setError("New password must be at least 8 characters long.");
+    const passErr = validatePassword(password);
+    if (passErr) {
+      setError(passErr);
       return;
     }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -31,7 +35,7 @@ export default function ResetPasswordPage() {
     setTimeout(() => {
       setLoading(false);
       setResetDone(true);
-    }, 1200);
+    }, 1100);
   };
 
   return (
@@ -42,41 +46,38 @@ export default function ResetPasswordPage() {
       {!resetDone ? (
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {/* New Password Field */}
-          <div className="space-y-1 text-left">
-            <label className="text-xs font-semibold text-[var(--foreground)]">New Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-[var(--subtext)] absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-colors"
-              />
-            </div>
-            <PasswordStrengthMeter password={password} />
+          <div className="space-y-1">
+            <PasswordInput
+              id="reset_new_password"
+              value={password}
+              onChange={setPassword}
+              placeholder="••••••••••••"
+              label="New Password"
+              autoComplete="new-password"
+            />
+            <PasswordStrengthMeter password={password} showRules={true} />
           </div>
 
-          {/* Confirm Password Field */}
-          <div className="space-y-1 text-left">
-            <label className="text-xs font-semibold text-[var(--foreground)]">Confirm New Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-[var(--subtext)] absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-colors"
-              />
-            </div>
+          {/* Confirm New Password Field */}
+          <div className="space-y-1">
+            <PasswordInput
+              id="reset_confirm_password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              placeholder="••••••••••••"
+              label="Confirm New Password"
+              autoComplete="new-password"
+            />
+            {confirmPassword && password !== confirmPassword && (
+              <p className="text-[11px] text-red-500 font-medium pt-0.5">Passwords do not match</p>
+            )}
           </div>
 
           <button
@@ -95,20 +96,21 @@ export default function ResetPasswordPage() {
           </button>
         </form>
       ) : (
-        <div className="text-center space-y-4 py-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+        <div className="text-center space-y-4 py-4 animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto shadow-inner">
             <CheckCircle2 className="w-6 h-6" />
           </div>
 
-          <h2 className="text-lg font-bold text-[var(--foreground)]">Password Successfully Reset</h2>
-
-          <p className="text-xs text-[var(--subtext)] leading-relaxed">
-            Your password has been updated. You can now log in with your new credentials.
-          </p>
+          <div className="space-y-1">
+            <h2 className="text-lg font-bold text-[var(--foreground)]">Password Successfully Reset</h2>
+            <p className="text-xs text-[var(--subtext)] leading-relaxed">
+              Your password has been updated. You can now log in to your Human Capital account with your new credentials.
+            </p>
+          </div>
 
           <Link
             href="/auth/login"
-            className="w-full py-3 rounded-xl bg-blue-600 dark:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs shadow-md inline-block"
+            className="w-full py-3 rounded-xl bg-blue-600 dark:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs shadow-md text-center inline-block hover:opacity-95 transition-all"
           >
             Proceed to Login
           </Link>

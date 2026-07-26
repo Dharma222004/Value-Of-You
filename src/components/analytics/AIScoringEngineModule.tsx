@@ -1,460 +1,351 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles,
-  TrendingUp,
-  ShieldCheck,
-  Award,
-  Zap,
-  Sliders,
-  RotateCcw,
-  Briefcase,
-  DollarSign,
-  HeartPulse,
   Brain,
-  ChevronRight,
-  BarChart3,
-  PieChart,
-  Target,
-  AlertTriangle,
+  Sparkles,
   CheckCircle2,
-  ArrowUpRight,
-  Info,
-  Save,
+  Clock,
+  Play,
+  RotateCcw,
+  ShieldAlert,
+  ShieldCheck,
+  TrendingUp,
+  Award,
   Layers,
+  Zap,
+  CheckSquare,
+  AlertTriangle,
+  FileText,
+  Calendar,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
 import {
-  calculateHumanCapitalScore,
-  DEFAULT_WEIGHTAGE,
-  WeightageConfig,
-  HumanCapitalCalculationResult,
-} from "@/services/scoringEngine";
+  getSavedAiReport,
+  generateStructuredAiReport,
+  SavedAiReportPayload,
+  AiPipelineStepStatus,
+} from "@/services/aiPipelineService";
+
+const INITIAL_STEPS: AiPipelineStepStatus[] = [
+  { id: 1, title: "Data Validation & Intelligence Pipeline", category: "Validation", status: "pending", detailText: "Validating field completeness, normalizing inputs & detecting cross-module anomalies..." },
+  { id: 2, title: "Evaluating Personal & Professional Profile", category: "Module 1", status: "pending", detailText: "Analyzing academic degree, CGPA, technical skills count, projects & certifications..." },
+  { id: 3, title: "Evaluating Financial Health KPIs", category: "Module 2", status: "pending", detailText: "Analyzing active income, savings rate %, debt EMI ratio, net worth & insurance coverage..." },
+  { id: 4, title: "Evaluating Professional Capital Metrics", category: "Module 3", status: "pending", detailText: "Evaluating employability index, AI readiness score & system architecture capabilities..." },
+  { id: 5, title: "Evaluating Health & Lifestyle Telemetry", category: "Module 4", status: "pending", detailText: "Analyzing BMI, daily sleep hours, workout frequency, stress index & lifestyle habits..." },
+  { id: 6, title: "Evaluating Human Assessments & Psychometrics", category: "Module 5", status: "pending", detailText: "Synthesizing 130 psychometric questions across 6 stages (Personality, Mindset, Decision, Aptitude, Comm)..." },
+  { id: 7, title: "Generating 7 Core Sub-Indices & Reasons", category: "Sub-Indices", status: "pending", detailText: "Computing Strength, Risk, Growth, Career, Financial, Leadership & Learning Indices with confidence scores..." },
+  { id: 8, title: "Synthesizing Executive AI Report & Roadmap", category: "Final Executive", status: "pending", detailText: "Compiling 4-paragraph narrative, top 5 strengths/weaknesses, 5 risk vectors & 30/90/365 day recommendations..." },
+];
 
 export const AIScoringEngineModule: React.FC = () => {
-  // State for customizable weightages
-  const [weightages, setWeightages] = useState<WeightageConfig>(DEFAULT_WEIGHTAGE);
-  const [customScores, setCustomScores] = useState({
-    currentStatus: 84,
-    financial: 79,
-    health: 75,
-    skills: 88,
-    assessment: 85,
-  });
+  const [mounted, setMounted] = useState(false);
+  const [savedReport, setSavedReport] = useState<SavedAiReportPayload | null>(null);
+  const [isRunningPipeline, setIsRunningPipeline] = useState(false);
+  const [steps, setSteps] = useState<AiPipelineStepStatus[]>(INITIAL_STEPS);
+  const [activeStepIndex, setActiveStepIndex] = useState<number>(-1);
 
-  // Calculate live results using reusable service
-  const result: HumanCapitalCalculationResult = useMemo(() => {
-    return calculateHumanCapitalScore(customScores, weightages);
-  }, [customScores, weightages]);
-
-  // Total weight sum helper
-  const totalWeightPercent = Math.round(
-    (weightages.currentStatus +
-      weightages.financial +
-      weightages.health +
-      weightages.skills +
-      weightages.assessment) *
-      100
-  );
-
-  const resetWeightages = () => {
-    setWeightages(DEFAULT_WEIGHTAGE);
-  };
-
-  const applyPreset = (preset: "standard" | "skills" | "financial" | "leadership") => {
-    if (preset === "standard") {
-      setWeightages({ currentStatus: 0.1, financial: 0.25, health: 0.15, skills: 0.2, assessment: 0.3 });
-    } else if (preset === "skills") {
-      setWeightages({ currentStatus: 0.1, financial: 0.15, health: 0.1, skills: 0.4, assessment: 0.25 });
-    } else if (preset === "financial") {
-      setWeightages({ currentStatus: 0.1, financial: 0.5, health: 0.1, skills: 0.15, assessment: 0.15 });
-    } else if (preset === "leadership") {
-      setWeightages({ currentStatus: 0.15, financial: 0.15, health: 0.1, skills: 0.25, assessment: 0.35 });
+  useEffect(() => {
+    setMounted(true);
+    if (typeof window !== "undefined") {
+      const existing = getSavedAiReport();
+      if (existing) {
+        setSavedReport(existing);
+        setSteps(INITIAL_STEPS.map((s) => ({ ...s, status: "completed" })));
+      }
     }
+  }, []);
+
+  const runPipeline = async () => {
+    setIsRunningPipeline(true);
+    setSavedReport(null);
+    setSteps(INITIAL_STEPS.map((s) => ({ ...s, status: "pending" })));
+
+    for (let i = 0; i < INITIAL_STEPS.length; i++) {
+      setActiveStepIndex(i);
+      setSteps((prev) =>
+        prev.map((step, idx) => {
+          if (idx === i) return { ...step, status: "running" };
+          if (idx < i) return { ...step, status: "completed" };
+          return step;
+        })
+      );
+      await new Promise((resolve) => setTimeout(resolve, 450));
+    }
+
+    setSteps((prev) => prev.map((step) => ({ ...step, status: "completed" })));
+    const freshReport = generateStructuredAiReport();
+    setSavedReport(freshReport);
+    setIsRunningPipeline(false);
+    setActiveStepIndex(-1);
   };
+
+  if (!mounted) {
+    return (
+      <div className="glass-panel p-8 rounded-3xl border border-[var(--border)] max-w-7xl mx-auto space-y-4 animate-pulse">
+        <div className="h-8 bg-slate-800 rounded-xl w-1/3"></div>
+        <div className="h-4 bg-slate-900 rounded-xl w-1/2"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans">
-      {/* HEADER BANNER */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 bg-gradient-to-r from-[#0a0d1a] via-[#10152b] to-[#0a0d1a] relative overflow-hidden shadow-2xl">
-        <div className="absolute -top-10 -right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
-                PHASE 9 · AI SCORING ENGINE
-              </span>
-              <span className="text-[11px] font-mono text-slate-400">Modular Multi-Vector Capital Valuation</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
-              Unified Human Capital Score & 7-Index Intelligence
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
-              Aggregates telemetry across Current Status (10%), Financial (25%), Health (15%), Skills (20%), and Assessment (30%).
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={resetWeightages}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-mono text-slate-300 border border-slate-800 transition-colors"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-              <span>Reset Weightages</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* PRIMARY SCORE & CLASSIFICATION HIGHLIGHT CARD */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/40 via-slate-950 to-purple-950/30 shadow-2xl space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
-              <Sparkles className="w-6 h-6 animate-pulse" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white font-mono uppercase tracking-wide">
-                HUMAN CAPITAL SCORE INDEX
-              </h2>
-              <span className="text-xs text-slate-400">Unified 0–100 Multi-Vector Neural Telemetry</span>
-            </div>
-          </div>
-
-          {/* Classification Badge */}
-          <div className={`px-4 py-2 rounded-2xl border font-mono font-black text-sm flex items-center gap-2 ${result.ratingBadgeBg}`}>
-            <ShieldCheck className="w-4 h-4" />
-            <span>CLASSIFICATION: {result.overallRating.toUpperCase()}</span>
-          </div>
-        </div>
-
-        {/* Core KPI Trio */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-          {/* Main 0-100 Score Dial */}
-          <div className="flex flex-col items-center justify-center p-6 bg-slate-950/80 rounded-2xl border border-slate-800 text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="text-6xl sm:text-7xl font-black font-mono text-white tracking-tight">
-              {result.humanCapitalScore}
-            </div>
-            <span className="text-xs font-mono text-indigo-400 uppercase tracking-widest mt-1">
-              COMPOSITE SCORE (0 - 100)
-            </span>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 mt-3 px-3 py-1 rounded-full bg-emerald-950/40 border border-emerald-800">
-              <TrendingUp className="w-4 h-4" /> +4.2 PTS THIS QUARTER
-            </div>
-          </div>
-
-          {/* Asset Valuation Projection */}
-          <div className="p-6 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2 text-left">
-            <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">PROJECTED ASSET WORTH (INR)</span>
-            <div className="text-3xl sm:text-4xl font-black text-white font-mono">{result.lifetimeValuationINR}</div>
-            <p className="text-xs text-slate-400">Compounding capital yield based on skills, health runway, and cognitive agility.</p>
-          </div>
-
-          {/* Global Percentile */}
-          <div className="p-6 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2 text-left">
-            <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">GLOBAL BENCHMARK PERCENTILE</span>
-            <div className="text-3xl sm:text-4xl font-black text-sky-400 font-mono">TOP 2.8%</div>
-            <p className="text-xs text-slate-400">Validated against institutional human capital data sets.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* 7 CALCULATED SUB-INDICES METRICS GRID */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 text-left">
+      {/* HEADER LOCKUP */}
+      <div className="glass-panel p-6 rounded-3xl border border-[var(--border)] relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-1 z-10">
           <div className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-base font-bold text-white tracking-tight">7 Core Human Capital Sub-Indices</h2>
+            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[11px] font-mono font-bold uppercase tracking-wider">
+              Enterprise AI Intelligence Pipeline
+            </span>
+            {savedReport && (
+              <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> AI Report Saved ({savedReport.reportVersion})
+              </span>
+            )}
           </div>
-          <span className="text-xs font-mono text-slate-500">Modular Component Index Metrics</span>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--foreground)]">
+            AI Scoring & Evaluation Engine
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--subtext)] max-w-xl leading-relaxed">
+            Evaluates all 5 modules through a multi-stage intelligence pipeline, producing structured sub-indices, reasons, confidence scores, and executive report.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">1. STRENGTH INDEX</span>
-            <div className="text-2xl font-black font-mono text-indigo-400">{result.strengthIndex} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-indigo-400 h-full rounded-full" style={{ width: `${result.strengthIndex}%` }} />
-            </div>
-            <span className="text-[10px] text-slate-400">Skills & Cognitive core depth</span>
-          </div>
-
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">2. RISK INDEX</span>
-            <div className="text-2xl font-black font-mono text-rose-400">{result.riskIndex} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-rose-400 h-full rounded-full" style={{ width: `${result.riskIndex}%` }} />
-            </div>
-            <span className="text-[10px] text-slate-400">Vulnerability (Lower is better)</span>
-          </div>
-
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">3. GROWTH POTENTIAL</span>
-            <div className="text-2xl font-black font-mono text-sky-400">{result.growthPotential} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-sky-400 h-full rounded-full" style={{ width: `${result.growthPotential}%` }} />
-            </div>
-            <span className="text-[10px] text-slate-400">Upskilling velocity & trajectory</span>
-          </div>
-
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">4. CAREER READINESS</span>
-            <div className="text-2xl font-black font-mono text-amber-400">{result.careerReadiness} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-amber-400 h-full rounded-full" style={{ width: `${result.careerReadiness}%` }} />
-            </div>
-            <span className="text-[10px] text-slate-400">Degree, portfolio & experience</span>
-          </div>
-
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">5. FINANCIAL STABILITY</span>
-            <div className="text-2xl font-black font-mono text-emerald-400">{result.financialStability} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${result.financialStability}%` }} />
-            </div>
-            <span className="text-[10px] text-slate-400">Runway, savings & debt ratio</span>
-          </div>
-
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">6. LEADERSHIP POTENTIAL</span>
-            <div className="text-2xl font-black font-mono text-purple-400">{result.leadershipPotential} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-purple-400 h-full rounded-full" style={{ width: `${result.leadershipPotential}%` }} />
-            </div>
-            <span className="text-[10px] text-slate-400">Decision ethics & team EQ</span>
-          </div>
-
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2 sm:col-span-2 lg:col-span-2">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">7. LEARNING POTENTIAL</span>
-            <div className="text-2xl font-black font-mono text-cyan-400">{result.learningPotential} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
-            <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-cyan-400 h-full rounded-full" style={{ width: `${result.learningPotential}%` }} />
-            </div>
-            <span className="text-[10px] text-slate-400">Tech adoption speed & annual reading volume</span>
-          </div>
+        <div className="z-10">
+          <button
+            type="button"
+            onClick={runPipeline}
+            disabled={isRunningPipeline}
+            className={`px-6 py-3 rounded-2xl font-mono font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-xl transition-all ${
+              isRunningPipeline
+                ? "bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700"
+                : "bg-gradient-to-r from-purple-600 via-indigo-600 to-sky-500 hover:from-purple-500 hover:to-sky-400 text-white shadow-purple-500/25"
+            }`}
+          >
+            {isRunningPipeline ? (
+              <>
+                <Clock className="w-4 h-4 animate-spin text-purple-400" />
+                Executing Pipeline...
+              </>
+            ) : savedReport ? (
+              <>
+                <RotateCcw className="w-4 h-4" />
+                Re-Run AI Intelligence Pipeline
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 fill-current" />
+                Run AI Intelligence Pipeline
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* INPUT MODULE TELEMETRY & WEIGHTAGE TUNING CONTROLS */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Module Telemetry Cards */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-sky-400" />
-              <h3 className="text-base font-bold text-white tracking-tight">Input Module Telemetry Breakdown</h3>
-            </div>
-            <span className="text-xs font-mono text-slate-500">5 Input Modules</span>
+      {/* PIPELINE EXECUTION TERMINAL TIMELINE */}
+      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-[var(--border)] space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-purple-400" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 font-mono">
+              8-Step AI Evaluation Pipeline Status
+            </h3>
           </div>
+          <span className="text-[10px] font-mono text-[var(--subtext)]">
+            {isRunningPipeline ? "Status: Executing Neural Pipeline..." : savedReport ? "Status: All Pipeline Steps Completed" : "Status: Ready for Evaluation"}
+          </span>
+        </div>
 
-          <div className="space-y-3">
-            {[
-              { key: "currentStatus", name: "1. Current Status", weight: weightages.currentStatus, icon: Briefcase, color: "text-sky-400" },
-              { key: "financial", name: "2. Financial Health", weight: weightages.financial, icon: DollarSign, color: "text-emerald-400" },
-              { key: "health", name: "3. Health & Lifestyle", weight: weightages.health, icon: HeartPulse, color: "text-rose-400" },
-              { key: "skills", name: "4. Skills Architecture", weight: weightages.skills, icon: Award, color: "text-indigo-400" },
-              { key: "assessment", name: "5. Human Assessments", weight: weightages.assessment, icon: Brain, color: "text-purple-400" },
-            ].map((m) => {
-              const Icon = m.icon;
-              const scoreVal = result.moduleScores[m.key as keyof typeof result.moduleScores];
-              const contrib = Math.round(scoreVal * m.weight);
-              return (
-                <div key={m.key} className="glass-panel p-4.5 rounded-2xl border border-slate-800 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                      <Icon className={`w-5 h-5 ${m.color}`} />
-                    </div>
-                    <div>
-                      <div className="font-bold text-white text-sm">{m.name}</div>
-                      <div className="text-[10px] font-mono text-slate-400">
-                        Weight: <strong className="text-slate-200">{Math.round(m.weight * 100)}%</strong> · Contribution: <strong className="text-indigo-300">+{contrib} pts</strong>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs">
+          {steps.map((step) => {
+            const isDone = step.status === "completed";
+            const isRunning = step.status === "running";
+            return (
+              <div
+                key={step.id}
+                className={`p-3.5 rounded-2xl border transition-all ${
+                  isRunning
+                    ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/20"
+                    : isDone
+                    ? "bg-slate-950/80 border-slate-800/90 text-slate-300"
+                    : "bg-slate-900/30 border-slate-800/40 text-slate-600"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400">
+                    Step {step.id} • {step.category}
+                  </span>
+                  {isDone ? (
+                    <span className="text-emerald-400 font-bold flex items-center gap-1 text-[10px]">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+                    </span>
+                  ) : isRunning ? (
+                    <span className="text-amber-400 font-bold flex items-center gap-1 text-[10px] animate-pulse">
+                      <Clock className="w-3.5 h-3.5 animate-spin" /> Evaluating...
+                    </span>
+                  ) : (
+                    <span className="text-slate-600 text-[10px]">Pending</span>
+                  )}
+                </div>
+                <h4 className="text-xs font-bold text-white leading-tight">{step.title}</h4>
+                <p className="text-[11px] text-[var(--subtext)] leading-relaxed mt-1">{step.detailText}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* SAVED AI REPORT RESULTS DISPLAY */}
+      {savedReport && (
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            {/* MASTER SCORE & CLASSIFICATION CARD */}
+            <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-[var(--border)] shadow-2xl relative overflow-hidden space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/40">
+                    <Award className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-white">Generated Human Capital Intelligence Score</h2>
+                    <p className="text-xs text-[var(--subtext)]">Report Timestamp: {new Date(savedReport.timestamp).toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className={`px-4 py-2 rounded-2xl border text-xs font-mono font-bold uppercase tracking-wider ${savedReport.classificationBadgeBg}`}>
+                  {savedReport.classification} Classification
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                <div className="p-6 bg-slate-950 rounded-2xl border border-slate-800 text-center space-y-1">
+                  <span className="text-[10px] font-mono text-[var(--subtext)] uppercase tracking-widest block">MASTER INDEX</span>
+                  <div className="text-5xl font-black font-mono text-emerald-400">{savedReport.humanCapitalScore}</div>
+                  <span className="text-[10px] font-mono text-purple-400 uppercase tracking-widest">OUT OF 100</span>
+                </div>
+
+                <div className="p-5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2 col-span-2 text-xs font-mono">
+                  <div className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">DATA INTEGRITY & VALIDATION META</div>
+                  <div className="grid grid-cols-2 gap-3 pt-1 text-[11px]">
+                    <div>Fields Validated: <strong className="text-white">{savedReport.validationMeta.totalFieldsValidated}</strong></div>
+                    <div>Data Integrity Score: <strong className="text-emerald-400">{savedReport.validationMeta.dataIntegrityScore}/100</strong></div>
+                    <div>Module Completion: <strong className="text-sky-400">{savedReport.validationMeta.completionPercentage}%</strong></div>
+                    <div>AI Engine Version: <strong className="text-purple-300">{savedReport.aiEngineVersion}</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 7 CORE SUB-INDICES WITH REASONS & CONFIDENCE SCORES */}
+            <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-[var(--border)] space-y-4">
+              <div className="flex items-center gap-2 border-b border-[var(--border)] pb-3">
+                <Zap className="w-5 h-5 text-purple-400" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-purple-400 font-mono">
+                  7 Core Sub-Indices (Score, Analytical Reason & Confidence)
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.values(savedReport.subIndices).map((item) => (
+                  <div key={item.name} className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+                    <div className="flex justify-between items-center font-mono">
+                      <span className="font-bold text-white text-sm">{item.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-[10px] font-bold">
+                          {item.confidence}
+                        </span>
+                        <span className="text-lg font-black text-emerald-400 font-mono">{item.score}/100</span>
                       </div>
                     </div>
+                    <p className="text-[11px] text-[var(--subtext)] leading-relaxed">{item.reason}</p>
+                    <div className="text-[10px] font-mono text-sky-400 pt-1 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> {item.summary}
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
 
-                  <div className="text-right font-mono">
-                    <div className="text-lg font-black text-white">{scoreVal} / 100</div>
-                    <span className="text-[10px] text-emerald-400">Active Telemetry</span>
+            {/* 3-5 PARAGRAPH EXECUTIVE AI SUMMARY NARRATIVE */}
+            <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-[var(--border)] space-y-4">
+              <div className="flex items-center gap-2 border-b border-[var(--border)] pb-3">
+                <Brain className="w-5 h-5 text-purple-400" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-purple-400 font-mono">
+                  🧠 Professional Executive AI Summary (3-5 Paragraph Narrative)
+                </h3>
+              </div>
+
+              <div className="space-y-4 text-xs sm:text-sm text-[var(--foreground)] leading-relaxed font-sans">
+                {savedReport.executiveSummaryNarrative.map((para, idx) => (
+                  <p key={idx} className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80">
+                    {para}
+                  </p>
+                ))}
+              </div>
+            </div>
+
+            {/* TOP 5 STRENGTHS & TOP 5 WEAKNESSES */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="glass-panel p-6 rounded-3xl border border-emerald-500/30 space-y-3">
+                <h4 className="text-xs font-bold font-mono text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> Top 5 Discovered Strengths
+                </h4>
+                <ul className="space-y-2 text-xs text-[var(--subtext)] font-sans">
+                  {savedReport.topStrengths.map((str, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                      <span className="text-slate-200">{str}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="glass-panel p-6 rounded-3xl border border-rose-500/30 space-y-3">
+                <h4 className="text-xs font-bold font-mono text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" /> Top 5 Improvement Areas
+                </h4>
+                <ul className="space-y-2 text-xs text-[var(--subtext)] font-sans">
+                  {savedReport.topWeaknesses.map((wk, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-rose-400 font-bold shrink-0">⚠</span>
+                      <span className="text-slate-200">{wk}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* 5 RISK VECTORS MATRIX */}
+            <div className="glass-panel p-6 rounded-3xl border border-[var(--border)] space-y-4">
+              <h4 className="text-xs font-bold font-mono text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4" /> 5 Risk Vectors Analysis (Financial, Career, Health, Learning, Burnout)
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs font-mono">
+                {Object.entries(savedReport.riskVectors).map(([key, value]) => (
+                  <div key={key} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] text-[var(--subtext)] uppercase">{key.replace("Risk", "")}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${value.level === "High" ? "bg-rose-500/20 text-rose-400 border border-rose-500/40" : value.level === "Medium" ? "bg-amber-500/20 text-amber-400 border border-amber-500/40" : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"}`}>
+                        {value.level}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-300 font-sans leading-snug">{value.detail}</p>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right Column: Weightage Tuning & Presets */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sliders className="w-5 h-5 text-indigo-400" />
-              <h3 className="text-base font-bold text-white tracking-tight">Weightage Tuning Controls</h3>
-            </div>
-            <span className="text-xs font-mono text-indigo-400 font-bold">Sum: {totalWeightPercent}%</span>
-          </div>
-
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5">
-            <span className="text-xs font-mono text-slate-400">Quick Strategy Presets:</span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => applyPreset("standard")}
-                className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-mono text-slate-200 border border-slate-800"
-              >
-                Standard (10/25/15/20/30)
-              </button>
-              <button
-                onClick={() => applyPreset("skills")}
-                className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-mono text-slate-200 border border-slate-800"
-              >
-                Skills Focus (40% Tech)
-              </button>
-              <button
-                onClick={() => applyPreset("financial")}
-                className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-mono text-slate-200 border border-slate-800"
-              >
-                Financial Focus (50% Fin)
-              </button>
-              <button
-                onClick={() => applyPreset("leadership")}
-                className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-mono text-slate-200 border border-slate-800"
-              >
-                Leadership Focus (35% Eval)
-              </button>
-            </div>
-
-            <div className="space-y-4 pt-2 border-t border-slate-800">
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-300">Current Status Weightage</span>
-                  <span className="text-sky-400 font-bold">{Math.round(weightages.currentStatus * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.05"
-                  max="0.5"
-                  step="0.05"
-                  value={weightages.currentStatus}
-                  onChange={(e) => setWeightages({ ...weightages, currentStatus: parseFloat(e.target.value) })}
-                  className="w-full h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-sky-400"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-300">Financial Health Weightage</span>
-                  <span className="text-emerald-400 font-bold">{Math.round(weightages.financial * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.05"
-                  max="0.5"
-                  step="0.05"
-                  value={weightages.financial}
-                  onChange={(e) => setWeightages({ ...weightages, financial: parseFloat(e.target.value) })}
-                  className="w-full h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-emerald-400"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-300">Health & Lifestyle Weightage</span>
-                  <span className="text-rose-400 font-bold">{Math.round(weightages.health * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.05"
-                  max="0.5"
-                  step="0.05"
-                  value={weightages.health}
-                  onChange={(e) => setWeightages({ ...weightages, health: parseFloat(e.target.value) })}
-                  className="w-full h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-rose-400"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-300">Skills Architecture Weightage</span>
-                  <span className="text-indigo-400 font-bold">{Math.round(weightages.skills * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.05"
-                  max="0.5"
-                  step="0.05"
-                  value={weightages.skills}
-                  onChange={(e) => setWeightages({ ...weightages, skills: parseFloat(e.target.value) })}
-                  className="w-full h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-indigo-400"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-300">Human Assessments Weightage</span>
-                  <span className="text-purple-400 font-bold">{Math.round(weightages.assessment * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.05"
-                  max="0.5"
-                  step="0.05"
-                  value={weightages.assessment}
-                  onChange={(e) => setWeightages({ ...weightages, assessment: parseFloat(e.target.value) })}
-                  className="w-full h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-purple-400"
-                />
+                ))}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* DIAGNOSTIC STRENGTHS, RISK FACTORS & STRATEGIC ACTION ITEMS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-          <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Key Capital Strengths</span>
-          </div>
-          <ul className="space-y-2 text-xs text-slate-300 font-mono">
-            {result.strengthsList.map((s, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-emerald-400 font-bold">✓</span>
-                <span>{s}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-          <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-            <AlertTriangle className="w-4 h-4" />
-            <span>Risk Factors & Vulnerabilities</span>
-          </div>
-          <ul className="space-y-2 text-xs text-slate-300 font-mono">
-            {result.riskFactorsList.map((r, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-amber-400 font-bold">⚠</span>
-                <span>{r}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-          <div className="flex items-center gap-2 text-sky-400 font-bold text-sm">
-            <ArrowUpRight className="w-4 h-4" />
-            <span>Quarterly Action Plan</span>
-          </div>
-          <ul className="space-y-2 text-xs text-slate-300 font-mono">
-            {result.actionItems.map((a, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-sky-400 font-bold">→</span>
-                <span>{a}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+          </motion.div>
+        </AnimatePresence>
+      )}
     </div>
   );
 };

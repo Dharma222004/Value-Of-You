@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import AuthCard from "@/components/auth/AuthCard";
+import { validateEmail } from "@/lib/auth/validation";
 import { Mail, Loader2, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
 
 export default function ForgotPasswordPage() {
@@ -15,8 +16,9 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError(null);
 
-    if (!email || !email.includes("@")) {
-      setError("Please enter a valid email address.");
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      setError(emailErr);
       return;
     }
 
@@ -25,18 +27,18 @@ export default function ForgotPasswordPage() {
     setTimeout(() => {
       setLoading(false);
       setSent(true);
-    }, 1200);
+    }, 1000);
   };
 
   return (
     <AuthCard
-      title="Reset Your Password"
-      subtitle="Enter your email to receive a secure 256-bit password recovery link"
+      title="Reset Password"
+      subtitle="Enter your account email to receive a secure 256-bit password recovery link"
     >
       {!sent ? (
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -51,7 +53,8 @@ export default function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="alex@example.com"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-colors"
+                autoComplete="email"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
               />
             </div>
           </div>
@@ -64,7 +67,7 @@ export default function ForgotPasswordPage() {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Sending Reset Link...</span>
+                <span>Sending Recovery Link...</span>
               </>
             ) : (
               <span>Send Recovery Link</span>
@@ -82,30 +85,31 @@ export default function ForgotPasswordPage() {
           </div>
         </form>
       ) : (
-        <div className="text-center space-y-4 py-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+        <div className="text-center space-y-4 py-3 animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto shadow-inner">
             <CheckCircle2 className="w-6 h-6" />
           </div>
 
-          <h2 className="text-lg font-bold text-[var(--foreground)]">Recovery Email Sent</h2>
+          <div className="space-y-1">
+            <h2 className="text-lg font-bold text-[var(--foreground)]">Recovery Email Sent</h2>
+            <p className="text-xs text-[var(--subtext)] leading-relaxed">
+              We sent a password reset token to <strong className="text-[var(--foreground)]">{email}</strong>. Check your inbox to update your password.
+            </p>
+          </div>
 
-          <p className="text-xs text-[var(--subtext)] leading-relaxed">
-            We sent a password reset link to <strong className="text-[var(--foreground)]">{email}</strong>. Check your inbox and follow the instructions to update your credentials.
-          </p>
-
-          <div className="pt-2 flex flex-col gap-2">
+          <div className="pt-2 flex flex-col gap-2.5">
             <Link
-              href="/auth/reset-password"
-              className="w-full py-2.5 rounded-xl bg-blue-600 dark:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs shadow-md"
+              href={`/auth/reset-password?email=${encodeURIComponent(email)}&token=token_demo_reset_256`}
+              className="w-full py-3 rounded-xl bg-blue-600 dark:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs shadow-md text-center hover:opacity-95 transition-all"
             >
-              Demo: Proceed to Reset Password
+              Proceed to Reset Password
             </Link>
 
             <button
               onClick={() => setSent(false)}
-              className="text-xs text-[var(--subtext)] hover:underline"
+              className="text-xs text-[var(--subtext)] hover:text-[var(--foreground)] hover:underline transition-colors"
             >
-              Didn't get the email? Try again
+              Didn't receive email? Try again
             </button>
           </div>
         </div>
