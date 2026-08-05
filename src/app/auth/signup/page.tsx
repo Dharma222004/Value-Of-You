@@ -62,9 +62,9 @@ export default function SignupPage() {
     const result = await signupWithCredentials(fullName, email, password);
 
     if (result.success) {
-      setSuccess("Account created! Redirecting to email verification...");
+      setSuccess("Account created! Check your email for the verification code.");
       setTimeout(() => {
-        router.push("/auth/verify-email");
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
       }, 700);
     } else {
       setError(result.error || "Failed to create account. Please try again.");
@@ -94,33 +94,35 @@ export default function SignupPage() {
         )}
 
         {/* Full Name Field */}
-        <div className="space-y-1 text-left">
-          <label className="text-xs font-semibold text-[var(--foreground)]">Full Name</label>
+        <div className="space-y-1.5 text-left">
+          <label htmlFor="signup_name" className="section-label block">Full Name</label>
           <div className="relative">
-            <User className="w-4 h-4 text-[var(--subtext)] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
+              id="signup_name"
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="Alex Vance"
+              placeholder="Your full name"
               autoComplete="name"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
+              className="input-field text-sm pl-9"
             />
           </div>
         </div>
 
         {/* Email Field */}
-        <div className="space-y-1 text-left">
-          <label className="text-xs font-semibold text-[var(--foreground)]">Work / Personal Email</label>
+        <div className="space-y-1.5 text-left">
+          <label htmlFor="signup_email" className="section-label block">Email address</label>
           <div className="relative">
-            <Mail className="w-4 h-4 text-[var(--subtext)] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
+              id="signup_email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="alex@example.com"
+              placeholder="you@example.com"
               autoComplete="email"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
+              className="input-field text-sm pl-9"
             />
           </div>
         </div>
@@ -176,19 +178,17 @@ export default function SignupPage() {
           </label>
         </div>
 
-        {/* Submit CTA Button */}
+        {/* Submit */}
         <button
+          id="signup_submit_btn"
           type="submit"
           disabled={loading}
-          className="w-full py-3 rounded-xl bg-blue-600 dark:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs shadow-md hover:opacity-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          className="btn-primary w-full justify-center py-2.5 text-sm"
         >
           {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Creating Account...</span>
-            </>
+            <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</>
           ) : (
-            <span>Create Free Account</span>
+            "Create Free Account"
           )}
         </button>
 
@@ -196,12 +196,12 @@ export default function SignupPage() {
         <SocialButtons />
 
         {/* Login Redirect */}
-        <div className="text-center pt-4 text-xs text-[var(--subtext)] border-t border-[var(--border)]">
+        <p className="text-center text-xs text-slate-500 pt-2 border-t border-white/6">
           Already have an account?{" "}
-          <Link href="/auth/login" className="text-blue-600 dark:text-cyan-400 font-bold hover:underline">
-            Log In
+          <Link href="/auth/login" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
+            Sign in
           </Link>
-        </div>
+        </p>
       </form>
     </AuthCard>
   );

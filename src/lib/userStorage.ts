@@ -1,7 +1,13 @@
 /**
- * Human Capital Platform - User-Scoped Storage Utility
- * Isolates LocalStorage keys per logged-in User Email ID.
- * Prevents data leakage between different user accounts on the same browser/device.
+ * @deprecated — This file is DEPRECATED.
+ * All localStorage-based storage has been migrated to Supabase.
+ * Use `@/services/moduleDataService` instead.
+ *
+ * This file is kept for backward compatibility only.
+ * DO NOT import this file in new code.
+ *
+ * Human Capital Platform - User-Scoped Storage Utility (LEGACY)
+ * Previously isolated LocalStorage keys per logged-in User Email ID.
  */
 
 export function getActiveUserEmail(): string {

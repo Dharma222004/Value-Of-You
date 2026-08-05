@@ -6,7 +6,8 @@
 
 import { calculateFinancialHealthMetrics, formatINR } from "@/lib/financialEngine";
 import { calculateProfessionalCapitalScore } from "@/lib/professionalCapitalEngine";
-import { getScopedItem } from "@/lib/userStorage";
+import { loadAllModuleRecords, getCurrentUserId, ModuleKey } from "@/services/moduleDataService";
+import { ModuleData } from "@/types/database";
 
 export interface ModuleTelemetryStatus {
   id: number;
@@ -79,7 +80,7 @@ export interface DashboardTelemetry {
   } | null;
 }
 
-export function getDashboardTelemetry(): DashboardTelemetry {
+export async function getDashboardTelemetry(): Promise<DashboardTelemetry> {
   if (typeof window === "undefined") {
     return {
       mounted: false,
@@ -111,8 +112,42 @@ export function getDashboardTelemetry(): DashboardTelemetry {
 
   // --- 1. User Info ---
   let userName = "User";
-  let userEmail = "user@human-capital.ai";
-  const parsedMaster = getScopedItem<any>("hc_master_profile_data", null);
+  let userEmail = "";
+
+  // Load all module records from Supabase
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return {
+      mounted: true,
+      userName,
+      userEmail,
+      userInitials: "HC",
+      modules: {
+        module1: { id: 1, key: "m1", name: "Personal & Professional Profile", shortName: "Profile", status: "not-started", completionPercentage: 0, score: null, route: "/dashboard/career" },
+        module2: { id: 2, key: "m2", name: "Financial Health Intelligence", shortName: "Financial", status: "not-started", completionPercentage: 0, score: null, route: "/dashboard/financial" },
+        module3: { id: 3, key: "m3", name: "Professional Capital Intelligence", shortName: "Skills", status: "not-started", completionPercentage: 0, score: null, route: "/dashboard/skills" },
+        module4: { id: 4, key: "m4", name: "Health & Lifestyle", shortName: "Health", status: "not-started", completionPercentage: 0, score: null, route: "/dashboard/health" },
+        module5: { id: 5, key: "m5", name: "Human Assessments", shortName: "Assessments", status: "not-started", completionPercentage: 0, score: null, route: "/dashboard/assessments" },
+      },
+      completedCount: 0,
+      overallCompletionPercentage: 0,
+      isAllCompleted: false,
+      compositeHumanCapitalScore: null,
+      compositeRating: null,
+      compositeRatingBg: null,
+      riskIndex: null,
+      strengthIndex: null,
+      financial: { isCompleted: false, netWorth: null, netWorthFormatted: "Not Available", monthlyIncome: null, monthlySavings: null, monthlyCashFlow: null, savingsRate: null, debtRatio: null, financialScore: null },
+      professional: { isCompleted: false, professionalCapitalScore: null, employabilityIndex: null, aiReadinessScore: null, leadershipScore: null },
+      health: { isCompleted: false, healthScore: null },
+      assessment: { isCompleted: false, assessmentScore: null },
+      nextRecommendedModule: { name: "Personal & Professional Profile", route: "/dashboard/career", buttonText: "Start Master Profile" },
+    };
+  }
+
+  const allRecords = await loadAllModuleRecords(userId);
+
+  const parsedMaster = allRecords.master_profile?.data || null;
   if (parsedMaster) {
     try {
       const fn = parsedMaster.personalProfile?.firstName?.trim();
@@ -164,7 +199,7 @@ export function getDashboardTelemetry(): DashboardTelemetry {
     financialScore: null as number | null,
   };
 
-  const parsedFin = getScopedItem<any>("hc_financial_module_data", null);
+  const parsedFin = allRecords.financial?.data || null;
   if (parsedFin) {
     try {
       if (parsedFin.incomeProfile) {
@@ -205,7 +240,7 @@ export function getDashboardTelemetry(): DashboardTelemetry {
     leadershipScore: null as number | null,
   };
 
-  const parsedSkills = getScopedItem<any>("hc_skills_module_data", null);
+  const parsedSkills = allRecords.skills?.data || null;
   if (parsedSkills) {
     try {
       if (parsedSkills.academic) {
@@ -234,7 +269,7 @@ export function getDashboardTelemetry(): DashboardTelemetry {
   let m4Status: "completed" | "in-progress" | "not-started" = "not-started";
   let m4Pct = 0;
   let m4Score: number | null = null;
-  const parsedHealth = getScopedItem<any>("hc_health_module_data", null);
+  const parsedHealth = allRecords.health?.data || null;
   if (parsedHealth) {
     try {
       if (parsedHealth.bodyMetrics) {
@@ -261,7 +296,8 @@ export function getDashboardTelemetry(): DashboardTelemetry {
   let m5Status: "completed" | "in-progress" | "not-started" = "not-started";
   let m5Pct = 0;
   let m5Score: number | null = null;
-  const parsedAssess = getScopedItem<any>("hc_assessment_module_data", null);
+  let parsedAssess = allRecords.assessments?.data || null;
+
   if (parsedAssess) {
     try {
       if (parsedAssess.answers) {
@@ -271,13 +307,14 @@ export function getDashboardTelemetry(): DashboardTelemetry {
         m5Pct = Math.min(100, Math.round((answeredCount / 130) * 100));
 
         const isAllStagesDone =
-          parsedAssess.isCompleted ||
-          (parsedAssess.isPersonalityCompleted &&
-            parsedAssess.isMindsetCompleted &&
-            parsedAssess.isDecisionCompleted &&
-            parsedAssess.isAwarenessCompleted &&
-            parsedAssess.isAptitudeCompleted &&
-            parsedAssess.isCommunicationCompleted);
+          Boolean(parsedAssess.isCompleted) ||
+          (Boolean(parsedAssess.isPersonalityCompleted) &&
+            Boolean(parsedAssess.isMindsetCompleted) &&
+            Boolean(parsedAssess.isDecisionCompleted) &&
+            Boolean(parsedAssess.isAwarenessCompleted) &&
+            Boolean(parsedAssess.isAptitudeCompleted) &&
+            Boolean(parsedAssess.isCommunicationCompleted)) ||
+          answeredCount >= 130;
 
         if (isAllStagesDone || answeredCount >= 130) {
           m5Status = "completed";

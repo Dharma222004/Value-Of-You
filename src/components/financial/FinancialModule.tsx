@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { getScopedItem, setScopedItem } from "@/lib/userStorage";
+import { saveModuleData, loadModuleData, getCurrentUserId, saveFinancialProfile, saveLearningProgress } from "@/services/moduleDataService";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DollarSign,
@@ -68,35 +68,51 @@ export const FinancialModule: React.FC = () => {
   const [state, setState] = useState<FinancialModuleState>(defaultFinancialModuleState);
   const [activeStep, setActiveStep] = useState<number>(1);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
+
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined") {
-      const parsed = getScopedItem<FinancialModuleState | null>("hc_financial_module_data", null);
-      if (parsed && parsed.incomeProfile) {
-        setState(parsed);
-        if (parsed.isCompleted || parsed.incomeProfile.monthlyActiveIncome > 0) {
-          setIsSubmitted(true);
-          setActiveStep(12);
+    async function loadFromSupabase() {
+      try {
+        const uid = await getCurrentUserId();
+        setUserId(uid);
+        if (!uid) return;
+        const parsed = await loadModuleData(uid, "financial") as FinancialModuleState | null;
+        if (parsed && parsed.incomeProfile) {
+          const isComp = Boolean(parsed.isCompleted || parsed.submittedAt || parsed.incomeProfile.monthlyActiveIncome > 0);
+          setState({ ...parsed, isCompleted: isComp });
+          if (isComp) {
+            setIsSubmitted(true);
+            setActiveStep(12);
+          }
         }
+      } finally {
+        setIsLoaded(true);
       }
     }
+    loadFromSupabase();
   }, []);
-  const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
-
-  // Debounced Autosave
-  useEffect(() => {
-    if (!mounted) return;
-    setSavingStatus("saving");
-    const timeout = setTimeout(() => {
-      setScopedItem("hc_financial_module_data", state);
-      setSavingStatus("saved");
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [state, mounted]);
-
   // Real-Time Engine Calculation
   const metrics = useMemo(() => calculateFinancialHealthMetrics(state), [state]);
+
+  // Debounced Autosave to Supabase (ONLY after initial load finishes)
+  useEffect(() => {
+    if (!mounted || !userId || !isLoaded) return;
+    setSavingStatus("saving");
+    const timeout = setTimeout(async () => {
+      const isComp = Boolean(state.isCompleted || state.submittedAt || isSubmitted);
+      const finScore = metrics?.financialHealthScore || 0;
+      const result = await saveModuleData(userId, "financial", { ...state, isCompleted: isComp } as any, isComp, finScore);
+      if (!result) {
+        console.warn("[FinancialModule] ⚠️ Save to Supabase FAILED — data was NOT persisted. Check [DB_DEBUG] logs above.");
+      }
+      setSavingStatus("saved");
+    }, 800);
+    return () => clearTimeout(timeout);
+  }, [state, mounted, userId, isLoaded, isSubmitted, metrics]);
 
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -121,7 +137,7 @@ export const FinancialModule: React.FC = () => {
     if (activeStep > 1) setActiveStep((prev) => prev - 1);
   };
 
-  const handleSubmitFinancial = () => {
+  const handleSubmitFinancial = async () => {
     if (!validateCurrentStep(activeStep)) return;
     const updatedState = {
       ...state,
@@ -129,8 +145,27 @@ export const FinancialModule: React.FC = () => {
       submittedAt: new Date().toISOString(),
     };
     setState(updatedState);
+    if (userId) {
+      const finScore = metrics?.financialHealthScore || 0;
+      await saveModuleData(userId, "financial", updatedState as any, true, finScore);
+      // Also save structured financial profile
+      await saveFinancialProfile(userId, {
+        income: metrics?.totalMonthlyIncome || 0,
+        expenses: updatedState.expenseProfile?.monthlyEssentialExpenses || 0,
+        savings: metrics?.totalSavingsBalance || 0,
+        investments: metrics?.totalInvestments || 0,
+        liabilities: metrics?.totalLiabilities || 0,
+        net_worth: metrics?.netWorth || 0,
+        savings_rate: metrics?.savingsRate || 0,
+        debt_to_income_ratio: metrics?.debtToIncomeRatio || 0,
+        emergency_fund_months: metrics?.emergencyFundMonths || 0,
+        has_health_insurance: Boolean(updatedState.riskInsurance?.hasHealthInsurance),
+        has_life_insurance: Boolean(updatedState.riskInsurance?.hasLifeInsurance),
+        financial_score: finScore,
+      });
+      await saveLearningProgress(userId, "financial", 100);
+    }
     if (typeof window !== "undefined") {
-      setScopedItem("hc_financial_module_data", updatedState);
       window.dispatchEvent(new CustomEvent("hc_assessment_updated"));
     }
     setIsSubmitted(true);

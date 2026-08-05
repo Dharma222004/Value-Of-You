@@ -31,89 +31,121 @@ import {
   defaultAssessmentState,
   calculateAssessmentMetrics,
 } from "@/lib/assessmentEngine";
+import { saveModuleData, loadModuleData, getCurrentUserId, saveHumanValuesTest, saveLearningProgress } from "@/services/moduleDataService";
 
-// Storage Keys
-const PRIMARY_STORAGE_KEY = "hc_assessment_module_data";
-const BACKUP_STORAGE_KEY = "human_capital_assessment_v8_session";
-const HISTORY_STORAGE_KEY = "hc_assessment_history";
+// Module key for Supabase storage
+const MODULE_KEY = "assessments" as const;
 
 export const AssessmentsModule: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<AssessmentState>(defaultAssessmentState);
   const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
 
-  // Load Saved Data on Mount
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+
+  // Load Saved Data from Supabase on Mount
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined") {
-      const savedPrimary = localStorage.getItem(PRIMARY_STORAGE_KEY);
-      const savedBackup = localStorage.getItem(BACKUP_STORAGE_KEY);
-      const dataToParse = savedPrimary || savedBackup;
-      if (dataToParse) {
-        try {
-          const parsed = JSON.parse(dataToParse);
-          if (parsed && parsed.answers) {
-            setState(parsed);
-          }
-        } catch (e) {
-          console.error("Failed to parse saved assessment state:", e);
+    async function loadFromSupabase() {
+      try {
+        const uid = await getCurrentUserId();
+        setUserId(uid);
+        if (!uid) return;
+        const parsed = await loadModuleData(uid, MODULE_KEY);
+        if (parsed && (parsed as any).answers) {
+          setState(parsed as AssessmentState);
         }
+      } finally {
+        setIsLoaded(true);
       }
     }
+    loadFromSupabase();
   }, []);
 
   // Real-Time Metrics Calculation
   const metrics = useMemo(() => calculateAssessmentMetrics(state), [state]);
 
-  // Centralized Helper Function to Save State to Storage
-  const persistState = useCallback((newState: AssessmentState) => {
-    if (typeof window === "undefined") return;
+  // Centralized Helper Function to Save State to Supabase
+  const persistState = useCallback(async (newState: AssessmentState) => {
+    if (!userId) return;
     setSavingStatus("saving");
     try {
       const computedMetrics = calculateAssessmentMetrics(newState);
+
+      const isPersonalityDone =
+        newState.isPersonalityCompleted ||
+        PERSONALITY_QUESTION_BANK.every((q) => Boolean(newState.answers[q.id]?.selectedOptionId));
+      const isMindsetDone =
+        newState.isMindsetCompleted ||
+        MINDSET_QUESTION_BANK.every((q) => Boolean(newState.answers[q.id]?.selectedOptionId));
+      const isDecisionDone =
+        newState.isDecisionCompleted ||
+        DECISION_QUESTION_BANK.every((q) => Boolean(newState.answers[q.id]?.selectedOptionId));
+      const isAwarenessDone =
+        newState.isAwarenessCompleted ||
+        AWARENESS_QUESTION_BANK.every((q) => Boolean(newState.answers[q.id]?.selectedOptionId));
+      const isAptitudeDone =
+        newState.isAptitudeCompleted ||
+        APTITUDE_QUESTION_BANK.every((q) => Boolean(newState.answers[q.id]?.selectedOptionId));
+      const isCommunicationDone =
+        newState.isCommunicationCompleted ||
+        COMMUNICATION_QUESTION_BANK.every((q) => Boolean(newState.answers[q.id]?.selectedOptionId));
+
+      const totalAnswered = Object.keys(newState.answers).length;
       const allCompleted =
-        newState.isPersonalityCompleted &&
-        newState.isMindsetCompleted &&
-        newState.isDecisionCompleted &&
-        newState.isAwarenessCompleted &&
-        newState.isAptitudeCompleted &&
-        newState.isCommunicationCompleted;
+        (isPersonalityDone &&
+          isMindsetDone &&
+          isDecisionDone &&
+          isAwarenessDone &&
+          isAptitudeDone &&
+          isCommunicationDone) ||
+        totalAnswered >= 130;
 
       const payload = {
         ...newState,
+        isPersonalityCompleted: isPersonalityDone,
+        isMindsetCompleted: isMindsetDone,
+        isDecisionCompleted: isDecisionDone,
+        isAwarenessCompleted: isAwarenessDone,
+        isAptitudeCompleted: isAptitudeDone,
+        isCommunicationCompleted: isCommunicationDone,
         lastUpdatedTime: new Date().toISOString(),
         isCompleted: allCompleted,
         metrics: computedMetrics,
       };
 
-      const serialized = JSON.stringify(payload);
-      localStorage.setItem(PRIMARY_STORAGE_KEY, serialized);
-      localStorage.setItem(BACKUP_STORAGE_KEY, serialized);
-
-      // Store Stage Snapshot if any stage was completed
-      const historyStr = localStorage.getItem(HISTORY_STORAGE_KEY);
-      let historyList: any[] = [];
-      if (historyStr) {
-        try { historyList = JSON.parse(historyStr); } catch (e) {}
+      const assessmentScore = computedMetrics?.assessmentScore || 0;
+      const saveResult = await saveModuleData(userId, MODULE_KEY, payload, allCompleted, assessmentScore);
+      if (!saveResult) {
+        console.warn("[AssessmentsModule] ⚠️ Save to Supabase FAILED — data was NOT persisted. Check [DB_DEBUG] logs above.");
       }
-      historyList.push({
-        timestamp: new Date().toISOString(),
-        activeStage: newState.activeStage,
-        answeredCount: Object.keys(newState.answers).length,
-        isCompleted: allCompleted,
-      });
-      // Limit history to last 50 entries
-      if (historyList.length > 50) historyList = historyList.slice(-50);
-      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyList));
 
-      // Broadcast custom event for live dashboard updates
-      window.dispatchEvent(new CustomEvent("hc_assessment_updated", { detail: payload }));
+      // If all completed, also save to human_values_tests table
+      if (allCompleted) {
+        const level = assessmentScore >= 85 ? "elite" : assessmentScore >= 70 ? "advanced" : assessmentScore >= 50 ? "intermediate" : "beginner";
+        await saveHumanValuesTest(userId, assessmentScore, {
+          personality: computedMetrics?.traits || {},
+          mindset: computedMetrics?.mindset || {},
+          decision: computedMetrics?.decision || {},
+          awareness: computedMetrics?.awareness || {},
+          aptitude: computedMetrics?.aptitude || {},
+          communication: computedMetrics?.communication || {},
+        }, level);
+        await saveLearningProgress(userId, "assessments", 100);
+      }
+
+      // Broadcast custom events for live dashboard updates
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hc_assessment_updated", { detail: payload }));
+        window.dispatchEvent(new CustomEvent("hc_telemetry_updated", { detail: payload }));
+      }
       setSavingStatus("saved");
     } catch (e) {
       console.error("Failed to persist assessment data:", e);
       setSavingStatus("saved");
     }
-  }, []);
+  }, [userId]);
 
   // Debounced Background Autosave Safety Net
   useEffect(() => {
@@ -178,6 +210,7 @@ export const AssessmentsModule: React.FC = () => {
   const currentAnswer = state.answers[currentQ.id];
 
   const handleSelectOption = (optionId: string) => {
+    if (isStageCompleted || allStagesCompleted) return; // Prevent modification after submission
     setState((prev) => {
       const updatedAnswers = {
         ...prev.answers,
@@ -446,85 +479,41 @@ export const AssessmentsModule: React.FC = () => {
           </p>
         </div>
 
-        {/* 6-STAGE SELECTOR TABS */}
-        <div className="flex flex-wrap items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-[var(--border)] z-10">
-          <button
-            type="button"
-            onClick={() => handleSwitchStage("personality")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-1.5 ${
-              activeStage === "personality"
-                ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
-                : "text-[var(--subtext)] hover:text-white"
-            }`}
-          >
-            Stage 1: Personality (25M)
-            {state.isPersonalityCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSwitchStage("mindset")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-1.5 ${
-              activeStage === "mindset"
-                ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
-                : "text-[var(--subtext)] hover:text-white"
-            }`}
-          >
-            Stage 2: Mindset (20M)
-            {state.isMindsetCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSwitchStage("decision")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-1.5 ${
-              activeStage === "decision"
-                ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
-                : "text-[var(--subtext)] hover:text-white"
-            }`}
-          >
-            Stage 3: Decision (15M)
-            {state.isDecisionCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSwitchStage("awareness")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-1.5 ${
-              activeStage === "awareness"
-                ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
-                : "text-[var(--subtext)] hover:text-white"
-            }`}
-          >
-            Stage 4: Awareness (15M)
-            {state.isAwarenessCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSwitchStage("aptitude")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-1.5 ${
-              activeStage === "aptitude"
-                ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
-                : "text-[var(--subtext)] hover:text-white"
-            }`}
-          >
-            Stage 5: Aptitude (10M)
-            {state.isAptitudeCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSwitchStage("communication")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-1.5 ${
-              activeStage === "communication"
-                ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
-                : "text-[var(--subtext)] hover:text-white"
-            }`}
-          >
-            Stage 6: Communication (15M)
-            {state.isCommunicationCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-          </button>
+        {/* 6-STAGE SELECTOR TABS (Clean Grid Layout) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 bg-slate-950/90 p-2 rounded-2xl border border-[var(--border)] z-10 w-full">
+          {[
+            { id: "personality", label: "Personality", marks: "25M", isDone: state.isPersonalityCompleted, num: "1" },
+            { id: "mindset", label: "Mindset", marks: "20M", isDone: state.isMindsetCompleted, num: "2" },
+            { id: "decision", label: "Decision", marks: "15M", isDone: state.isDecisionCompleted, num: "3" },
+            { id: "awareness", label: "Awareness", marks: "15M", isDone: state.isAwarenessCompleted, num: "4" },
+            { id: "aptitude", label: "Aptitude", marks: "10M", isDone: state.isAptitudeCompleted, num: "5" },
+            { id: "communication", label: "Communication", marks: "15M", isDone: state.isCommunicationCompleted, num: "6" },
+          ].map((stg) => {
+            const isCurrent = activeStage === stg.id;
+            return (
+              <button
+                key={stg.id}
+                type="button"
+                onClick={() => handleSwitchStage(stg.id as any)}
+                className={`px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between gap-1.5 ${
+                  isCurrent
+                    ? "bg-purple-600 text-white shadow-lg shadow-purple-500/25 ring-1 ring-purple-400/40 font-bold"
+                    : "text-slate-300 hover:text-white hover:bg-slate-900/80 bg-slate-900/40"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${isCurrent ? "bg-purple-700 text-purple-100" : "bg-slate-800 text-slate-400"}`}>
+                    S{stg.num}
+                  </span>
+                  <span className="truncate">{stg.label}</span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="text-[10px] font-mono text-slate-400">{stg.marks}</span>
+                  {stg.isDone && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -862,12 +851,10 @@ export const AssessmentsModule: React.FC = () => {
                 </button>
               </>
             ) : (
-              <button
-                onClick={handleRestart}
-                className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-500/20 transition-all"
-              >
-                Restart Module Assessment <RotateCcw className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300">
+                <Lock className="w-4 h-4 text-emerald-400" />
+                <span>Assessment Completed &amp; Locked</span>
+              </div>
             )}
           </div>
         </div>

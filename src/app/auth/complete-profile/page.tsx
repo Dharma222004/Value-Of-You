@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthCard from "@/components/auth/AuthCard";
 import { useAuth } from "@/context/AuthContext";
@@ -39,7 +39,7 @@ const TIMEZONES = [
   "(UTC+10:00) Australian Eastern Time",
 ];
 
-export default function CompleteProfilePage() {
+function CompleteProfileForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, completeUserProfile } = useAuth();
@@ -53,7 +53,6 @@ export default function CompleteProfilePage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    // Populate query param details from OAuth callback if available
     const nameParam = searchParams?.get("name");
     if (nameParam) {
       setDisplayName(nameParam);
@@ -64,36 +63,37 @@ export default function CompleteProfilePage() {
     e.preventDefault();
     setLoading(true);
 
-    await completeUserProfile({
-      displayName: displayName || "Human Capital User",
-      status,
-      country,
-      timezone,
-      completedOnboarding: true,
-    });
+    try {
+      await completeUserProfile({
+        name: displayName,
+        status,
+        country,
+        timezone,
+      });
 
-    setLoading(false);
-    setSuccess(true);
-
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 600);
+      setSuccess(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+    } catch {
+      setLoading(false);
+    }
   };
 
-  return (
-    <AuthCard
-      title="Complete Your Profile"
-      subtitle="Customize your profile parameters to calibrate your human capital valuation algorithm"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {success && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-xs flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Profile completed! Calibrating valuation metrics...</span>
-          </div>
-        )}
+  if (success) {
+    return (
+      <AuthCard title="Profile Completed!" subtitle="Redirecting to your dashboard...">
+        <div className="py-8 flex flex-col items-center justify-center space-y-3">
+          <CheckCircle2 className="w-12 h-12 text-emerald-500 animate-bounce" />
+          <p className="text-xs font-medium text-[var(--subtext)]">Setting up your personal workspace...</p>
+        </div>
+      </AuthCard>
+    );
+  }
 
-        {/* Display Name */}
+  return (
+    <AuthCard title="Complete Your Profile" subtitle="Help us personalize your Human Values intelligence dashboard">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1 text-left">
           <label className="text-xs font-semibold text-[var(--foreground)]">Display Name</label>
           <div className="relative">
@@ -103,15 +103,14 @@ export default function CompleteProfilePage() {
               required
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Alex Vance"
+              placeholder="e.g. Alex Morgan"
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
             />
           </div>
         </div>
 
-        {/* Current Professional Status */}
         <div className="space-y-1 text-left">
-          <label className="text-xs font-semibold text-[var(--foreground)]">Current Status</label>
+          <label className="text-xs font-semibold text-[var(--foreground)]">Current Status / Role</label>
           <div className="relative">
             <Briefcase className="w-4 h-4 text-[var(--subtext)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <select
@@ -128,7 +127,6 @@ export default function CompleteProfilePage() {
           </div>
         </div>
 
-        {/* Country Selector */}
         <div className="space-y-1 text-left">
           <label className="text-xs font-semibold text-[var(--foreground)]">Country</label>
           <div className="relative">
@@ -147,7 +145,6 @@ export default function CompleteProfilePage() {
           </div>
         </div>
 
-        {/* Timezone Selector */}
         <div className="space-y-1 text-left">
           <label className="text-xs font-semibold text-[var(--foreground)]">Timezone</label>
           <div className="relative">
@@ -166,7 +163,6 @@ export default function CompleteProfilePage() {
           </div>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
@@ -183,5 +179,13 @@ export default function CompleteProfilePage() {
         </button>
       </form>
     </AuthCard>
+  );
+}
+
+export default function CompleteProfilePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Loading profile setup...</div>}>
+      <CompleteProfileForm />
+    </Suspense>
   );
 }

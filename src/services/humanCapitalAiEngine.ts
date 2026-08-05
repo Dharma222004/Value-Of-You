@@ -10,6 +10,7 @@ import { calculateFinancialHealthMetrics, formatINR } from "@/lib/financialEngin
 import { calculateProfessionalCapitalScore } from "@/lib/professionalCapitalEngine";
 import { calculateHealthCapitalScore } from "@/lib/healthCapitalEngine";
 import { calculateAssessmentMetrics } from "@/lib/assessmentEngine";
+import { loadAllModuleData, getCurrentUserId, ModuleKey } from "@/services/moduleDataService";
 
 // ================= LAYER 1: RULE ENGINE (300+ METRICS AGGREGATOR) =================
 
@@ -144,165 +145,167 @@ export interface Layer1Metrics {
   };
 }
 
-export function collectLayer1Metrics(): Layer1Metrics {
+export async function collectLayer1Metrics(): Promise<Layer1Metrics> {
   const defaultMetrics: Layer1Metrics = {
     hasData: false,
     profile: {
       firstName: "",
       lastName: "",
       email: "",
-      degree: "Bachelor's Degree",
-      cgpa: 8.2,
-      experienceYears: 3,
-      primaryRole: "Software Engineer",
-      primaryIndustry: "Technology",
-      certificationsCount: 2,
-      projectsCount: 3,
+      degree: "",
+      cgpa: 0,
+      experienceYears: 0,
+      primaryRole: "",
+      primaryIndustry: "",
+      certificationsCount: 0,
+      projectsCount: 0,
       hasResearchPaper: false,
-      isOpenSourceContributor: true,
+      isOpenSourceContributor: false,
       isFounder: false,
     },
     financial: {
       isCompleted: false,
-      monthlyActiveIncome: 120000,
-      monthlyPassiveIncome: 15000,
-      totalMonthlyIncome: 135000,
-      monthlySavings: 35000,
-      monthlyExpenses: 65000,
-      savingsRatePct: 26,
-      emergencyFundMonths: 3,
-      debtToIncomeRatioPct: 20,
-      netWorthINR: 1850000,
-      netWorthFormatted: "₹18.50 Lakhs",
-      hasHealthInsurance: true,
+      monthlyActiveIncome: 0,
+      monthlyPassiveIncome: 0,
+      totalMonthlyIncome: 0,
+      monthlySavings: 0,
+      monthlyExpenses: 0,
+      savingsRatePct: 0,
+      emergencyFundMonths: 0,
+      debtToIncomeRatioPct: 0,
+      netWorthINR: 0,
+      netWorthFormatted: "Not Available",
+      hasHealthInsurance: false,
       hasLifeInsurance: false,
-      financialScore: 72,
+      financialScore: 0,
     },
     professional: {
       isCompleted: false,
-      professionalCapitalScore: 78,
-      employabilityIndex: 82,
-      aiReadinessScore: 76,
-      technicalSkillsCount: 6,
-      leadershipSkillsCount: 3,
+      professionalCapitalScore: 0,
+      employabilityIndex: 0,
+      aiReadinessScore: 0,
+      technicalSkillsCount: 0,
+      leadershipSkillsCount: 0,
     },
     health: {
       isCompleted: false,
-      bmi: 23.4,
-      workoutFrequencyPerWeek: 3,
-      sleepHoursPerNight: 7,
-      sleepScore: 75,
-      stressLevel: 4,
-      dietQualityScore: 70,
+      bmi: 0,
+      workoutFrequencyPerWeek: 0,
+      sleepHoursPerNight: 0,
+      sleepScore: 0,
+      stressLevel: 0,
+      dietQualityScore: 0,
       hasMindfulnessPractice: false,
       hasHarmfulHabits: false,
-      healthCapitalScore: 74,
+      healthCapitalScore: 0,
     },
     assessment: {
       isCompleted: false,
-      assessmentScore: 80,
+      assessmentScore: 0,
       answeredCount: 0,
-      discipline: 75,
-      integrity: 80,
-      healthHabits: 70,
-      financialBehavior: 75,
-      leadershipTrait: 78,
-      emotionalIntelligence: 76,
-      teamwork: 80,
-      learningOrientation: 82,
-      productivity: 78,
-      selfAwareness: 75,
-      growthMindset: 80,
-      disciplineConsistency: 75,
-      gritResilience: 78,
-      goalOrientation: 80,
-      entrepreneurialMindset: 75,
-      financialDecision: 76,
-      careerJudgment: 80,
-      ethicalReasoning: 82,
-      leadershipJudgment: 78,
-      riskAssessment: 72,
-      problemSolving: 80,
-      strategicThinking: 78,
-      timeManagement: 75,
-      crisisManagement: 74,
-      innovationMindset: 78,
-      emotionalControl: 76,
-      customerOrientation: 78,
-      personalResponsibility: 80,
-      longTermThinking: 78,
-      economicAwareness: 75,
-      financialAwareness: 78,
-      bankingKnowledge: 76,
-      technologyAwareness: 82,
-      aiLiteracy: 80,
-      cybersecurityAwareness: 70,
-      businessEntrepreneurship: 75,
-      environmentalAwareness: 74,
-      civicAwareness: 76,
-      scientificAwareness: 78,
-      generalWorldAwareness: 76,
-      numericalAbility: 80,
-      logicalReasoning: 82,
-      patternRecognition: 78,
-      dataInterpretation: 74,
-      analyticalThinking: 82,
-      readingComprehension: 78,
-      grammarVocabulary: 80,
-      professionalWriting: 78,
-      businessCommunication: 76,
-      learningAgility: 82,
-      curiosityIndex: 80,
-      technologyAdoptionScore: 82,
-      readingHabitScore: 75,
-      continuousLearningScore: 80,
-      skillDevelopmentScore: 82,
+      discipline: 0,
+      integrity: 0,
+      healthHabits: 0,
+      financialBehavior: 0,
+      leadershipTrait: 0,
+      emotionalIntelligence: 0,
+      teamwork: 0,
+      learningOrientation: 0,
+      productivity: 0,
+      selfAwareness: 0,
+      growthMindset: 0,
+      disciplineConsistency: 0,
+      gritResilience: 0,
+      goalOrientation: 0,
+      entrepreneurialMindset: 0,
+      financialDecision: 0,
+      careerJudgment: 0,
+      ethicalReasoning: 0,
+      leadershipJudgment: 0,
+      riskAssessment: 0,
+      problemSolving: 0,
+      strategicThinking: 0,
+      timeManagement: 0,
+      crisisManagement: 0,
+      innovationMindset: 0,
+      emotionalControl: 0,
+      customerOrientation: 0,
+      personalResponsibility: 0,
+      longTermThinking: 0,
+      economicAwareness: 0,
+      financialAwareness: 0,
+      bankingKnowledge: 0,
+      technologyAwareness: 0,
+      aiLiteracy: 0,
+      cybersecurityAwareness: 0,
+      businessEntrepreneurship: 0,
+      environmentalAwareness: 0,
+      civicAwareness: 0,
+      scientificAwareness: 0,
+      generalWorldAwareness: 0,
+      numericalAbility: 0,
+      logicalReasoning: 0,
+      patternRecognition: 0,
+      dataInterpretation: 0,
+      analyticalThinking: 0,
+      readingComprehension: 0,
+      grammarVocabulary: 0,
+      professionalWriting: 0,
+      businessCommunication: 0,
+      learningAgility: 0,
+      curiosityIndex: 0,
+      technologyAdoptionScore: 0,
+      readingHabitScore: 0,
+      continuousLearningScore: 0,
+      skillDevelopmentScore: 0,
     },
   };
 
-  if (typeof window === "undefined") return defaultMetrics;
+  // Load data from Supabase instead of localStorage
+  const userId = await getCurrentUserId();
+  if (!userId) return defaultMetrics;
+
+  const allModuleData = await loadAllModuleData(userId);
 
   let hasAnyData = false;
 
   // 1. Module 1: Master Profile
-  const savedMaster = localStorage.getItem("hc_master_profile_data");
-  if (savedMaster) {
+  const parsedMaster = allModuleData.master_profile;
+  if (parsedMaster) {
     try {
-      const parsed = JSON.parse(savedMaster);
       hasAnyData = true;
-      if (parsed.personalProfile) {
-        defaultMetrics.profile.firstName = parsed.personalProfile.firstName || "";
-        defaultMetrics.profile.lastName = parsed.personalProfile.lastName || "";
+      if (parsedMaster.personalProfile) {
+        defaultMetrics.profile.firstName = parsedMaster.personalProfile.firstName || "";
+        defaultMetrics.profile.lastName = parsedMaster.personalProfile.lastName || "";
       }
-      if (parsed.contactInformation?.email) {
-        defaultMetrics.profile.email = parsed.contactInformation.email;
+      if (parsedMaster.contactInformation?.email) {
+        defaultMetrics.profile.email = parsedMaster.contactInformation.email;
       }
-      if (parsed.primaryRole) defaultMetrics.profile.primaryRole = parsed.primaryRole;
+      if (parsedMaster.primaryRole) defaultMetrics.profile.primaryRole = parsedMaster.primaryRole;
     } catch (e) {}
   }
 
   // 2. Module 2: Financial Health
-  const savedFin = localStorage.getItem("hc_financial_module_data");
-  if (savedFin) {
+  const parsedFin = allModuleData.financial;
+  if (parsedFin) {
     try {
-      const parsed = JSON.parse(savedFin);
-      if (parsed.incomeProfile) {
+      if (parsedFin.incomeProfile) {
         hasAnyData = true;
-        const fMetrics = calculateFinancialHealthMetrics(parsed);
+        const fMetrics = calculateFinancialHealthMetrics(parsedFin);
         defaultMetrics.financial = {
           isCompleted: true,
-          monthlyActiveIncome: parsed.incomeProfile.monthlyActiveIncome || 0,
-          monthlyPassiveIncome: parsed.incomeProfile.monthlyPassiveIncome || 0,
+          monthlyActiveIncome: parsedFin.incomeProfile.monthlyActiveIncome || 0,
+          monthlyPassiveIncome: parsedFin.incomeProfile.monthlyPassiveIncome || 0,
           totalMonthlyIncome: fMetrics.totalMonthlyIncome,
           monthlySavings: fMetrics.totalSavingsBalance,
-          monthlyExpenses: parsed.expenseProfile?.monthlyEssentialExpenses || 0,
+          monthlyExpenses: parsedFin.expenseProfile?.monthlyEssentialExpenses || 0,
           savingsRatePct: Math.round(fMetrics.savingsRate),
           emergencyFundMonths: fMetrics.emergencyFundMonths,
           debtToIncomeRatioPct: Math.round(fMetrics.debtToIncomeRatio),
           netWorthINR: fMetrics.netWorth,
           netWorthFormatted: formatINR(fMetrics.netWorth),
-          hasHealthInsurance: Boolean(parsed.riskInsurance?.hasHealthInsurance),
-          hasLifeInsurance: Boolean(parsed.riskInsurance?.hasLifeInsurance),
+          hasHealthInsurance: Boolean(parsedFin.riskInsurance?.hasHealthInsurance),
+          hasLifeInsurance: Boolean(parsedFin.riskInsurance?.hasLifeInsurance),
           financialScore: fMetrics.financialHealthScore,
         };
       }
@@ -310,47 +313,45 @@ export function collectLayer1Metrics(): Layer1Metrics {
   }
 
   // 3. Module 3: Professional Capital
-  const savedSkills = localStorage.getItem("hc_skills_module_data");
-  if (savedSkills) {
+  const parsedSkills = allModuleData.skills;
+  if (parsedSkills) {
     try {
-      const parsed = JSON.parse(savedSkills);
-      if (parsed.academic) {
+      if (parsedSkills.academic) {
         hasAnyData = true;
-        const pMetrics = calculateProfessionalCapitalScore(parsed);
+        const pMetrics = calculateProfessionalCapitalScore(parsedSkills);
         defaultMetrics.professional = {
           isCompleted: true,
           professionalCapitalScore: pMetrics.professionalCapitalScore,
           employabilityIndex: pMetrics.employabilityIndex,
           aiReadinessScore: pMetrics.aiReadinessScore,
-          technicalSkillsCount: parsed.technicalSkills?.length || 0,
-          leadershipSkillsCount: parsed.softSkills?.length || 0,
+          technicalSkillsCount: parsedSkills.technicalSkills?.length || 0,
+          leadershipSkillsCount: parsedSkills.softSkills?.length || 0,
         };
-        if (parsed.academic.degree) defaultMetrics.profile.degree = parsed.academic.degree;
-        if (parsed.academic.gpa) defaultMetrics.profile.cgpa = parsed.academic.gpa;
-        if (parsed.certifications) defaultMetrics.profile.certificationsCount = parsed.certifications.length;
-        if (parsed.projects) defaultMetrics.profile.projectsCount = parsed.projects.length;
+        if (parsedSkills.academic.degree) defaultMetrics.profile.degree = parsedSkills.academic.degree;
+        if (parsedSkills.academic.gpa) defaultMetrics.profile.cgpa = parsedSkills.academic.gpa;
+        if (parsedSkills.certifications) defaultMetrics.profile.certificationsCount = parsedSkills.certifications.length;
+        if (parsedSkills.projects) defaultMetrics.profile.projectsCount = parsedSkills.projects.length;
       }
     } catch (e) {}
   }
 
   // 4. Module 4: Health Capital
-  const savedHealth = localStorage.getItem("hc_health_module_data") || localStorage.getItem("human_capital_health_v4");
-  if (savedHealth) {
+  const parsedHealth = allModuleData.health;
+  if (parsedHealth) {
     try {
-      const parsed = JSON.parse(savedHealth);
-      if (parsed.bodyMetrics) {
+      if (parsedHealth.bodyMetrics) {
         hasAnyData = true;
-        const hMetrics = calculateHealthCapitalScore(parsed);
+        const hMetrics = calculateHealthCapitalScore(parsedHealth);
         defaultMetrics.health = {
           isCompleted: true,
           bmi: hMetrics.bmi,
-          workoutFrequencyPerWeek: parsed.physicalActivity?.workoutFrequencyPerWeek || 0,
-          sleepHoursPerNight: parsed.sleepIntelligence?.averageSleepHoursPerNight || 7,
+          workoutFrequencyPerWeek: parsedHealth.physicalActivity?.workoutFrequencyPerWeek || 0,
+          sleepHoursPerNight: parsedHealth.sleepIntelligence?.averageSleepHoursPerNight || 7,
           sleepScore: hMetrics.scores.sleepRecovery,
-          stressLevel: parsed.mentalWellbeing?.perceivedStressLevel1To10 || 4,
+          stressLevel: parsedHealth.mentalWellbeing?.perceivedStressLevel1To10 || 4,
           dietQualityScore: hMetrics.scores.nutritionMetabolic,
-          hasMindfulnessPractice: Boolean(parsed.mentalWellbeing?.practicesMindfulness),
-          hasHarmfulHabits: Boolean(parsed.lifestyleHabits?.usesTobacco),
+          hasMindfulnessPractice: Boolean(parsedHealth.mentalWellbeing?.practicesMindfulness),
+          hasHarmfulHabits: Boolean(parsedHealth.lifestyleHabits?.usesTobacco),
           healthCapitalScore: hMetrics.healthCapitalScore,
         };
       }
@@ -358,26 +359,27 @@ export function collectLayer1Metrics(): Layer1Metrics {
   }
 
   // 5. Module 5: Human Assessments
-  const savedAssess = localStorage.getItem("hc_assessment_module_data") || localStorage.getItem("human_capital_assessment_v8_session");
-  if (savedAssess) {
+  const parsedAssess = allModuleData.assessments;
+  if (parsedAssess) {
     try {
-      const parsed = JSON.parse(savedAssess);
-      if (parsed.answers) {
+      if (parsedAssess.answers) {
         hasAnyData = true;
-        const aMetrics = calculateAssessmentMetrics(parsed);
+        const aMetrics = calculateAssessmentMetrics(parsedAssess);
+        const answeredCount = Object.keys(parsedAssess.answers).length;
         const allCompleted =
-          parsed.isCompleted ||
-          (parsed.isPersonalityCompleted &&
-            parsed.isMindsetCompleted &&
-            parsed.isDecisionCompleted &&
-            parsed.isAwarenessCompleted &&
-            parsed.isAptitudeCompleted &&
-            parsed.isCommunicationCompleted);
+          Boolean(parsedAssess.isCompleted) ||
+          (Boolean(parsedAssess.isPersonalityCompleted) &&
+            Boolean(parsedAssess.isMindsetCompleted) &&
+            Boolean(parsedAssess.isDecisionCompleted) &&
+            Boolean(parsedAssess.isAwarenessCompleted) &&
+            Boolean(parsedAssess.isAptitudeCompleted) &&
+            Boolean(parsedAssess.isCommunicationCompleted)) ||
+          answeredCount >= 130;
 
         defaultMetrics.assessment = {
           isCompleted: allCompleted,
           assessmentScore: aMetrics.assessmentScore,
-          answeredCount: Object.keys(parsed.answers).length,
+          answeredCount: Object.keys(parsedAssess.answers).length,
           discipline: aMetrics.traits.discipline,
           integrity: aMetrics.traits.integrity,
           healthHabits: aMetrics.traits.healthConsciousness,
@@ -675,8 +677,8 @@ export function generateLayer3ExecutiveReport(
 }
 
 // Master Function Executing All 3 Layers
-export function run3LayerAiEngine() {
-  const layer1 = collectLayer1Metrics();
+export async function run3LayerAiEngine() {
+  const layer1 = await collectLayer1Metrics();
   const layer2 = evaluateLayer2Scores(layer1);
   const layer3 = generateLayer3ExecutiveReport(layer1, layer2);
   return {

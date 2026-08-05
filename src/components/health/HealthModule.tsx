@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { getScopedItem, setScopedItem } from "@/lib/userStorage";
+import { saveModuleData, loadModuleData, getCurrentUserId, saveLearningProgress } from "@/services/moduleDataService";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   HeartPulse,
@@ -51,35 +51,51 @@ export const HealthModule: React.FC = () => {
   const [data, setData] = useState<HealthCapitalState>(defaultHealthCapitalState);
   const [activeStep, setActiveStep] = useState<number>(1);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
+
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined") {
-      const parsed = getScopedItem<HealthCapitalState | null>("hc_health_module_data", null);
-      if (parsed && parsed.bodyMetrics) {
-        setData(parsed);
-        if (parsed.isCompleted || (parsed.bodyMetrics.heightCm && parsed.bodyMetrics.weightKg)) {
-          setIsSubmitted(true);
-          setActiveStep(9);
+    async function loadFromSupabase() {
+      try {
+        const uid = await getCurrentUserId();
+        setUserId(uid);
+        if (!uid) return;
+        const parsed = await loadModuleData(uid, "health") as HealthCapitalState | null;
+        if (parsed && parsed.bodyMetrics) {
+          const isComp = Boolean(parsed.isCompleted || parsed.submittedAt || (parsed.bodyMetrics.heightCm && parsed.bodyMetrics.weightKg));
+          setData({ ...parsed, isCompleted: isComp });
+          if (isComp) {
+            setIsSubmitted(true);
+            setActiveStep(9);
+          }
         }
+      } finally {
+        setIsLoaded(true);
       }
     }
+    loadFromSupabase();
   }, []);
-  const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
-
-  // Debounced Autosave
-  useEffect(() => {
-    if (!mounted) return;
-    setSavingStatus("saving");
-    const timeout = setTimeout(() => {
-      setScopedItem("hc_health_module_data", data);
-      setSavingStatus("saved");
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [data, mounted]);
-
   // Real-Time Engine Calculation
   const metrics = useMemo(() => calculateHealthCapitalScore(data), [data]);
+
+  // Debounced Autosave to Supabase (ONLY after initial load finishes)
+  useEffect(() => {
+    if (!mounted || !userId || !isLoaded) return;
+    setSavingStatus("saving");
+    const timeout = setTimeout(async () => {
+      const isComp = Boolean((data as any).isCompleted || (data as any).submittedAt || isSubmitted);
+      const healthScore = metrics?.healthCapitalScore || 0;
+      const result = await saveModuleData(userId, "health", { ...data, isCompleted: isComp } as any, isComp, healthScore);
+      if (!result) {
+        console.warn("[HealthModule] ⚠️ Save to Supabase FAILED — data was NOT persisted. Check [DB_DEBUG] logs above.");
+      }
+      setSavingStatus("saved");
+    }, 800);
+    return () => clearTimeout(timeout);
+  }, [data, mounted, userId, isLoaded, isSubmitted, metrics]);
 
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -104,7 +120,7 @@ export const HealthModule: React.FC = () => {
     if (activeStep > 1) setActiveStep((prev) => prev - 1);
   };
 
-  const handleSubmitHealth = () => {
+  const handleSubmitHealth = async () => {
     if (!validateCurrentStep(activeStep)) return;
     const updatedData = {
       ...data,
@@ -112,8 +128,12 @@ export const HealthModule: React.FC = () => {
       submittedAt: new Date().toISOString(),
     };
     setData(updatedData);
+    if (userId) {
+      const healthScore = metrics?.healthCapitalScore || 0;
+      await saveModuleData(userId, "health", updatedData, true, healthScore);
+      await saveLearningProgress(userId, "health", 100);
+    }
     if (typeof window !== "undefined") {
-      setScopedItem("hc_health_module_data", updatedData);
       window.dispatchEvent(new CustomEvent("hc_assessment_updated"));
     }
     setIsSubmitted(true);

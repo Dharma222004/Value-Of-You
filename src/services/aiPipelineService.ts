@@ -135,15 +135,22 @@ export function getClassificationDetails(score: number): {
   }
 }
 
-import { getScopedItem, setScopedItem } from "@/lib/userStorage";
+import { saveModuleData, loadModuleData, getCurrentUserId, saveAiRecommendation } from "@/services/moduleDataService";
 
-// Read Saved AI Report from Storage
-export function getSavedAiReport(): SavedAiReportPayload | null {
-  if (typeof window === "undefined") return null;
+// Read Saved AI Report from Supabase
+export async function getSavedAiReport(): Promise<SavedAiReportPayload | null> {
   try {
-    const parsed = getScopedItem<SavedAiReportPayload | null>(SAVED_AI_REPORT_STORAGE_KEY, null);
-    if (parsed && parsed.humanCapitalScore !== undefined) {
-      return parsed;
+    const userId = await getCurrentUserId();
+    if (!userId) return null;
+    const data = await loadModuleData(userId, "assessments" as any);
+    // Check if report data is stored as a nested property
+    if (data && (data as any).aiReport) {
+      return (data as any).aiReport as SavedAiReportPayload;
+    }
+    // Also try loading from a dedicated ai_report key in module_data
+    const reportData = await loadModuleData(userId, "assessments" as any);
+    if (reportData && (reportData as any).humanCapitalScore !== undefined) {
+      return reportData as any as SavedAiReportPayload;
     }
   } catch (e) {
     console.error("Failed to read saved AI report:", e);
@@ -151,20 +158,37 @@ export function getSavedAiReport(): SavedAiReportPayload | null {
   return null;
 }
 
-// Save AI Report Payload to Storage & Broadcast Event
-export function saveAiReport(report: SavedAiReportPayload): void {
-  if (typeof window === "undefined") return;
+// Save AI Report Payload to Supabase & Broadcast Event
+export async function saveAiReport(report: SavedAiReportPayload): Promise<void> {
   try {
-    setScopedItem(SAVED_AI_REPORT_STORAGE_KEY, report);
-    window.dispatchEvent(new CustomEvent(AI_REPORT_UPDATED_EVENT, { detail: report }));
+    const userId = await getCurrentUserId();
+    if (userId) {
+      // Save as module_data with a special key
+      await saveModuleData(userId, "assessments" as any, { ...await loadModuleData(userId, "assessments" as any) || {}, aiReport: report }, true, report.humanCapitalScore);
+      // Also save top recommendations to ai_recommendations table
+      if (report.recommendations) {
+        for (const rec of report.recommendations.slice(0, 5)) {
+          await saveAiRecommendation(
+            userId,
+            typeof rec === "string" ? rec : (rec as any).text || JSON.stringify(rec),
+            "ai_pipeline",
+            0,
+            { source: "3-layer-ai-engine" }
+          );
+        }
+      }
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(AI_REPORT_UPDATED_EVENT, { detail: report }));
+    }
   } catch (e) {
     console.error("Failed to save AI report:", e);
   }
 }
 
 // Check if a Saved AI Report exists
-export function hasSavedAiReport(): boolean {
-  return getSavedAiReport() !== null;
+export async function hasSavedAiReport(): Promise<boolean> {
+  return (await getSavedAiReport()) !== null;
 }
 
 // ================= INTERMEDIATE STAGE: DATA VALIDATION & INTELLIGENCE PIPELINE =================
@@ -202,11 +226,24 @@ export function runDataValidationPipeline(l1: Layer1Metrics) {
   };
 }
 
+import { evaluateUserWithGroq } from "./groqAiService";
+
 // ================= AI EVALUATION PIPELINE EXECUTION =================
 
-export function generateStructuredAiReport(): SavedAiReportPayload {
-  const l1 = collectLayer1Metrics();
+export async function generateStructuredAiReport(): Promise<SavedAiReportPayload> {
+  const l1 = await collectLayer1Metrics();
   const validation = runDataValidationPipeline(l1);
+
+  // Attempt Groq AI Engine Evaluation (Primary: meta-llama/llama-guard-4-12b)
+  try {
+    const groqReport = await evaluateUserWithGroq(l1);
+    if (groqReport) {
+      await saveAiReport(groqReport);
+      return groqReport;
+    }
+  } catch (err) {
+    console.error("[AI Pipeline] Groq evaluation error, falling back to local engine:", err);
+  }
 
   // 1. Calculate 7 Core Sub-Indices with Analytical Reasons & Confidence
   const techCap = Math.min(100, l1.professional.technicalSkillsCount * 12 + l1.profile.certificationsCount * 10 + l1.profile.projectsCount * 8);
@@ -498,7 +535,7 @@ export function generateStructuredAiReport(): SavedAiReportPayload {
     validationMeta: validation,
   };
 
-  // Save report to localStorage and trigger events
+  // Save report to Supabase and trigger UI events
   saveAiReport(payload);
   return payload;
 }

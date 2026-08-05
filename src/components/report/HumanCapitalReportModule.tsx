@@ -29,16 +29,18 @@ export const HumanCapitalReportModule: React.FC = () => {
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined") {
-      const saved = getSavedAiReport();
-      if (saved) {
+    async function loadReport() {
+      const saved = await getSavedAiReport();
+      if (saved) setReport(saved);
+    }
+    loadReport();
+
+    const handleUpdate = async (e: any) => {
+      if (e.detail) setReport(e.detail);
+      else {
+        const saved = await getSavedAiReport();
         setReport(saved);
       }
-    }
-
-    const handleUpdate = (e: any) => {
-      if (e.detail) setReport(e.detail);
-      else setReport(getSavedAiReport());
     };
 
     window.addEventListener("hc_ai_report_updated", handleUpdate);

@@ -64,8 +64,8 @@ export interface HumanCapitalCalculationResult {
   actionItems: string[];
 }
 
-export function calculateHumanCapitalScore(): HumanCapitalCalculationResult {
-  const savedReport = getSavedAiReport();
+export async function calculateHumanCapitalScore(): Promise<HumanCapitalCalculationResult> {
+  const savedReport = await getSavedAiReport();
 
   if (savedReport) {
     const { classification, color, bg } = getClassificationDetails(savedReport.humanCapitalScore);
@@ -104,7 +104,7 @@ export function calculateHumanCapitalScore(): HumanCapitalCalculationResult {
   }
 
   // Fallback to Live 3-Layer Evaluation if no report has been saved yet
-  const { layer1, layer2, layer3 } = run3LayerAiEngine();
+  const { layer1, layer2, layer3 } = await run3LayerAiEngine();
   const humanCapitalScore = layer2.masterHumanCapitalScore;
   const { classification, color, bg } = getClassificationDetails(humanCapitalScore);
   const baseCr = (humanCapitalScore / 100) * 5.8;
@@ -125,7 +125,7 @@ export function calculateHumanCapitalScore(): HumanCapitalCalculationResult {
     learningPotential: layer2.learningPotential,
 
     moduleScores: {
-      currentStatus: 85,
+      currentStatus: layer1.profile.cgpa > 0 ? Math.round(layer1.profile.cgpa * 10) : 0,
       financial: layer1.financial.financialScore,
       health: layer1.health.healthCapitalScore,
       skills: layer1.professional.professionalCapitalScore,

@@ -1,21 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import AuthCard from "@/components/auth/AuthCard";
 import PasswordInput from "@/components/auth/PasswordInput";
 import PasswordStrengthMeter from "@/components/auth/PasswordStrengthMeter";
 import { validatePassword } from "@/lib/auth/validation";
+import { supabase } from "@/lib/supabase";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function ResetPasswordPage() {
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetDone, setResetDone] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Supabase sends the user here with a recovery token in the URL hash.
+  // The Supabase JS client auto-detects it and establishes a session.
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // Session is now set; user can update their password
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -32,10 +49,23 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password,
+      });
+
+      if (updateError) {
+        setError(updateError.message);
+        setLoading(false);
+        return;
+      }
+
       setResetDone(true);
-    }, 1100);
+    } catch (err: any) {
+      setError(err.message || "Failed to update password.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -104,7 +134,7 @@ export default function ResetPasswordPage() {
           <div className="space-y-1">
             <h2 className="text-lg font-bold text-[var(--foreground)]">Password Successfully Reset</h2>
             <p className="text-xs text-[var(--subtext)] leading-relaxed">
-              Your password has been updated. You can now log in to your Human Capital account with your new credentials.
+              Your password has been updated. You can now log in with your new credentials.
             </p>
           </div>
 

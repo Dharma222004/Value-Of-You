@@ -21,11 +21,18 @@ export const ExecutiveAiSummaryCard: React.FC = () => {
   const [report, setReport] = useState<SavedAiReportPayload | null>(null);
 
   useEffect(() => {
-    setReport(getSavedAiReport());
+    async function loadReport() {
+      const saved = await getSavedAiReport();
+      if (saved) setReport(saved);
+    }
+    loadReport();
 
-    const handleUpdate = (e: any) => {
+    const handleUpdate = async (e: any) => {
       if (e.detail) setReport(e.detail);
-      else setReport(getSavedAiReport());
+      else {
+        const saved = await getSavedAiReport();
+        setReport(saved);
+      }
     };
 
     window.addEventListener("hc_ai_report_updated", handleUpdate);
@@ -92,7 +99,9 @@ export const ExecutiveAiSummaryCard: React.FC = () => {
 
       {/* AI Narrative Executive Summary Paragraph 1 */}
       <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-[var(--text-main)] leading-relaxed shadow-sm">
-        {report.executiveSummaryNarrative[0]}
+        {typeof report.executiveSummaryNarrative?.[0] === "string" 
+          ? report.executiveSummaryNarrative[0].replace(/```json/g, "").replace(/```/g, "").trim()
+          : "Enterprise AI evaluation completes comprehensive multi-dimensional telemetry analysis."}
       </div>
 
       {/* 7 AI Core Sub-Indices Grid */}

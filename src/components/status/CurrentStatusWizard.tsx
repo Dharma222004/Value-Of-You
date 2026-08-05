@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { getScopedItem, setScopedItem } from "@/lib/userStorage";
+import { saveModuleData, loadModuleData, getCurrentUserId, saveLearningProgress } from "@/services/moduleDataService";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   UserCheck,
@@ -234,19 +234,31 @@ export function CurrentStatusWizard() {
   const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
 
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined") {
-      const parsed = getScopedItem<MasterProfileState | null>("hc_master_profile_data", null);
-      if (parsed && parsed.personalProfile) {
-        setState(parsed);
-        if (parsed.isCompleted || (parsed.personalProfile.firstName && parsed.personalProfile.lastName)) {
-          setIsSubmitted(true);
-          setActiveStep(9);
+    async function loadFromSupabase() {
+      try {
+        const uid = await getCurrentUserId();
+        setUserId(uid);
+        if (!uid) return;
+        const parsed = await loadModuleData(uid, "master_profile") as MasterProfileState | null;
+        if (parsed && parsed.personalProfile) {
+          const isComp = Boolean(parsed.isCompleted || parsed.submittedAt || (parsed.personalProfile.firstName && parsed.personalProfile.lastName));
+          setState({ ...parsed, isCompleted: isComp });
+          if (isComp) {
+            setIsSubmitted(true);
+            setActiveStep(9);
+          }
         }
+      } finally {
+        setIsLoaded(true);
       }
     }
+    loadFromSupabase();
   }, []);
 
   // Automatically update age when Date of Birth changes
@@ -260,16 +272,20 @@ export function CurrentStatusWizard() {
     }
   }, [state.personalProfile.dateOfBirth]);
 
-  // Debounced autosave to LocalStorage
+  // Debounced autosave to Supabase (ONLY after initial load finishes)
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !userId || !isLoaded) return;
     setSavingStatus("saving");
-    const timeout = setTimeout(() => {
-      setScopedItem("hc_master_profile_data", state);
+    const timeout = setTimeout(async () => {
+      const isComp = Boolean(state.isCompleted || state.submittedAt || isSubmitted);
+      const result = await saveModuleData(userId, "master_profile", { ...state, isCompleted: isComp } as any, isComp, 88);
+      if (!result) {
+        console.warn("[CurrentStatusWizard] ⚠️ Save to Supabase FAILED — data was NOT persisted. Check [DB_DEBUG] logs above.");
+      }
       setSavingStatus("saved");
-    }, 500);
+    }, 800);
     return () => clearTimeout(timeout);
-  }, [state, mounted]);
+  }, [state, mounted, userId, isLoaded, isSubmitted]);
 
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -332,7 +348,7 @@ export function CurrentStatusWizard() {
     if (activeStep > 1) setActiveStep((prev) => prev - 1);
   };
 
-  const handleSubmitProfile = () => {
+  const handleSubmitProfile = async () => {
     if (!validateCurrentStep(activeStep)) return;
     const updatedState = {
       ...state,
@@ -340,8 +356,11 @@ export function CurrentStatusWizard() {
       submittedAt: new Date().toISOString(),
     };
     setState(updatedState);
+    if (userId) {
+      await saveModuleData(userId, "master_profile", updatedState as any, true, 88);
+      await saveLearningProgress(userId, "master_profile", 100);
+    }
     if (typeof window !== "undefined") {
-      setScopedItem("hc_master_profile_data", updatedState);
       window.dispatchEvent(new CustomEvent("hc_assessment_updated"));
     }
     setIsSubmitted(true);
@@ -427,8 +446,20 @@ export function CurrentStatusWizard() {
           </p>
         </div>
 
-        {/* Profile Completeness Pill */}
-        <div className="flex items-center gap-4 z-10">
+        {/* Profile Completeness Pill & Quick Edit Action */}
+        <div className="flex items-center gap-3 z-10 flex-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSubmitted(false);
+              setActiveStep(1);
+            }}
+            className="px-4 py-3 rounded-2xl bg-indigo-600/15 border border-indigo-500/30 text-indigo-300 font-mono font-bold text-xs hover:bg-indigo-600/25 hover:text-white transition-all flex items-center gap-2 shadow-sm"
+          >
+            <UserCheck className="w-4 h-4 text-indigo-400" />
+            <span>Edit Profile</span>
+          </button>
+
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-blue-600/10 border border-blue-500/20">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-400 text-white font-extrabold text-lg flex items-center justify-center shadow-lg">
               {aiSummaryData.profileCompletenessPercentage}%

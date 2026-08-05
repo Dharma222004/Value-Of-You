@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { getScopedItem, setScopedItem } from "@/lib/userStorage";
+import { saveModuleData, loadModuleData, getCurrentUserId, saveLearningProgress } from "@/services/moduleDataService";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   GraduationCap,
@@ -68,43 +68,59 @@ export const SkillsModule: React.FC = () => {
   const [data, setData] = useState<ProfessionalCapitalState>(defaultProfessionalCapitalState);
   const [activeStep, setActiveStep] = useState<number>(1);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
+
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined") {
-      const parsed = getScopedItem<any>("hc_skills_module_data", null);
-      if (parsed && parsed.academic) {
-        const mergedData = {
-          ...defaultProfessionalCapitalState,
-          ...parsed,
-          academic: { ...defaultProfessionalCapitalState.academic, ...(parsed.academic || {}) },
-          workExperience: { ...defaultProfessionalCapitalState.workExperience, ...(parsed.workExperience || {}) },
-          continuousLearning: { ...defaultProfessionalCapitalState.continuousLearning, ...(parsed.continuousLearning || {}) },
-          careerVision: { ...defaultProfessionalCapitalState.careerVision, ...(parsed.careerVision || {}) },
-        };
-        setData(mergedData);
-        if (parsed.isCompleted || (mergedData.academic && mergedData.academic.degree)) {
-          setIsSubmitted(true);
-          setActiveStep(13);
+    async function loadFromSupabase() {
+      try {
+        const uid = await getCurrentUserId();
+        setUserId(uid);
+        if (!uid) return;
+        const parsed = await loadModuleData(uid, "skills");
+        if (parsed && (parsed as any).academic) {
+          const mergedData = {
+            ...defaultProfessionalCapitalState,
+            ...parsed,
+            academic: { ...defaultProfessionalCapitalState.academic, ...((parsed as any).academic || {}) },
+            workExperience: { ...defaultProfessionalCapitalState.workExperience, ...((parsed as any).workExperience || {}) },
+            continuousLearning: { ...defaultProfessionalCapitalState.continuousLearning, ...((parsed as any).continuousLearning || {}) },
+            careerVision: { ...defaultProfessionalCapitalState.careerVision, ...((parsed as any).careerVision || {}) },
+          };
+          const isComp = Boolean((parsed as any).isCompleted || (parsed as any).submittedAt || (mergedData.academic && mergedData.academic.degree));
+          setData({ ...mergedData, isCompleted: isComp } as ProfessionalCapitalState);
+          if (isComp) {
+            setIsSubmitted(true);
+            setActiveStep(13);
+          }
         }
+      } finally {
+        setIsLoaded(true);
       }
     }
+    loadFromSupabase();
   }, []);
-  const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
-
-  // Debounced Autosave
-  useEffect(() => {
-    if (!mounted) return;
-    setSavingStatus("saving");
-    const timeout = setTimeout(() => {
-      setScopedItem("hc_skills_module_data", data);
-      setSavingStatus("saved");
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [data, mounted]);
-
   // Real-Time Engine Calculation
   const metrics = useMemo(() => calculateProfessionalCapitalScore(data), [data]);
+
+  // Debounced Autosave to Supabase (ONLY after initial load finishes)
+  useEffect(() => {
+    if (!mounted || !userId || !isLoaded) return;
+    setSavingStatus("saving");
+    const timeout = setTimeout(async () => {
+      const isComp = Boolean((data as any).isCompleted || (data as any).submittedAt || isSubmitted);
+      const skillsScore = metrics?.professionalCapitalScore || 0;
+      const result = await saveModuleData(userId, "skills", { ...data, isCompleted: isComp } as any, isComp, skillsScore);
+      if (!result) {
+        console.warn("[SkillsModule] ⚠️ Save to Supabase FAILED — data was NOT persisted. Check [DB_DEBUG] logs above.");
+      }
+      setSavingStatus("saved");
+    }, 800);
+    return () => clearTimeout(timeout);
+  }, [data, mounted, userId, isLoaded, isSubmitted, metrics]);
 
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -134,7 +150,7 @@ export const SkillsModule: React.FC = () => {
     if (activeStep > 1) setActiveStep((prev) => prev - 1);
   };
 
-  const handleSubmitSkills = () => {
+  const handleSubmitSkills = async () => {
     if (!validateCurrentStep(activeStep)) return;
     const updatedData = {
       ...data,
@@ -142,8 +158,12 @@ export const SkillsModule: React.FC = () => {
       submittedAt: new Date().toISOString(),
     };
     setData(updatedData);
+    if (userId) {
+      const skillScore = metrics?.professionalCapitalScore || 0;
+      await saveModuleData(userId, "skills", updatedData as any, true, skillScore);
+      await saveLearningProgress(userId, "skills", 100);
+    }
     if (typeof window !== "undefined") {
-      setScopedItem("hc_skills_module_data", updatedData);
       window.dispatchEvent(new CustomEvent("hc_assessment_updated"));
     }
     setSavingStatus("saved");

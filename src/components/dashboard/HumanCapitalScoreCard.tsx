@@ -6,13 +6,24 @@ import Link from "next/link";
 import { getDashboardTelemetry, DashboardTelemetry } from "@/services/dashboardTelemetry";
 
 export const HumanCapitalScoreCard: React.FC = () => {
-  const [telemetry, setTelemetry] = useState<DashboardTelemetry>(() => getDashboardTelemetry());
+  const [telemetry, setTelemetry] = useState<DashboardTelemetry | null>(null);
 
   useEffect(() => {
-    setTelemetry(getDashboardTelemetry());
+    const refresh = () => { getDashboardTelemetry().then(setTelemetry); };
+    refresh();
+
+    window.addEventListener("hc_assessment_updated", refresh);
+    window.addEventListener("hc_telemetry_updated", refresh);
+    window.addEventListener("focus", refresh);
+
+    return () => {
+      window.removeEventListener("hc_assessment_updated", refresh);
+      window.removeEventListener("hc_telemetry_updated", refresh);
+      window.removeEventListener("focus", refresh);
+    };
   }, []);
 
-  if (!telemetry.mounted) {
+  if (!telemetry || !telemetry.mounted) {
     return (
       <div className="glass-panel rounded-3xl p-6 border border-[var(--border-color)] space-y-6 animate-pulse">
         <div className="h-6 bg-slate-800 rounded w-1/3"></div>

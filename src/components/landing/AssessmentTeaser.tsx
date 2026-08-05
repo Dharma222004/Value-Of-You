@@ -1,18 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  CheckCircle,
   ArrowRight,
   ArrowLeft,
   Sparkles,
-  Save,
   Check,
-  ShieldAlert,
   Zap,
-  HelpCircle,
-  RotateCcw,
+  RotateCcw
 } from "lucide-react";
 
 interface QuestionStep {
@@ -26,20 +22,20 @@ interface QuestionStep {
 const wizardSteps: QuestionStep[] = [
   {
     id: 1,
-    section: "Dimension 1: Career Trajectory & Mobility",
-    question: "What is your primary career trajectory leverage point?",
+    section: "Dimension 1: Career Mobility & Executive Authority",
+    question: "What is your primary career leverage point?",
     subtitle: "Evaluates market scarcity, title velocity, and executive mobility.",
     options: [
       { label: "Executive / Founder with equity leverage", impact: "+22 pts", score: 95 },
-      { label: "Senior Tech / Strategy IC at high-growth firm", impact: "+18 pts", score: 85 },
+      { label: "Senior Tech / Strategy Leader at high-growth firm", impact: "+18 pts", score: 85 },
       { label: "Mid-level Manager seeking career acceleration", impact: "+12 pts", score: 72 },
-      { label: "Early-stage Specialist exploring optimal pivot", impact: "+8 pts", score: 60 },
+      { label: "Specialist exploring optimal pivot", impact: "+8 pts", score: 60 },
     ],
   },
   {
     id: 2,
-    section: "Dimension 2: Financial Runway & Independence",
-    question: "How many months of liquid runway (unearned income) do you hold?",
+    section: "Dimension 2: Financial Independence & Liquid Shield",
+    question: "How many months of liquid unearned runway do you hold?",
     subtitle: "Determines risk tolerance threshold and capital independence.",
     options: [
       { label: "24+ Months (High Capital Shield)", impact: "+25 pts", score: 96 },
@@ -50,12 +46,12 @@ const wizardSteps: QuestionStep[] = [
   },
   {
     id: 3,
-    section: "Dimension 3: Technical Skills Architecture",
-    question: "How integrated are generative AI & automation tools into your daily output?",
+    section: "Dimension 3: Technical Skills & AI Tooling Architecture",
+    question: "How integrated are generative AI & automation tools into your daily workflow?",
     subtitle: "Measures 10x output multiplier and technological disruption defense.",
     options: [
-      { label: "Expert: Automated workflow pipelines & custom agents", impact: "+20 pts", score: 98 },
-      { label: "Advanced: Daily power user for writing, code, & strategy", impact: "+15 pts", score: 82 },
+      { label: "Expert: Custom agents & automated pipeline workflows", impact: "+20 pts", score: 98 },
+      { label: "Advanced: Daily power user for code, writing, & strategy", impact: "+15 pts", score: 82 },
       { label: "Intermediate: Occasional prompts for basic tasks", impact: "+8 pts", score: 65 },
       { label: "Novice: Minimal integration into routine", impact: "+2 pts", score: 45 },
     ],
@@ -94,74 +90,102 @@ export const AssessmentTeaser: React.FC = () => {
     setSelectedAnswers({});
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "1") handleSelectOption(step.options[0].score);
+      else if (e.key === "2") handleSelectOption(step.options[1].score);
+      else if (e.key === "3") handleSelectOption(step.options[2].score);
+      else if (e.key === "4") handleSelectOption(step.options[3].score);
+      else if (e.key === "ArrowRight") nextStep();
+      else if (e.key === "ArrowLeft") prevStep();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentStepIndex, step]);
+
   const progressPercent = Math.round(((currentStepIndex + 1) / wizardSteps.length) * 100);
 
   return (
-    <section id="wizard" className="py-24 relative bg-[#060a14] border-t border-slate-800/80">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section id="wizard" className="py-32 relative bg-[#090d1a]">
+      
+      {/* Background Accent */}
+      <div className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-[#06b6d4]/04 blur-[140px] pointer-events-none rounded-full" />
+
+      <div className="grid-container max-w-[920px] relative z-10">
         
         {/* Section Header */}
-        <div className="text-center space-y-3 mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono font-semibold uppercase tracking-wider">
+        <div className="text-center space-y-4 mb-14">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 text-xs font-mono font-semibold uppercase tracking-wider">
             <Zap className="w-3.5 h-3.5" />
-            <span>Interactive Assessment Preview</span>
+            <span>INTERACTIVE WIZARD</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h2 className="section-headline">
             Experience the Assessment Wizard
           </h2>
-          <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto">
-            Test a sample 3-question evaluation. Real-time autosave persists your answers across evaluation steps.
+          <p className="body-text mx-auto">
+            Test a sample 3-question evaluation. Real-time autosave persists your selections.
           </p>
         </div>
 
-        {/* Wizard Card Container */}
-        <div className="glass-panel rounded-3xl border border-slate-700/80 p-6 sm:p-10 shadow-2xl space-y-6 relative overflow-hidden">
+        {/* Wizard Glass Container */}
+        <div className="card-surface p-8 sm:p-10 space-y-6">
           
-          {/* Progress Header */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4 text-xs font-mono">
-            <div className="flex items-center gap-2 text-slate-300 font-bold">
-              <span>Question {currentStepIndex + 1} of {wizardSteps.length}</span>
-              <span className="text-slate-500">({progressPercent}% Complete)</span>
+          {/* Progress & Autosave Bar */}
+          <div className="space-y-3 border-b border-white/[0.08] pb-5">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <div className="flex items-center gap-2 text-white font-semibold">
+                <span>Question {currentStepIndex + 1} of {wizardSteps.length}</span>
+                <span className="text-[#94a3b8]">({progressPercent}% Complete)</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {isSaved ? (
+                  <span className="flex items-center gap-1 text-[#10b981] text-[11px] font-semibold bg-[#10b981]/10 px-2.5 py-0.5 rounded border border-[#10b981]/20 font-mono">
+                    <Check className="w-3 h-3" /> Autosaved
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-[#f59e0b] text-[11px] font-semibold bg-[#f59e0b]/10 px-2.5 py-0.5 rounded border border-[#f59e0b]/20 font-mono">
+                    Saving...
+                  </span>
+                )}
+                <button
+                  onClick={resetWizard}
+                  className="text-[#94a3b8] hover:text-white p-1 transition-colors"
+                  title="Reset Answers"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              {isSaved ? (
-                <span className="flex items-center gap-1 text-emerald-400 text-[11px] font-semibold bg-emerald-950/80 px-2.5 py-0.5 rounded border border-emerald-800">
-                  <Check className="w-3 h-3" /> Autosaved
-                </span>
-              ) : (
-                <span className="flex items-center gap-1 text-amber-400 text-[11px] font-semibold bg-amber-950/80 px-2.5 py-0.5 rounded border border-amber-800">
-                  Saving...
-                </span>
-              )}
-              <button
-                onClick={resetWizard}
-                className="text-slate-400 hover:text-white p-1 transition-colors"
-                title="Reset Answers"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
+            {/* Smooth Animated Progress Bar */}
+            <div className="h-1.5 w-full bg-[#05070f] rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-[#3b82f6] via-[#06b6d4] to-[#10b981] rounded-full"
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 0.3 }}
+              />
             </div>
           </div>
 
-          {/* Step Category Badge & Question */}
+          {/* Question & Options Area */}
           <AnimatePresence mode="wait">
             <motion.div
               key={step.id}
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.2 }}
               className="space-y-6"
             >
               <div className="space-y-1">
-                <span className="text-xs font-mono font-bold text-sky-400 uppercase tracking-wider">
+                <span className="text-xs font-mono font-bold text-[#3b82f6] uppercase tracking-wider">
                   {step.section}
                 </span>
                 <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                   {step.question}
                 </h3>
-                <p className="text-xs text-slate-300">{step.subtitle}</p>
+                <p className="text-sm text-[#94a3b8]">{step.subtitle}</p>
               </div>
 
               {/* Options Radio List */}
@@ -174,21 +198,17 @@ export const AssessmentTeaser: React.FC = () => {
                       onClick={() => handleSelectOption(opt.score)}
                       className={`w-full p-4 rounded-2xl text-left flex items-center justify-between border transition-all duration-200 ${
                         isSelected
-                          ? "bg-sky-500/10 border-sky-500/60 text-white shadow-lg shadow-sky-500/10"
-                          : "bg-slate-950/80 border-slate-800 text-slate-300 hover:bg-slate-900 hover:border-slate-700"
+                          ? "bg-[#3b82f6]/15 border-[#3b82f6] text-white shadow-md shadow-[#3b82f6]/10"
+                          : "bg-[#05070f] border-white/[0.08] text-[#94a3b8] hover:bg-[#111827] hover:border-white/[0.16] hover:text-white"
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div
-                          className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                            isSelected ? "border-sky-400 bg-sky-400 text-slate-950" : "border-slate-700 bg-slate-900"
-                          }`}
-                        >
-                          {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                        </div>
+                        <span className="w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-mono font-bold shrink-0 border-white/[0.2] bg-[#090d1a] text-white">
+                          {idx + 1}
+                        </span>
                         <span className="text-sm font-semibold">{opt.label}</span>
                       </div>
-                      <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-md border border-emerald-800">
+                      <span className="text-xs font-mono font-bold text-[#10b981] bg-[#10b981]/10 px-2.5 py-1 rounded-md border border-[#10b981]/20">
                         {opt.impact}
                       </span>
                     </button>
@@ -198,15 +218,15 @@ export const AssessmentTeaser: React.FC = () => {
             </motion.div>
           </AnimatePresence>
 
-          {/* Navigation Controls */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+          {/* Navigation Footer */}
+          <div className="flex items-center justify-between pt-4 border-t border-white/[0.08]">
             <button
               onClick={prevStep}
               disabled={currentStepIndex === 0}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-colors ${
+              className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-colors ${
                 currentStepIndex === 0
-                  ? "opacity-40 cursor-not-allowed border-slate-800 text-slate-600"
-                  : "border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "opacity-30 cursor-not-allowed border-white/[0.05] text-[#94a3b8]"
+                  : "border-white/[0.08] bg-[#05070f] text-[#94a3b8] hover:bg-[#111827] hover:text-white"
               }`}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -216,7 +236,7 @@ export const AssessmentTeaser: React.FC = () => {
             {currentStepIndex < wizardSteps.length - 1 ? (
               <button
                 onClick={nextStep}
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-sky-500 hover:bg-sky-400 text-slate-950 flex items-center gap-2 shadow-lg shadow-sky-500/20 transition-all"
+                className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-[#3b82f6] hover:bg-[#2563eb] text-white flex items-center gap-2 shadow-md shadow-[#3b82f6]/20 transition-all"
               >
                 <span>Next Question</span>
                 <ArrowRight className="w-4 h-4" />
@@ -224,7 +244,7 @@ export const AssessmentTeaser: React.FC = () => {
             ) : (
               <a
                 href="/auth/signup"
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
+                className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#10b981] to-[#06b6d4] text-white flex items-center gap-2 shadow-md shadow-[#10b981]/20 transition-all"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Complete Full Assessment →</span>

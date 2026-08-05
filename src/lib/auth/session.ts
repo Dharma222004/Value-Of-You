@@ -1,3 +1,9 @@
+/**
+ * @deprecated — This file is DEPRECATED.
+ * Session management is now handled by Supabase Auth via AuthContext.
+ * This legacy localStorage-based session system is no longer used.
+ * DO NOT import this file in new code.
+ */
 import { User, AuthSession, UserProfile } from "@/types/auth";
 
 const SESSION_KEY = "hc_platform_auth_session";

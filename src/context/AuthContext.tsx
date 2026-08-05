@@ -2,13 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, AuthSession, UserProfile } from "@/types/auth";
-import {
-  getStoredSession,
-  saveSession,
-  clearSession,
-  updateStoredUserProfile,
-  subscribeMultiTabSync,
-} from "@/lib/auth/session";
+import { supabase } from "@/lib/supabase";
+import { syncSupabaseProfile } from "@/services/supabaseProfileService";
 
 interface AuthContextType {
   user: User | null;
@@ -16,10 +11,11 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   loginWithCredentials: (email: string, pass: string, rememberMe: boolean) => Promise<{ success: boolean; error?: string; user?: User }>;
-  loginWithGoogle: () => void;
   signupWithCredentials: (name: string, email: string, pass: string) => Promise<{ success: boolean; error?: string; user?: User }>;
-  completeUserProfile: (profileData: UserProfile) => Promise<{ success: boolean; user?: User }>;
-  logout: () => void;
+  completeUserProfile: (data: { displayName?: string; status?: string; country?: string; timezone?: string; completedOnboarding?: boolean }) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: () => Promise<void>;
+  logout: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,125 +25,309 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    // Initial session load
-    const activeSession = getStoredSession();
-    if (activeSession) {
-      setSession(activeSession);
-      setUser(activeSession.user);
-    }
-    setLoading(false);
-
-    // Multi-tab synchronization
-    const unsubscribe = subscribeMultiTabSync((event, payload) => {
-      if (event === "LOGIN") {
-        setSession(payload);
-        setUser(payload.user);
-      } else if (event === "LOGOUT") {
+  const fetchSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
         setSession(null);
         setUser(null);
+        return;
+      }
+
+      const sbSession = data.session;
+      if (sbSession && sbSession.user) {
+        const userPayload: User = {
+          id: sbSession.user.id,
+          email: sbSession.user.email || "",
+          name:
+            sbSession.user.user_metadata?.full_name ||
+            sbSession.user.user_metadata?.name ||
+            sbSession.user.email?.split("@")[0] ||
+            "User",
+          image: sbSession.user.user_metadata?.avatar_url || sbSession.user.user_metadata?.picture,
+          provider: (sbSession.user.app_metadata?.provider as any) || "google",
+          emailVerified: true,
+          createdAt: sbSession.user.created_at || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const authSession: AuthSession = {
+          user: userPayload,
+          token: sbSession.access_token,
+          expiresAt: new Date((sbSession.expires_at || Date.now() / 1000 + 3600) * 1000).toISOString(),
+          rememberMe: true,
+        };
+
+        setSession(authSession);
+        setUser(userPayload);
+
+        // Set auth cookie for Next.js middleware
+        if (typeof document !== "undefined" && sbSession.access_token) {
+          document.cookie = `sb-auth-token=${sbSession.access_token}; path=/; max-age=2592000; SameSite=Lax;`;
+        }
+
+        // Sync profile to database
+        await syncSupabaseProfile(sbSession.user);
+      } else {
+        setSession(null);
+        setUser(null);
+        if (typeof document !== "undefined") {
+          document.cookie = "sb-auth-token=; path=/; max-age=0; SameSite=Lax;";
+        }
+      }
+    } catch (err) {
+      console.error("[Supabase Auth Fetch Error]:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetchSession();
+
+    // Subscribe to Supabase auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, sbSession) => {
+      if (sbSession && sbSession.user && isMounted) {
+        const userPayload: User = {
+          id: sbSession.user.id,
+          email: sbSession.user.email || "",
+          name:
+            sbSession.user.user_metadata?.full_name ||
+            sbSession.user.user_metadata?.name ||
+            sbSession.user.email?.split("@")[0] ||
+            "User",
+          image: sbSession.user.user_metadata?.avatar_url || sbSession.user.user_metadata?.picture,
+          provider: (sbSession.user.app_metadata?.provider as any) || "google",
+          emailVerified: true,
+          createdAt: sbSession.user.created_at || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const newAuthSession: AuthSession = {
+          user: userPayload,
+          token: sbSession.access_token,
+          expiresAt: new Date((sbSession.expires_at || Date.now() / 1000 + 3600) * 1000).toISOString(),
+          rememberMe: true,
+        };
+
+        setSession(newAuthSession);
+        setUser(userPayload);
+
+        // Set auth cookie for Next.js middleware
+        if (typeof document !== "undefined" && sbSession.access_token) {
+          document.cookie = `sb-auth-token=${sbSession.access_token}; path=/; max-age=2592000; SameSite=Lax;`;
+        }
+
+        // Synchronize to profiles table
+        await syncSupabaseProfile(sbSession.user);
+      } else if (event === "SIGNED_OUT" && isMounted) {
+        setSession(null);
+        setUser(null);
+        if (typeof document !== "undefined") {
+          document.cookie = "sb-auth-token=; path=/; max-age=0; SameSite=Lax;";
+        }
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
+  /**
+   * Supabase Email & Password Login
+   */
   const loginWithCredentials = async (email: string, pass: string, rememberMe: boolean) => {
     setLoading(true);
     try {
-      // Create authenticated user session
-      const newUser: User = {
-        id: `usr_${Date.now()}`,
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        name: email.split("@")[0].replace(".", " "),
-        provider: "credentials",
-        emailVerified: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+        password: pass,
+      });
 
-      const newSession: AuthSession = {
-        user: newUser,
-        token: `jwt_sec_${Math.random().toString(36).substring(2)}_${Date.now()}`,
-        expiresAt: new Date(Date.now() + (rememberMe ? 30 : 1) * 24 * 60 * 60 * 1000).toISOString(),
-        rememberMe,
-      };
+      if (error) {
+        setLoading(false);
+        return { success: false, error: error.message };
+      }
 
-      saveSession(newSession);
-      setSession(newSession);
-      setUser(newUser);
+      if (data.session && data.user) {
+        const userPayload: User = {
+          id: data.user.id,
+          email: data.user.email || "",
+          name:
+            data.user.user_metadata?.full_name ||
+            data.user.user_metadata?.name ||
+            data.user.email?.split("@")[0] ||
+            "User",
+          image: data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture,
+          provider: "credentials",
+          emailVerified: true,
+          createdAt: data.user.created_at || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const authSession: AuthSession = {
+          user: userPayload,
+          token: data.session.access_token,
+          expiresAt: new Date((data.session.expires_at || Date.now() / 1000 + 3600) * 1000).toISOString(),
+          rememberMe,
+        };
+
+        setSession(authSession);
+        setUser(userPayload);
+        await syncSupabaseProfile(data.user);
+        setLoading(false);
+        return { success: true, user: userPayload };
+      }
+
       setLoading(false);
-      return { success: true, user: newUser };
+      return { success: false, error: "Failed to authenticate session" };
     } catch (err: any) {
       setLoading(false);
       return { success: false, error: err.message || "Authentication failed." };
     }
   };
 
-  const loginWithGoogle = () => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
-    const redirectUri = `${window.location.origin}/api/auth/callback/google`;
-    const scope = encodeURIComponent("openid profile email");
-    const state = Math.random().toString(36).substring(7);
-
-    // Store state in sessionStorage for CSRF validation
-    sessionStorage.setItem("google_oauth_state", state);
-
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
-      redirectUri
-    )}&response_type=code&scope=${scope}&state=${state}&prompt=consent&access_type=offline`;
-
-    window.location.href = googleAuthUrl;
-  };
-
+  /**
+   * Supabase Email & Password Signup
+   */
   const signupWithCredentials = async (name: string, email: string, pass: string) => {
     setLoading(true);
     try {
-      const newUser: User = {
-        id: `usr_${Date.now()}`,
+      const { data, error } = await supabase.auth.signUp({
         email,
-        name,
-        provider: "credentials",
-        emailVerified: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+        password: pass,
+        options: {
+          data: {
+            full_name: name,
+          },
+        },
+      });
 
-      const newSession: AuthSession = {
-        user: newUser,
-        token: `jwt_sec_${Math.random().toString(36).substring(2)}_${Date.now()}`,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        rememberMe: true,
-      };
+      if (error) {
+        setLoading(false);
+        return { success: false, error: error.message };
+      }
 
-      saveSession(newSession);
-      setSession(newSession);
-      setUser(newUser);
+      if (data.user) {
+        const userPayload: User = {
+          id: data.user.id,
+          email: data.user.email || "",
+          name,
+          provider: "credentials",
+          emailVerified: Boolean(data.user.email_confirmed_at),
+          createdAt: data.user.created_at || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await syncSupabaseProfile(data.user);
+
+        if (data.session) {
+          const authSession: AuthSession = {
+            user: userPayload,
+            token: data.session.access_token,
+            expiresAt: new Date((data.session.expires_at || Date.now() / 1000 + 3600) * 1000).toISOString(),
+            rememberMe: true,
+          };
+          setSession(authSession);
+          setUser(userPayload);
+        }
+
+        setLoading(false);
+        return { success: true, user: userPayload };
+      }
+
       setLoading(false);
-      return { success: true, user: newUser };
+      return { success: false, error: "Signup completed. Please check your email to confirm." };
     } catch (err: any) {
       setLoading(false);
       return { success: false, error: err.message || "Signup failed." };
     }
   };
 
-  const completeUserProfile = async (profileData: UserProfile) => {
-    const updatedUser = updateStoredUserProfile(profileData);
-    if (updatedUser) {
-      setUser({ ...updatedUser });
-      if (session) {
-        setSession({ ...session, user: { ...updatedUser } });
+  /**
+   * Complete User Profile & Update Supabase Profiles Table
+   */
+  const completeUserProfile = async (data: {
+    displayName?: string;
+    status?: string;
+    country?: string;
+    timezone?: string;
+    completedOnboarding?: boolean;
+  }) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const activeUser = sessionData.session?.user;
+      if (activeUser) {
+        const fullName = data.displayName || user?.name || activeUser.email?.split("@")[0];
+        const { error } = await supabase
+          .from("profiles")
+          .upsert({
+            id: activeUser.id,
+            full_name: fullName,
+            email: activeUser.email,
+            updated_at: new Date().toISOString(),
+          });
+
+        if (error) throw error;
+
+        if (user) {
+          setUser({ ...user, name: fullName || user.name });
+        }
       }
-      return { success: true, user: updatedUser };
+      return { success: true };
+    } catch (err: any) {
+      console.error("[completeUserProfile Error]:", err);
+      return { success: false, error: err.message };
     }
-    return { success: false };
   };
 
-  const logout = () => {
-    clearSession();
+  /**
+   * Google OAuth Login via Supabase SDK ONLY
+   */
+  const loginWithGoogle = async (): Promise<void> => {
+    const redirectUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/auth/callback`
+        : "http://localhost:3000/auth/callback";
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: "offline",
+          prompt: "select_account",
+        },
+      },
+    });
+
+    if (error) {
+      console.error("[Supabase OAuth Error]:", error.message);
+      throw error;
+    }
+  };
+
+  /**
+   * Sign out via Supabase SDK ONLY
+   */
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      // Ignore
+    }
+    if (typeof document !== "undefined") {
+      document.cookie = "sb-auth-token=; path=/; max-age=0; SameSite=Lax;";
+    }
     setSession(null);
     setUser(null);
-    window.location.href = "/auth/login";
+    if (typeof window !== "undefined") {
+      window.location.href = "/auth/login";
+    }
   };
 
   return (
@@ -158,10 +338,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         isAuthenticated: !!user,
         loginWithCredentials,
-        loginWithGoogle,
         signupWithCredentials,
         completeUserProfile,
+        loginWithGoogle,
         logout,
+        refreshSession: fetchSession,
       }}
     >
       {children}

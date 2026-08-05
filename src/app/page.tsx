@@ -5,6 +5,7 @@ import { Header } from "@/components/landing/Header";
 import { Hero } from "@/components/landing/Hero";
 import WhyHumanCapital from "@/components/WhyHumanCapital";
 import { FiveDimensions } from "@/components/landing/FiveDimensions";
+import { CareerDetail } from "@/components/landing/CareerDetail";
 import { ScoreVisualizer } from "@/components/landing/ScoreVisualizer";
 import AssessmentProcess from "@/components/AssessmentProcess";
 import { AssessmentTeaser } from "@/components/landing/AssessmentTeaser";
@@ -23,11 +24,12 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#060911] text-slate-100 relative overflow-hidden bg-grid-pattern glow-gradient">
+    <main className="min-h-screen bg-[#05070f] text-[#FFFFFF] relative overflow-hidden bg-institutional-grid">
       <Header onStartAssessment={scrollToWizard} />
       <Hero onStartAssessment={scrollToWizard} />
       <WhyHumanCapital />
       <FiveDimensions />
+      <CareerDetail />
       <ScoreVisualizer />
       <AssessmentProcess />
       <AssessmentTeaser />

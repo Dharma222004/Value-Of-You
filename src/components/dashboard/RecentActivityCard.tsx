@@ -6,14 +6,14 @@ import { getDashboardTelemetry, DashboardTelemetry } from "@/services/dashboardT
 
 export const RecentActivityCard: React.FC = () => {
   const [mounted, setMounted] = useState(false);
-  const [telemetry, setTelemetry] = useState<DashboardTelemetry>(() => getDashboardTelemetry());
+  const [telemetry, setTelemetry] = useState<DashboardTelemetry | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    setTelemetry(getDashboardTelemetry());
+    getDashboardTelemetry().then(setTelemetry);
   }, []);
 
-  if (!mounted) {
+  if (!mounted || !telemetry) {
     return (
       <div className="glass-panel rounded-3xl p-6 border border-[var(--border-color)] space-y-4 text-left animate-pulse">
         <div className="h-6 bg-slate-800 rounded w-1/3"></div>

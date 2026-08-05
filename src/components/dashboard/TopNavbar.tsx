@@ -2,37 +2,29 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Search,
-  Bell,
   Sun,
   Moon,
-  Settings,
-  User,
-  Shield,
-  Menu,
-  X,
   ChevronDown,
-  Sparkles,
-  Activity,
-  Laptop,
+  User,
+  LogOut,
+  Menu,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
+import Link from "next/link";
 
 interface TopNavbarProps {
   onToggleMobileMenu?: () => void;
 }
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
-  const { user, logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
+  const { profile } = useProfile();
+
   const [themeMode, setThemeMode] = useState<"dark" | "light">("dark");
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  const [displayName, setDisplayName] = useState<string>("User");
-  const [displayEmail, setDisplayEmail] = useState<string>("user@human-capital.ai");
-
   useEffect(() => {
-    // Read theme preference
     if (typeof window !== "undefined") {
       const savedTheme = (localStorage.getItem("hc_theme_preference") as "dark" | "light") || "dark";
       setThemeMode(savedTheme);
@@ -46,31 +38,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
         document.documentElement.setAttribute("data-theme", "dark");
       }
     }
+  }, []);
 
-    if (user?.name && user.name !== "Authenticated User") {
-      setDisplayName(user.name);
-    }
-    if (user?.email) {
-      setDisplayEmail(user.email);
-    }
-
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("hc_master_profile_data");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          const fn = parsed.personalProfile?.firstName?.trim();
-          const ln = parsed.personalProfile?.lastName?.trim();
-          if (fn || ln) {
-            setDisplayName(`${fn} ${ln}`.trim());
-          }
-          if (parsed.contactInformation?.email) {
-            setDisplayEmail(parsed.contactInformation.email);
-          }
-        } catch (e) {}
-      }
-    }
-  }, [user]);
+  const displayName = profile?.full_name || authUser?.name || authUser?.email?.split("@")[0] || "User";
+  const displayEmail = profile?.email || authUser?.email || "";
+  const avatarUrl = profile?.avatar_url || authUser?.image || null;
 
   const initials = displayName
     ? displayName
@@ -99,36 +71,34 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
   };
 
   return (
-    <header className="h-16 border-b border-[var(--border-color)] bg-[var(--card-bg)] backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between transition-colors">
-      {/* Left: Mobile Menu Toggle & Title */}
-      <div className="flex items-center gap-4">
+    <header className="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between transition-colors">
+      {/* Left: Mobile Hamburger Toggle & App Title */}
+      <div className="flex items-center gap-3">
         {onToggleMobileMenu && (
           <button
+            type="button"
             onClick={onToggleMobileMenu}
-            className="md:hidden p-2 rounded-xl bg-slate-900 dark:bg-slate-800 border border-[var(--border-color)] text-slate-300"
+            title="Open Mobile Menu"
+            className="md:hidden p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:border-indigo-500/50 transition-all flex items-center justify-center shrink-0"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-5 h-5 text-indigo-400" />
           </button>
         )}
-
         <div>
-          <h1 className="text-base font-bold text-[var(--text-main)] tracking-tight flex items-center gap-2">
+          <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
             <span>Human Capital Platform</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20">
-              Executive Telemetry
-            </span>
           </h1>
         </div>
       </div>
 
-      {/* Right: Actions, Theme Switcher & User Dropdown */}
+      {/* Right: Theme Switcher & User Dropdown */}
       <div className="flex items-center gap-3">
-        {/* Theme Toggle Button (Light / Dark) */}
+        {/* Theme Toggle Button */}
         <button
           type="button"
           onClick={toggleTheme}
           title={`Switch to ${themeMode === "dark" ? "Light" : "Dark"} Mode`}
-          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-[var(--border-color)] text-slate-700 dark:text-slate-300 hover:border-purple-500/50 transition-all flex items-center gap-1.5 text-xs font-mono"
+          className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:border-indigo-500/50 transition-all flex items-center gap-1.5 text-xs font-mono"
         >
           {themeMode === "dark" ? (
             <>
@@ -137,43 +107,56 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
             </>
           ) : (
             <>
-              <Moon className="w-4 h-4 text-indigo-600" />
+              <Moon className="w-4 h-4 text-indigo-400" />
               <span className="hidden sm:inline">Dark</span>
             </>
           )}
         </button>
 
-        {/* User Profile Menu */}
+        {/* User Profile Dropdown */}
         <div className="relative">
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900 transition-all border border-[var(--border-color)]"
+            className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-800 transition-all border border-slate-700 bg-slate-900"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-sky-400 flex items-center justify-center font-bold text-white text-xs shadow">
-              {initials}
-            </div>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-lg object-cover border border-indigo-400/40" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs shadow">
+                {initials}
+              </div>
+            )}
             <div className="hidden sm:block text-left pr-1">
-              <div className="text-xs font-bold text-[var(--text-main)] leading-tight">{displayName}</div>
-              <div className="text-[10px] text-[var(--text-muted)] font-mono">Executive</div>
+              <div className="text-xs font-bold text-white leading-tight">{displayName}</div>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
           </button>
 
           {userMenuOpen && (
-            <div className="absolute right-0 mt-2 w-56 glass-panel rounded-2xl p-2 border border-[var(--border-color)] shadow-2xl z-50 text-xs">
-              <div className="p-3 border-b border-[var(--border-color)]">
-                <p className="font-bold text-[var(--text-main)]">{displayName}</p>
-                <p className="text-[11px] text-[var(--text-muted)] font-mono truncate">{displayEmail}</p>
+            <div className="absolute right-0 mt-2 w-56 rounded-2xl p-2 border border-slate-800 bg-slate-900/95 backdrop-blur-xl shadow-2xl z-50 text-xs">
+              <div className="p-3 border-b border-slate-800 space-y-0.5">
+                <p className="font-bold text-white truncate">{displayName}</p>
+                <p className="text-[11px] text-slate-400 font-mono truncate">{displayEmail}</p>
               </div>
 
-              <div className="p-1 space-y-1">
+              <div className="p-1 space-y-1 mt-1">
+                <Link
+                  href="/dashboard/profile"
+                  onClick={() => setUserMenuOpen(false)}
+                  className="w-full text-left p-2 rounded-xl text-slate-300 hover:bg-slate-800 font-medium transition-colors flex items-center gap-2"
+                >
+                  <User className="w-4 h-4 text-indigo-400" />
+                  View Profile
+                </Link>
+
                 <button
                   onClick={() => {
                     setUserMenuOpen(false);
                     logout();
                   }}
-                  className="w-full text-left p-2 rounded-xl text-rose-500 dark:text-rose-400 hover:bg-rose-500/10 font-medium transition-colors"
+                  className="w-full text-left p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 font-medium transition-colors flex items-center gap-2"
                 >
+                  <LogOut className="w-4 h-4 text-rose-400" />
                   Sign Out
                 </button>
               </div>
