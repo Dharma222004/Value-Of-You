@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { logSupabaseActivity } from "@/services/supabaseActivityService";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const { data: sessionData } = await supabase.auth.getSession();

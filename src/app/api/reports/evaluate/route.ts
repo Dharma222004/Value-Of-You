@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { generateStructuredAiReport } from "@/services/aiPipelineService";
 
+export const dynamic = "force-dynamic";
+
 export async function POST() {
   try {
     console.log("[API /api/reports/evaluate] Triggering Groq AI Evaluation Engine...");

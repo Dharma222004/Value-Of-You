@@ -1,13 +1,14 @@
 import { createClient, SupabaseClient, Session, User } from "@supabase/supabase-js";
 
-// Read environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+// Read environment variables with safe build-time fallbacks
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
 const supabasePublishableKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "";
+  "placeholder-anon-key";
 
-if (!supabaseUrl || !supabasePublishableKey) {
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || (!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
   if (typeof window !== "undefined") {
     console.warn(
       "[Supabase] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY environment variables."

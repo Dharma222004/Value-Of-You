@@ -17,8 +17,9 @@
  */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { calculateFinancialHealthMetrics, formatINR } from "@/lib/financialEngine";
+
+export const dynamic = "force-dynamic";
 import { calculateProfessionalCapitalScore } from "@/lib/professionalCapitalEngine";
 import { calculateHealthCapitalScore } from "@/lib/healthCapitalEngine";
 import { calculateAssessmentMetrics } from "@/lib/assessmentEngine";
