@@ -167,10 +167,17 @@ export async function saveAiReport(report: SavedAiReportPayload): Promise<void> 
       await saveModuleData(userId, "assessments" as any, { ...await loadModuleData(userId, "assessments" as any) || {}, aiReport: report }, true, report.humanCapitalScore);
       // Also save top recommendations to ai_recommendations table
       if (report.recommendations) {
-        for (const rec of report.recommendations.slice(0, 5)) {
+        // recommendations is an object { immediate: [...], thirtyDays: [...], ... }, not an array
+        const allRecs: any[] = [];
+        for (const timeHorizon of Object.values(report.recommendations)) {
+          if (Array.isArray(timeHorizon)) {
+            allRecs.push(...timeHorizon);
+          }
+        }
+        for (const rec of allRecs.slice(0, 5)) {
           await saveAiRecommendation(
             userId,
-            typeof rec === "string" ? rec : (rec as any).text || JSON.stringify(rec),
+            typeof rec === "string" ? rec : (rec as any).title || (rec as any).text || JSON.stringify(rec),
             "ai_pipeline",
             0,
             { source: "3-layer-ai-engine" }
@@ -179,12 +186,13 @@ export async function saveAiReport(report: SavedAiReportPayload): Promise<void> 
       }
     }
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent(AI_REPORT_UPDATED_EVENT, { detail: report }));
+      window.dispatchEvent(new CustomEvent("hc_ai_report_updated", { detail: report }));
     }
   } catch (e) {
     console.error("Failed to save AI report:", e);
   }
 }
+
 
 // Check if a Saved AI Report exists
 export async function hasSavedAiReport(): Promise<boolean> {
@@ -520,7 +528,7 @@ export async function generateStructuredAiReport(): Promise<SavedAiReportPayload
     id: `ai_report_${Date.now()}`,
     timestamp: new Date().toISOString(),
     reportVersion: "v1.0.0",
-    aiEngineVersion: "Gemini 3.6 Pro Intelligence Pipeline",
+    aiEngineVersion: "Multi-Agent AI Intelligence Pipeline",
     humanCapitalScore: masterScore,
     classification,
     classificationBadgeBg: bg,

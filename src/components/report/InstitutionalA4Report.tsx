@@ -844,7 +844,7 @@ export const InstitutionalA4Report: React.FC<InstitutionalA4ReportProps> = ({
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
               <h4 className="font-bold text-slate-900">Multi-Agent AI Architecture</h4>
               <p className="leading-relaxed text-slate-600">
-                This evaluation was synthesized using Human Values AI Multi-Provider Multi-Agent Engine v4.1.0, leveraging concurrent evaluations across NVIDIA Nemotron 550B, Groq Llama 3.3 70B, and Google Gemini 2.5 Flash.
+                This evaluation was synthesized using Human Values AI Multi-Agent Executive Analysis Engine, leveraging concurrent domain evaluations across unified neural telemetry.
               </p>
             </div>
 

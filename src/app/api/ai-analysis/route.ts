@@ -17,12 +17,14 @@
  */
 
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { calculateFinancialHealthMetrics, formatINR } from "@/lib/financialEngine";
 
 export const dynamic = "force-dynamic";
 import { calculateProfessionalCapitalScore } from "@/lib/professionalCapitalEngine";
 import { calculateHealthCapitalScore } from "@/lib/healthCapitalEngine";
 import { calculateAssessmentMetrics } from "@/lib/assessmentEngine";
+import { checkRateLimit } from "@/lib/security";
 
 // ====================================================================
 // CONFIGURATION
@@ -32,7 +34,7 @@ const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta";
 const OXLO_API_URL = process.env.OXLO_API_BASE_URL || "https://api.oxlo.ai/v1/chat/completions";
-const ANALYSIS_VERSION = "v4.2.0 Multi-Provider Engine (Groq + NVIDIA + Gemini + Oxlo)";
+const ANALYSIS_VERSION = "v4.2.0 Multi-Agent AI Analysis Engine";
 
 // Per-provider timeouts
 const TIMEOUT_MS: Record<string, number> = {
@@ -51,41 +53,41 @@ interface ModelConfig {
 }
 
 // STRATEGY: Multi-Agent execution across Groq, NVIDIA, Gemini & Oxlo AI
-// Agent 1 (Values)  → NVIDIA nemotron-3-ultra-550b → Groq gpt-oss-120b → Oxlo DeepSeek-V3.2 → Gemini 3.6 Flash
-// Agent 2 (Finance) → NVIDIA nemotron-3-super-120b → Groq gpt-oss-120b → Oxlo DeepSeek-R1-8B → Gemini 3.6 Flash
-// Agent 3 (Career)  → Groq gpt-oss-120b → NVIDIA llama-3.3-70b-instruct → Oxlo Mistral-7B → Gemini 3.6 Flash
-// Agent 4 (Habits)  → Groq gpt-oss-120b → NVIDIA gpt-oss-120b → Oxlo Gemma-3-4B → Gemini 3.6 Flash
-// Master Synthesizer → NVIDIA nemotron-3-ultra-550b → Groq gpt-oss-120b → Oxlo DeepSeek-V3.2 → Gemini 3.6 Flash
+// Agent 1 (Values)  → NVIDIA nemotron-3-super-120b → Groq gpt-oss-120b → Oxlo DeepSeek-V3.2 → Gemini 2.5 Flash
+// Agent 2 (Finance) → NVIDIA nemotron-3-super-120b → Groq gpt-oss-120b → Oxlo DeepSeek-R1-8B → Gemini 2.5 Flash
+// Agent 3 (Career)  → Groq gpt-oss-120b → NVIDIA llama-3.3-70b-instruct → Oxlo Mistral-7B → Gemini 2.5 Flash
+// Agent 4 (Habits)  → Groq gpt-oss-120b → NVIDIA gpt-oss-120b → Oxlo Gemma-3-4B → Gemini 2.5 Flash
+// Master Synthesizer → NVIDIA nemotron-3-super-120b → Groq gpt-oss-120b → Oxlo DeepSeek-V3.2 → Gemini 2.5 Flash
 const AGENT_MODELS: Record<string, ModelConfig[]> = {
   values: [
-    { name: "nvidia/nemotron-3-ultra-550b-a55b", provider: "nvidia", maxTokens: 2000 },
+    { name: "nvidia/nemotron-3-super-120b-a12b", provider: "nvidia", maxTokens: 2000 },
     { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
     { name: "deepseek-ai/DeepSeek-V3.2", provider: "oxlo", maxTokens: 3000 },
-    { name: "gemini-3.6-flash", provider: "gemini", maxTokens: 3000 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
   ],
   finance: [
     { name: "nvidia/nemotron-3-super-120b-a12b", provider: "nvidia", maxTokens: 2000 },
     { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
     { name: "deepseek-ai/DeepSeek-R1-8B", provider: "oxlo", maxTokens: 3000 },
-    { name: "gemini-3.6-flash", provider: "gemini", maxTokens: 3000 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
   ],
   career: [
     { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
     { name: "meta/llama-3.3-70b-instruct", provider: "nvidia", maxTokens: 2000 },
     { name: "mistralai/Mistral-7B-Instruct-v0.3", provider: "oxlo", maxTokens: 3000 },
-    { name: "gemini-3.6-flash", provider: "gemini", maxTokens: 3000 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
   ],
   habits: [
     { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
     { name: "gpt-oss-120b", provider: "nvidia", maxTokens: 2000 },
     { name: "google/gemma-3-4b-it", provider: "oxlo", maxTokens: 3000 },
-    { name: "gemini-3.6-flash", provider: "gemini", maxTokens: 3000 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
   ],
   master: [
-    { name: "nvidia/nemotron-3-ultra-550b-a55b", provider: "nvidia", maxTokens: 2500 },
+    { name: "nvidia/nemotron-3-super-120b-a12b", provider: "nvidia", maxTokens: 2500 },
     { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3500 },
     { name: "deepseek-ai/DeepSeek-V3.2", provider: "oxlo", maxTokens: 3500 },
-    { name: "gemini-3.6-flash", provider: "gemini", maxTokens: 3500 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3500 },
   ],
 };
 
@@ -272,7 +274,7 @@ async function callGemini(model: string, systemPrompt: string, userPrompt: strin
   const keys = getGeminiKeys();
   if (keys.length === 0) throw new Error("No Gemini API keys configured");
 
-  const geminiModel = model || "gemini-3.6-flash";
+  const geminiModel = model || "gemini-2.5-flash";
   let lastErr: Error | null = null;
   const startIdx = geminiKeyIndex;
   geminiKeyIndex++;
@@ -621,14 +623,12 @@ function buildComprehensiveProfile(rawData: Awaited<ReturnType<typeof fetchAllUs
 // ====================================================================
 
 const CORE_RULES = `
-ABSOLUTE EVALUATION RULES (REALISTIC HR + EVALUATOR + TEACHER PERSPECTIVE):
-1. EVALUATOR AUDIT RIGOR: Act as a Senior Performance Evaluator, Corporate HR Director, and Master Executive Teacher. Be strictly realistic, objective, and data-grounded. BANNED: Generic cheerleading, fluff, or fake compliments.
-2. TARGETED UPGRADES & FOCUS AREAS: Whenever user telemetry reveals a gap (low savings rate, skill deficit, career bottleneck, discipline gap, risk exposure), explicitly audit it, explain the operational risk, and prescribe step-by-step upgrade protocols.
-3. GROUNDED IN ACTUAL DATA: Reference exact user data points (salary, experience years, degree, skills, savings, test scores). If a metric is weak or missing, evaluate it realistically without sugarcoating.
-4. CONFIDENCE MODEL: Use High (80-100%), Medium (50-79%), Low (25-49%). Justify confidence based on data completeness.
-5. TEACHER ACTION PLAN: Deliver precise, executable instructions (specific books/courses to master, daily habits to build, exact target financial ratios, 30/60/90 day career upgrades).
-6. Each "content" section MUST be 3-8 detailed sentences. Each "highlights" array MUST contain 3-5 sharp, data-backed bullet points.
-7. Response MUST be valid JSON only. No markdown formatting, no text outside JSON.
+ABSOLUTE EVALUATION RULES (EXECUTIVE AUDITOR & MASTER PERFORMANCE COACH):
+1. EXECUTIVE SYNTHESIS & ELEGANCE: Act as an Executive Performance Auditor and Master Leadership Coach. Produce immaculate, highly structured, polished executive analyses. BANNED: Awkward meta-complaints about missing data, repetitive disclaimers, or robotic fluff.
+2. CONSTRUCTIVE & GROUNDED EVALUATION: Focus on evaluating actual user capabilities, strengths, and high-impact growth levers based on available telemetry. Where data points exist, reference them directly. Where data is sparse, provide constructive baseline guidance and positive strategic trajectory.
+3. CONFIDENCE MODEL: High (80-100%), Medium (50-79%), Low (25-49%).
+4. STRUCTURED PARAGRAPHS: Provide narratives as arrays of clean, distinct, well-written paragraphs (3-4 paragraphs for executive summaries).
+5. Response MUST be valid JSON only. No markdown formatting, no text outside JSON.
 `;
 
 // ====================================================================
@@ -667,7 +667,7 @@ async function runMultiAgentPipeline(
     AGENT_MODELS.habits,
   );
 
-  console.log("[Multi-Agent] ▶ Launching 4 domain agents concurrently (NVIDIA → Groq → Gemini)...");
+  console.log("[Multi-Agent] ▶ Launching 4 domain agents concurrently...");
   const [r1, r2, r3, r4] = await Promise.allSettled([a1, a2, a3, a4]);
 
   const o1 = r1.status === "fulfilled" && r1.value ? r1.value.result : {};
@@ -679,7 +679,7 @@ async function runMultiAgentPipeline(
 
   console.log("[Multi-Agent] ▶ Launching Master Synthesizer...");
   const masterRes = await invokeAgent(
-    `You are Agent 5 — Master Executive Synthesizer & HR Evaluation Committee Chair.\n${CORE_RULES}\nWrite a realistic, evidence-grounded 3-5 paragraph Executive Summary acting as an HR Committee Chair and Master Auditor. Assign 11 objective scores (0-100) strictly based on user telemetry figures and assessment evidence.\nAvailable domains: ${availableDomains.join(", ")}\nOUTPUT (valid JSON): {"executiveSummary":"3-5 realistic audit paragraphs","overallSummary":"2 strategic paragraphs","scores":{"humanValues":{"score":82,"explanation":"..."},"financialIntelligence":{"score":75,"explanation":"..."},"leadership":{"score":80,"explanation":"..."},"communication":{"score":82,"explanation":"..."},"selfAwareness":{"score":80,"explanation":"..."},"decisionMaking":{"score":78,"explanation":"..."},"growthMindset":{"score":85,"explanation":"..."},"consistency":{"score":80,"explanation":"..."},"learningAbility":{"score":84,"explanation":"..."},"professionalReadiness":{"score":80,"explanation":"..."},"overall":{"score":80,"explanation":"..."}}}`,
+    `You are Agent 5 — Master Executive Synthesizer & HR Evaluation Chair.\n${CORE_RULES}\nSynthesize a polished, executive-ready Executive Summary formatted as an array of 3-4 structured paragraph strings:\n- Paragraph 1: Executive Profile & Strategic Leadership Positioning.\n- Paragraph 2: Core Analytical & Financial Execution Strength.\n- Paragraph 3: Behavioral Resilience & Key Optimization Levers.\n- Paragraph 4: 90-Day High-Impact Action Plan.\n\nAssign 11 objective scores (0-100) strictly based on user telemetry figures and assessment evidence.\nAvailable domains: ${availableDomains.join(", ")}\nOUTPUT (valid JSON): {"executiveSummary":["Paragraph 1...", "Paragraph 2...", "Paragraph 3...", "Paragraph 4..."],"overallSummary":["Paragraph 1...", "Paragraph 2..."],"scores":{"humanValues":{"score":82,"explanation":"..."},"financialIntelligence":{"score":75,"explanation":"..."},"leadership":{"score":80,"explanation":"..."},"communication":{"score":82,"explanation":"..."},"selfAwareness":{"score":80,"explanation":"..."},"decisionMaking":{"score":78,"explanation":"..."},"growthMindset":{"score":85,"explanation":"..."},"consistency":{"score":80,"explanation":"..."},"learningAbility":{"score":84,"explanation":"..."},"professionalReadiness":{"score":80,"explanation":"..."},"overall":{"score":80,"explanation":"..."}}}`,
     `USER TELEMETRY:\n${profileStr}\n\nENGINE SCORES:\n${JSON.stringify(computedScores)}`,
     AGENT_MODELS.master,
   );
@@ -936,16 +936,17 @@ export async function GET(request: Request) {
     const accessToken = authHeader?.replace("Bearer ", "");
     if (!accessToken) return NextResponse.json({ success: false, error: "Unauthorized", report: null }, { status: 401 });
 
-    // Fast local JWT parsing (< 0.1ms)
-    let userId: string | null = parseJwtUserId(accessToken);
+    // Verified-first identity. getUser() validates the JWT signature server-side,
+    // so a forged/unsigned token cannot inject a fake userId into cache keys or
+    // logs. Local decode is only a fallback if the network call fails; RLS still
+    // backstops every query with the caller's token.
+    let userId: string | null = null;
     const supabase = createAuthenticatedClient(accessToken);
-
-    if (!userId) {
-      try {
-        const { data: userData } = await supabase.auth.getUser(accessToken);
-        if (userData?.user?.id) userId = userData.user.id;
-      } catch {}
-    }
+    try {
+      const { data: userData } = await supabase.auth.getUser(accessToken);
+      if (userData?.user?.id) userId = userData.user.id;
+    } catch {}
+    if (!userId) userId = parseJwtUserId(accessToken);
 
     if (!userId) return NextResponse.json({ success: false, error: "Invalid session", report: null }, { status: 401 });
 
@@ -983,7 +984,8 @@ export async function GET(request: Request) {
       cached: false,
     });
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message, report: null }, { status: 500 });
+    console.error("[AI Report Engine] Unhandled error:", err);
+    return NextResponse.json({ success: false, error: "Failed to generate AI report", report: null }, { status: 500 });
   }
 }
 
@@ -998,18 +1000,30 @@ export async function POST(request: Request) {
     const accessToken = authHeader?.replace("Bearer ", "");
     if (!accessToken) return NextResponse.json({ success: false, error: "Unauthorized", errorCode: "AUTH_MISSING" }, { status: 401 });
 
-    // Fast local JWT parsing (< 0.1ms)
-    let userId: string | null = parseJwtUserId(accessToken);
+    // Verified-first identity (see GET handler). Signature-checked getUser()
+    // before local decode so a forged token can't drive the rate-limit bucket,
+    // cache key, or LLM cost attribution.
+    let userId: string | null = null;
     const supabase = createAuthenticatedClient(accessToken);
-
-    if (!userId) {
-      try {
-        const { data: userData } = await supabase.auth.getUser(accessToken);
-        if (userData?.user?.id) userId = userData.user.id;
-      } catch {}
-    }
+    try {
+      const { data: userData } = await supabase.auth.getUser(accessToken);
+      if (userData?.user?.id) userId = userData.user.id;
+    } catch {}
+    if (!userId) userId = parseJwtUserId(accessToken);
 
     if (!userId) return NextResponse.json({ success: false, error: "Invalid session", errorCode: "AUTH_INVALID" }, { status: 401 });
+
+    // Rate limit expensive multi-LLM generation per user. A single POST fans
+    // out to ~5 LLM calls across up to 4 providers, so cap tightly. This is a
+    // per-instance throttle (see checkRateLimit note) — pair with a shared
+    // store for hard cross-instance quotas.
+    const rl = checkRateLimit(`ai-analysis:${userId}`, 5, 60_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded. Please wait before generating another report.", errorCode: "RATE_LIMITED" },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
+      );
+    }
 
     console.log(`[Multi-Agent AI] ═══ User: ${userId} ═══`);
 
@@ -1069,7 +1083,7 @@ export async function POST(request: Request) {
     }
 
     const overallScore = report.scores.overall?.score || computedScores.overall || 78;
-    const modelStr = modelsUsed.length ? modelsUsed.join(" + ") : "NVIDIA Nemotron + Groq + Gemini";
+    const modelStr = "Multi-Agent AI Intelligence Engine";
     const nowIso = new Date().toISOString();
 
     // Build structured module map for ai_reports table
@@ -1158,7 +1172,7 @@ export async function POST(request: Request) {
     });
   } catch (err: any) {
     console.error("[Multi-Agent AI] Unhandled Error:", err);
-    return NextResponse.json({ success: false, error: err.message || "Failed to process AI report", status: "FAILED" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Failed to process AI report", status: "FAILED" }, { status: 500 });
   }
 }
 

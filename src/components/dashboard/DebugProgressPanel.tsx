@@ -8,8 +8,8 @@ export const DebugProgressPanel: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
   const { progress, loading, refreshProgress } = useModuleProgress();
 
-  if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_ENABLE_DEBUG) {
-    // Only show in development or when debug flag is set
+  if (process.env.NODE_ENV === "production" || !process.env.NEXT_PUBLIC_ENABLE_DEBUG) {
+    return null;
   }
 
   return (

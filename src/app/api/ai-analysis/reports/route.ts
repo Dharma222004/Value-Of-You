@@ -57,16 +57,15 @@ export async function GET(request: Request) {
       );
     }
 
-    let userId: string | null = parseJwtUserId(accessToken);
-
+    // Verified-first identity: signature-checked getUser() before local decode
+    // so a forged token cannot select another user's report rows. RLS backstops.
+    let userId: string | null = null;
     const supabase = createAuthenticatedClient(accessToken);
-
-    if (!userId) {
-      try {
-        const { data: userData } = await supabase.auth.getUser(accessToken);
-        if (userData?.user?.id) userId = userData.user.id;
-      } catch {}
-    }
+    try {
+      const { data: userData } = await supabase.auth.getUser(accessToken);
+      if (userData?.user?.id) userId = userData.user.id;
+    } catch {}
+    if (!userId) userId = parseJwtUserId(accessToken);
 
     if (!userId) {
       return NextResponse.json(

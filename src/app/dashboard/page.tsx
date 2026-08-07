@@ -47,6 +47,16 @@ const staggerContainer = {
   visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
 };
 
+function toSafeString(val: any): string {
+  if (!val) return "";
+  if (typeof val === "string") return val;
+  if (Array.isArray(val)) return val.map(toSafeString).filter(Boolean).join("\n\n");
+  if (typeof val === "object") {
+    try { return JSON.stringify(val); } catch { return String(val); }
+  }
+  return String(val);
+}
+
 /**
  * Helper to parse raw stringified JSON or markdown summaries into clean executive text & bullets
  */
@@ -55,23 +65,25 @@ function parseSummaryText(raw: any): { mainText: string; executiveText: string; 
   let str = "";
   let exec = "";
 
-  if (typeof raw === "object") {
-    str = raw.overall_summary || raw.executive_summary || raw.executiveSummary || raw.summary || "";
-    exec = raw.executive_summary || raw.executiveSummary || "";
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    const target = raw.report_json ? (typeof raw.report_json === "string" ? JSON.parse(raw.report_json) : raw.report_json) : raw;
+    str = toSafeString(target.overall_summary || target.overallSummary || target.executiveSummary || target.executive_summary || target.summary || (Array.isArray(target.executiveSummaryNarrative) ? target.executiveSummaryNarrative : ""));
+    exec = toSafeString(target.executive_summary || target.executiveSummary || "");
   } else {
-    str = String(raw).trim();
+    str = toSafeString(raw).trim();
   }
 
   if (str.startsWith("{")) {
     try {
       const parsed = JSON.parse(str);
       const target = parsed.report_json ? (typeof parsed.report_json === "string" ? JSON.parse(parsed.report_json) : parsed.report_json) : parsed;
-      str = target.overall_summary || target.executiveSummary || target.executive_summary || target.summary || (Array.isArray(target.executiveSummaryNarrative) ? target.executiveSummaryNarrative[0] : "");
-      exec = target.executive_summary || target.executiveSummary || "";
+      str = toSafeString(target.overall_summary || target.overallSummary || target.executiveSummary || target.executive_summary || target.summary || (Array.isArray(target.executiveSummaryNarrative) ? target.executiveSummaryNarrative : ""));
+      exec = toSafeString(target.executive_summary || target.executiveSummary || "");
     } catch {}
   }
 
-  str = str.replace(/```json/g, "").replace(/```/g, "").trim();
+  str = toSafeString(str).replace(/```json/g, "").replace(/```/g, "").trim();
+  exec = toSafeString(exec).replace(/```json/g, "").replace(/```/g, "").trim();
 
   const bulletSplit = str.split(/\n\s*[\*\-•]\s*/);
   if (bulletSplit.length > 1) {

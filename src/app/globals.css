@@ -291,3 +291,192 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   border: none;
 }
+
+/* ── Glassmorphism Panel (used across all wizard modules) ── */
+.glass-panel {
+  background: rgba(9, 13, 26, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 8px 32px -8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Hide Scrollbar Utility (horizontal step chips) ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Scroll Fade Overlay for Step Chips ── */
+.scroll-fade-container {
+  position: relative;
+}
+.scroll-fade-container::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  background: linear-gradient(90deg, transparent, var(--bg-main));
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 0 12px 12px 0;
+}
+
+/* ── Step Chip Styles ── */
+.step-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.step-chip:hover {
+  border-color: var(--border-active);
+  color: var(--text-secondary);
+  background: var(--surface-2);
+}
+.step-chip-active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 0 16px -4px rgba(59, 130, 246, 0.35);
+}
+.step-chip-completed {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #10b981;
+}
+
+/* ── Wizard Form Inputs ── */
+.wizard-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.wizard-input::placeholder {
+  color: var(--text-tertiary);
+}
+.wizard-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* ── Wizard Select Dropdowns ── */
+.wizard-select {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.wizard-select:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+.wizard-select option {
+  background: var(--surface-1);
+  color: var(--text-primary);
+  padding: 8px;
+}
+
+/* ── Wizard Navigation Buttons ── */
+.wizard-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+.wizard-nav-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.3);
+}
+.wizard-nav-btn:active:not(:disabled) {
+  transform: translateY(0px) scale(0.98);
+}
+.wizard-nav-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+.wizard-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Section Header Divider ── */
+.section-header-line {
+  height: 1px;
+  background: linear-gradient(90deg, var(--border-active), transparent 80%);
+}
+
+/* ── Entrance Animation ── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Module Badge ── */
+.module-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Form Label ── */
+.wizard-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+.wizard-label-required::after {
+  content: ' *';
+  color: #f43f5e;
+}

@@ -13,11 +13,11 @@ import { SavedAiReportPayload, getClassificationDetails } from "./aiPipelineServ
 // This client-side service is kept as a fallback for the legacy 3-Layer engine.
 // All new AI analysis goes through POST /api/ai-analysis.
 
-const PRIMARY_MODEL = "openai/gpt-oss-120b";
+const PRIMARY_MODEL = "llama-3.3-70b-versatile";
 const FALLBACK_MODELS = [
-  "llama-3.3-70b-versatile",
+  "llama-3.1-70b-versatile",
   "qwen/qwen3-6.2b",
-  "openai/gpt-oss-20b",
+  "llama-3.1-8b-instant",
 ];
 
 let _groqKeyIdx = 0;

@@ -1,39 +1,36 @@
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export const dynamic = "force-dynamic";
+
+/**
+ * Legacy NextAuth-style endpoint.
+ *
+ * SECURITY: The previous POST handler was a MOCK that accepted ANY email +
+ * password and returned `{ success: true, token: "jwt_token_<ts>" }`. That is a
+ * complete authentication bypass — any caller could obtain a "valid" success
+ * response and a fabricated token without credentials being verified against
+ * any store. Authentication is now handled exclusively by Supabase Auth on the
+ * client (email/password + Google OAuth). This route no longer issues tokens.
+ *
+ * The GET handler is retained as a harmless capability probe (no secrets).
+ */
+export async function GET() {
   return NextResponse.json({
     name: "Human Capital Auth Engine",
     status: "online",
     version: "2.0.0",
-    supportedProviders: ["credentials", "google", "github", "microsoft", "apple"],
+    provider: "supabase",
     googleClientIdConfigured: !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
   });
 }
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { action, email, password } = body;
-
-    if (action === "login") {
-      if (!email || !password) {
-        return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
-      }
-
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: `usr_${Date.now()}`,
-          email,
-          name: email.split("@")[0],
-          provider: "credentials",
-        },
-        token: `jwt_token_${Date.now()}`,
-      });
-    }
-
-    return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Server Error" }, { status: 500 });
-  }
+export async function POST() {
+  return NextResponse.json(
+    {
+      success: false,
+      error:
+        "This endpoint is disabled. Authenticate via Supabase Auth (email/password or Google OAuth).",
+    },
+    { status: 410 }
+  );
 }

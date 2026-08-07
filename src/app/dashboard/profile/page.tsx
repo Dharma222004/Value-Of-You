@@ -12,7 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/hooks/useProfile";
 import { useModuleProgress } from "@/hooks/useModuleProgress";
 import { loadModuleData, saveModuleData, loadFinancialProfile, loadAiRecommendations } from "@/services/moduleDataService";
-import { sanitizeInput } from "@/lib/security";
+import { sanitizePlainText, isSafeHttpUrl } from "@/lib/security";
 import { trackEvent } from "@/lib/tracking";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -179,9 +179,16 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       // 1. Update Core Profile table
+      const cleanAvatar = avatarUrl.trim() ? isSafeHttpUrl(avatarUrl.trim()) : null;
+      if (avatarUrl.trim() && !cleanAvatar) {
+        setSaveError("Avatar URL must be a valid http(s) link.");
+        setSaving(false);
+        return;
+      }
+
       const result = await updateProfile({
-        full_name: sanitizeInput(fullName.trim()),
-        avatar_url: avatarUrl.trim() ? sanitizeInput(avatarUrl.trim()) : null,
+        full_name: sanitizePlainText(fullName.trim(), 120),
+        avatar_url: cleanAvatar,
       });
 
       if (!result?.success) {

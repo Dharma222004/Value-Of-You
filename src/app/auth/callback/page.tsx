@@ -48,7 +48,8 @@ function AuthCallbackContent() {
           // Set auth cookie for Next.js middleware
           const { data: currentSession } = await supabase.auth.getSession();
           if (typeof document !== "undefined" && currentSession.session?.access_token) {
-            document.cookie = `sb-auth-token=${currentSession.session.access_token}; path=/; max-age=2592000; SameSite=Lax;`;
+            const secure = typeof window !== "undefined" && window.location.protocol === "https:";
+            document.cookie = `sb-auth-token=${currentSession.session.access_token}; path=/; max-age=2592000; SameSite=Lax;${secure ? " Secure;" : ""}`;
           }
           // Synchronize user profile into public.profiles table
           await syncSupabaseProfile(sessionUser);
@@ -58,7 +59,8 @@ function AuthCallbackContent() {
           const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (session?.user) {
               if (typeof document !== "undefined" && session.access_token) {
-                document.cookie = `sb-auth-token=${session.access_token}; path=/; max-age=2592000; SameSite=Lax;`;
+                const secure = typeof window !== "undefined" && window.location.protocol === "https:";
+                document.cookie = `sb-auth-token=${session.access_token}; path=/; max-age=2592000; SameSite=Lax;${secure ? " Secure;" : ""}`;
               }
               await syncSupabaseProfile(session.user);
               authListener.subscription.unsubscribe();

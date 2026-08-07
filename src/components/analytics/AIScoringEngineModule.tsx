@@ -239,7 +239,7 @@ export const AIScoringEngineModule: React.FC = () => {
                     <div>Fields Validated: <strong className="text-white">{savedReport.validationMeta?.totalFieldsValidated ?? 130}</strong></div>
                     <div>Data Integrity Score: <strong className="text-emerald-400">{savedReport.validationMeta?.dataIntegrityScore ?? 100}/100</strong></div>
                     <div>Module Completion: <strong className="text-sky-400">{savedReport.validationMeta?.completionPercentage ?? 100}%</strong></div>
-                    <div>AI Engine Version: <strong className="text-purple-300">{savedReport.aiEngineVersion || "Gemini 3.6 Pro Intelligence Pipeline"}</strong></div>
+                    <div>AI Engine Version: <strong className="text-purple-300">{savedReport.aiEngineVersion || "Multi-Agent AI Engine"}</strong></div>
                   </div>
                 </div>
               </div>

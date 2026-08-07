@@ -42,6 +42,7 @@ import {
   Compass,
   Zap,
   HelpCircle,
+  Upload,
 } from "lucide-react";
 import {
   MasterProfileState,
@@ -132,14 +133,14 @@ const DEFAULT_MASTER_STATE: MasterProfileState = {
   careerInterests: [],
   careerPreferences: {
     preferredIndustry: "",
-    preferredCompanyType: "Startup",
-    preferredWorkStyle: "Hybrid",
+    preferredCompanyType: "",
+    preferredWorkStyle: "",
     preferredCountry: "",
-    relocationPreference: "Yes",
+    relocationPreference: "",
     openToInternationalOpportunities: true,
   },
   careerMotivations: [],
-  currentAvailability: "Open to Work",
+  currentAvailability: "",
   goals: {
     shortTermGoal1Yr: "",
     mediumTermGoal3Yr: "",
@@ -168,52 +169,237 @@ const ROLES: { id: PrimaryRoleOption; title: string; desc: string; icon: any }[]
   { id: "Other", title: "Other Mode", desc: "Unique career pathway", icon: Compass },
 ];
 
-const INTEREST_OPTIONS: CareerInterestCategory[] = [
-  "Artificial Intelligence",
-  "Finance",
-  "Healthcare",
-  "Cybersecurity",
-  "Cloud",
-  "Marketing",
-  "Sales",
-  "Business",
-  "Education",
-  "Research",
-  "Manufacturing",
-  "Robotics",
-  "Data Science",
+const INTEREST_OPTIONS: string[] = [
+  "Artificial Intelligence & Machine Learning",
+  "Data Science & Big Data Analytics",
+  "Cybersecurity & Digital Forensics",
+  "Cloud Computing & DevOps",
+  "Full Stack & Web Development",
+  "Mobile App Development (iOS/Android)",
+  "Blockchain & Web3 Technologies",
+  "AR / VR & Gaming Development",
+  "Robotics & Automation Engineering",
+  "Embedded Systems & IoT",
+  "Semiconductor & Core VLSI",
+  "Finance & FinTech",
+  "Healthcare & HealthTech",
+  "EdTech & E-Learning",
+  "E-Commerce & Retail Tech",
   "Product Management",
-  "Design",
-  "Law",
-  "Government",
-  "Agriculture",
+  "UI/UX & Digital Product Design",
+  "Marketing & Growth Operations",
+  "Sales & Business Development",
+  "Human Resources & Talent Management",
+  "Renewable Energy & CleanTech",
+  "Aerospace & Defense Engineering",
+  "Logistics & Supply Chain Management",
+  "Law & Intellectual Property",
+  "Government & Public Sector",
+  "Agriculture & AgTech",
+  "Research & Academia",
+  "Media, Content & Journalism",
   "Other",
 ];
 
-const MOTIVATION_OPTIONS: CareerMotivationOption[] = [
-  "High Salary",
-  "Financial Freedom",
-  "Leadership",
-  "Entrepreneurship",
-  "Research",
-  "Innovation",
-  "Learning",
-  "Work Life Balance",
-  "Job Security",
-  "Social Impact",
-  "Recognition",
+const COMPANY_TYPE_OPTIONS = [
+  "Startup (Early Stage / Seed)",
+  "Scale-up / High Growth Tech",
+  "MNC / Enterprise Corporate",
+  "Mid-Sized Business (SME)",
+  "Government / Public Sector Enterprise",
+  "PSU (Public Sector Undertaking)",
+  "Research Lab / Defense R&D",
+  "Consulting & Professional Services",
+  "NGO / Non-Profit / Social Enterprise",
+  "Freelance / Independent Agency",
+  "Other",
 ];
 
-const AVAILABILITY_OPTIONS: AvailabilityOption[] = [
-  "Student",
-  "Working",
-  "Open to Work",
-  "Looking for Internship",
-  "Looking for Placement",
-  "Looking for Co-Founder",
-  "Looking for Investors",
-  "Not Looking",
+const WORK_STYLE_OPTIONS = [
+  "Remote First / Fully Remote",
+  "Hybrid (Flexible Home & Office)",
+  "On Site / In Office",
+  "Field Work / Site Operations",
+  "Flexible / Outcome Based",
+  "Other",
 ];
+
+const RELOCATION_OPTIONS = [
+  "Yes, willing to relocate nationally",
+  "Yes, willing to relocate internationally",
+  "No, local city only",
+  "Maybe for the right opportunity",
+  "Open to Remote relocation only",
+  "Other",
+];
+
+const TARGET_INDUSTRY_OPTIONS = [
+  "Information Technology & Software",
+  "Artificial Intelligence & Tech Services",
+  "Banking, Financial Services & Insurance (BFSI)",
+  "Healthcare, Pharma & Biotechnology",
+  "Automotive & Electric Vehicles",
+  "Aerospace & Defense Engineering",
+  "E-Commerce & Retail Tech",
+  "Education & EdTech",
+  "Energy, Oil & Renewable CleanTech",
+  "Telecommunications & Networking",
+  "Manufacturing & Heavy Engineering",
+  "Media, Entertainment & Gaming",
+  "Other",
+];
+
+const MOTIVATION_OPTIONS: string[] = [
+  "Competitive Compensation & Wealth Building",
+  "Financial Freedom & Independence",
+  "Leadership & Team Management",
+  "Entrepreneurship & Startup Creation",
+  "Research & Scientific Innovation",
+  "Cutting-Edge Technology & Building Products",
+  "Continuous Learning & Skill Mastery",
+  "Work-Life Balance & Personal Wellbeing",
+  "Job Security & Long-Term Stability",
+  "Social Impact & Community Contribution",
+  "Industry Recognition & Authority",
+  "Global Mobility & International Exposure",
+  "Autonomy & Creative Freedom",
+  "Fast-Track Promotions & Career Growth",
+  "Mentorship & Developing Talent",
+  "Other",
+];
+
+const AVAILABILITY_OPTIONS: string[] = [
+  "Actively Seeking Full-Time Job Roles",
+  "Actively Seeking Internship / Co-op",
+  "Actively Seeking Campus Placement",
+  "Open to Opportunities (Casually Exploring)",
+  "Seeking Co-Founder / Business Partner",
+  "Seeking Angel / Seed Investors",
+  "Currently Employed & Open to Advisory / Freelance",
+  "Currently Studying (Not Looking for Jobs Yet)",
+  "Not Available / Not Looking",
+  "Other",
+];
+
+const DEGREE_OPTIONS = [
+  "B.Tech - Bachelor of Technology",
+  "B.E. - Bachelor of Engineering",
+  "B.Sc - Bachelor of Science",
+  "B.C.A. - Bachelor of Computer Applications",
+  "B.B.A. - Bachelor of Business Administration",
+  "B.Com - Bachelor of Commerce",
+  "B.A. - Bachelor of Arts",
+  "B.Arch - Bachelor of Architecture",
+  "B.Pharm - Bachelor of Pharmacy",
+  "MBBS - Bachelor of Medicine",
+  "LL.B. - Bachelor of Laws",
+  "M.Tech - Master of Technology",
+  "M.E. - Master of Engineering",
+  "M.Sc - Master of Science",
+  "M.C.A. - Master of Computer Applications",
+  "M.B.A. - Master of Business Administration",
+  "M.Com - Master of Commerce",
+  "M.A. - Master of Arts",
+  "Ph.D. / Doctorate",
+  "Diploma Program",
+  "Other",
+];
+
+const SPECIALIZATION_OPTIONS = [
+  "Computer Science & Engineering (CSE)",
+  "Information Technology (IT)",
+  "Artificial Intelligence & Data Science (AI & DS)",
+  "Artificial Intelligence & Machine Learning (AI & ML)",
+  "Cyber Security & Digital Forensics",
+  "Electronics & Communication Engineering (ECE)",
+  "Electrical & Electronics Engineering (EEE)",
+  "Mechanical Engineering",
+  "Civil Engineering",
+  "Robotics & Automation Engineering",
+  "Biotechnology / Biomedical Engineering",
+  "Aeronautical & Aerospace Engineering",
+  "Chemical Engineering",
+  "Data Science & Big Data Analytics",
+  "Software Engineering & Cloud Computing",
+  "VLSI Design & Embedded Systems",
+  "Automobile Engineering",
+  "Mechatronics Engineering",
+  "Business Administration & Management",
+  "Finance & Banking",
+  "Marketing & Digital Communications",
+  "Commerce & Accounting",
+  "Physics / Applied Physics",
+  "Chemistry / Biochemistry",
+  "Mathematics & Statistics",
+  "Design / UI-UX / Interactive Media",
+  "Other",
+];
+
+const TAMIL_NADU_INSTITUTIONS = [
+  "RMD Engineering College, Thiruvallur",
+  "RMK Engineering College, Thiruvallur",
+  "Anna University, Chennai",
+  "Indian Institute of Technology (IIT) Madras, Chennai",
+  "National Institute of Technology (NIT) Tiruchirappalli",
+  "PSG College of Technology, Coimbatore",
+  "Sri Sivasubramaniya Nadar (SSN) College of Engineering, Chennai",
+  "Vellore Institute of Technology (VIT), Vellore",
+  "SRM Institute of Science and Technology, Kattankulathur",
+  "SASTRA Deemed University, Thanjavur",
+  "Amrita Vishwa Vidyapeetham, Coimbatore",
+  "College of Engineering Guindy (CEG), Anna University",
+  "Madras Institute of Technology (MIT Campus), Anna University",
+  "Coimbatore Institute of Technology (CIT), Coimbatore",
+  "Thiagarajar College of Engineering (TCE), Madurai",
+  "Rajalakshmi Engineering College (REC), Chennai",
+  "St. Joseph's College of Engineering, Chennai",
+  "Sri Venkateswara College of Engineering (SVCE), Sriperumbudur",
+  "Easwari Engineering College, Chennai",
+  "KCG College of Technology, Chennai",
+  "Saveetha Engineering College, Chennai",
+  "Loyola College, Chennai",
+  "Madras Christian College (MCC), Chennai",
+  "Presidency College, Chennai",
+  "Kumaraguru College of Technology (KCT), Coimbatore",
+  "Sri Krishna College of Engineering and Technology (SKCET), Coimbatore",
+  "Bannari Amman Institute of Technology (BIT), Sathyamangalam",
+  "Mepco Schlenk Engineering College, Sivakasi",
+  "Government College of Technology (GCT), Coimbatore",
+  "Government College of Engineering, Salem",
+  "Government College of Engineering, Bargur",
+  "Government College of Engineering, Tirunelveli",
+  "Alagappa College of Technology (ACT Campus), Anna University",
+  "Alagappa University, Karaikudi",
+  "Bharathidasan University, Tiruchirappalli",
+  "Bharathiar University, Coimbatore",
+  "Madurai Kamaraj University, Madurai",
+  "Annamalai University, Chidambaram",
+  "Tamil Nadu Agricultural University (TNAU), Coimbatore",
+  "Vel Tech Rangarajan Dr. Sagunthala R&D Institute of Science and Technology",
+  "Hindustan Institute of Technology and Science (HITS), Chennai",
+  "Sathyabama Institute of Science and Technology, Chennai",
+  "KSR College of Technology, Tiruchengode",
+  "Kongu Engineering College, Perundurai",
+  "National Engineering College, Kovilpatti",
+  "Other",
+];
+
+function matchOption(options: string[], value: string): string {
+  if (!value) return "";
+  const vUpper = value.trim().toUpperCase();
+  const exact = options.find((o) => o.toUpperCase() === vUpper);
+  if (exact) return exact;
+  const partial = options.find((o) => {
+    const oUpper = o.toUpperCase();
+    return (
+      oUpper.startsWith(vUpper) ||
+      vUpper.startsWith(oUpper.split(" ")[0]) ||
+      (vUpper.length > 2 && oUpper.includes(vUpper))
+    );
+  });
+  if (partial) return partial;
+  return "Other";
+}
 
 const MASTER_STEPS = [
   { id: 1, title: "Primary Role" },
@@ -224,7 +410,7 @@ const MASTER_STEPS = [
   { id: 6, title: "Motivations" },
   { id: 7, title: "Availability" },
   { id: 8, title: "Three-Horizon Goals" },
-  { id: 9, title: "AI Master Summary" },
+  { id: 9, title: "Master Summary" },
 ];
 
 export function CurrentStatusWizard() {
@@ -232,6 +418,35 @@ export function CurrentStatusWizard() {
   const [state, setState] = useState<MasterProfileState>(DEFAULT_MASTER_STATE);
   const [activeStep, setActiveStep] = useState<number>(1);
   const [savingStatus, setSavingStatus] = useState<"saved" | "saving">("saved");
+
+  const [customDegreeActive, setCustomDegreeActive] = useState<boolean>(false);
+  const [customSpecActive, setCustomSpecActive] = useState<boolean>(false);
+  const [customUnivActive, setCustomUnivActive] = useState<boolean>(false);
+
+  const [customInterestInput, setCustomInterestInput] = useState<string>("");
+  const [customCompTypeActive, setCustomCompTypeActive] = useState<boolean>(false);
+  const [customWorkStyleActive, setCustomWorkStyleActive] = useState<boolean>(false);
+  const [customRelocActive, setCustomRelocActive] = useState<boolean>(false);
+  const [customIndustryActive, setCustomIndustryActive] = useState<boolean>(false);
+
+  const [customMotivationInput, setCustomMotivationInput] = useState<string>("");
+  const [customAvailInput, setCustomAvailInput] = useState<string>("");
+  const [customAvailActive, setCustomAvailActive] = useState<boolean>(false);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setState((prev) => ({
+          ...prev,
+          personalProfile: { ...prev.personalProfile, profilePhotoUrl: base64String },
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
@@ -291,6 +506,32 @@ export function CurrentStatusWizard() {
 
   // Evaluate AI summary in real-time
   const aiSummaryData = useMemo(() => generateAIProfileSummary(state), [state]);
+
+  // Derived option matches for Student dropdowns
+  const matchedDegree = useMemo(() => matchOption(DEGREE_OPTIONS, state.studentData.degree), [state.studentData.degree]);
+  const isDegreeOther = customDegreeActive || (Boolean(state.studentData.degree) && matchedDegree === "Other");
+
+  const matchedSpec = useMemo(() => matchOption(SPECIALIZATION_OPTIONS, state.studentData.specialization), [state.studentData.specialization]);
+  const isSpecOther = customSpecActive || (Boolean(state.studentData.specialization) && matchedSpec === "Other");
+
+  const matchedUniv = useMemo(() => matchOption(TAMIL_NADU_INSTITUTIONS, state.studentData.university || state.studentData.college), [state.studentData.university, state.studentData.college]);
+  const isUnivOther = customUnivActive || (Boolean(state.studentData.university || state.studentData.college) && matchedUniv === "Other");
+
+  // Derived option matches for Step 5 Preferences dropdowns
+  const matchedCompType = useMemo(() => matchOption(COMPANY_TYPE_OPTIONS, state.careerPreferences.preferredCompanyType), [state.careerPreferences.preferredCompanyType]);
+  const isCompTypeOther = customCompTypeActive || (Boolean(state.careerPreferences.preferredCompanyType) && matchedCompType === "Other");
+
+  const matchedWorkStyle = useMemo(() => matchOption(WORK_STYLE_OPTIONS, state.careerPreferences.preferredWorkStyle), [state.careerPreferences.preferredWorkStyle]);
+  const isWorkStyleOther = customWorkStyleActive || (Boolean(state.careerPreferences.preferredWorkStyle) && matchedWorkStyle === "Other");
+
+  const matchedRelocation = useMemo(() => matchOption(RELOCATION_OPTIONS, state.careerPreferences.relocationPreference), [state.careerPreferences.relocationPreference]);
+  const isRelocationOther = customRelocActive || (Boolean(state.careerPreferences.relocationPreference) && matchedRelocation === "Other");
+
+  const matchedIndustry = useMemo(() => matchOption(TARGET_INDUSTRY_OPTIONS, state.careerPreferences.preferredIndustry), [state.careerPreferences.preferredIndustry]);
+  const isIndustryOther = customIndustryActive || (Boolean(state.careerPreferences.preferredIndustry) && matchedIndustry === "Other");
+
+  const matchedAvailability = useMemo(() => matchOption(AVAILABILITY_OPTIONS, state.currentAvailability), [state.currentAvailability]);
+  const isAvailabilityOther = customAvailActive || (Boolean(state.currentAvailability) && matchedAvailability === "Other");
 
   // Validate active step mandatory fields
   const validateCurrentStep = (step: number): boolean => {
@@ -378,54 +619,21 @@ export function CurrentStatusWizard() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
-      {/* SUBMITTED COMPLETION STATUS BANNER */}
-      {isSubmitted && (
-        <div className="glass-panel p-6 rounded-3xl border border-emerald-500/40 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl text-left">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-bold text-[10px] uppercase">
-                  ✓ Profile Submitted & Saved Locally
-                </span>
-              </div>
-              <h3 className="text-base font-extrabold text-[var(--foreground)] mt-0.5">
-                Personal & Professional Parameters Stored
-              </h3>
-              <p className="text-xs text-[var(--subtext)]">
-                Your profile parameters are saved and active for Human Capital valuation.
-              </p>
-            </div>
-          </div>
+      {/* UNIFIED HEADER LOCKUP */}
+      <div className="glass-panel p-5 sm:p-6 rounded-2xl border border-[var(--border)] flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
+        <div className="space-y-2 min-w-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {isSubmitted ? (
+              <span className="module-badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                ✓ Profile Submitted & Saved
+              </span>
+            ) : (
+              <span className="module-badge bg-blue-500/10 border border-blue-500/20 text-cyan-400">
+                Phase 3 — Master Profile Engine
+              </span>
+            )}
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveStep(1)}
-              className="px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono font-bold hover:bg-slate-800 transition-all"
-            >
-              Edit Profile Parameters
-            </button>
-            <Link
-              href="/dashboard/financial"
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-500 hover:from-emerald-500 hover:to-sky-400 text-white font-mono font-bold text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5 transition-all"
-            >
-              Next Module: Financial Health <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* HEADER LOCKUP */}
-      <div className="glass-panel p-6 rounded-3xl border border-[var(--border)] relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="space-y-1 z-10">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 dark:text-cyan-400 text-[11px] font-mono font-bold uppercase tracking-wider">
-              Phase 3 — Master Profile Engine
-            </span>
-            <div className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--subtext)]">
+            <span className="flex items-center gap-1 text-[11px] font-mono">
               {savingStatus === "saving" ? (
                 <span className="text-amber-500 animate-pulse flex items-center gap-1">
                   <Clock className="w-3 h-3" /> Autosaving...
@@ -435,82 +643,81 @@ export function CurrentStatusWizard() {
                   <Check className="w-3 h-3" /> All changes saved
                 </span>
               )}
-            </div>
+            </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--foreground)]">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
             Personal & Professional Profile
           </h1>
-          <p className="text-xs sm:text-sm text-[var(--subtext)] max-w-xl leading-relaxed">
-            The foundational Master Profile powering your Human Capital Score, career recommendations, and financial assessments.
+          <p className="text-xs text-[var(--subtext)] max-w-lg leading-relaxed">
+            {isSubmitted
+              ? "Your profile parameters are saved and active for Human Capital valuation."
+              : "The foundational Master Profile powering your Human Capital Score, career recommendations, and financial assessments."}
           </p>
         </div>
 
-        {/* Profile Completeness Pill & Quick Edit Action */}
-        <div className="flex items-center gap-3 z-10 flex-wrap">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
           <button
             type="button"
             onClick={() => {
               setIsSubmitted(false);
               setActiveStep(1);
             }}
-            className="px-4 py-3 rounded-2xl bg-indigo-600/15 border border-indigo-500/30 text-indigo-300 font-mono font-bold text-xs hover:bg-indigo-600/25 hover:text-white transition-all flex items-center gap-2 shadow-sm"
+            className="wizard-nav-btn bg-[var(--surface-2)] border border-[var(--border-subtle)] text-[var(--text-secondary)] text-xs hover:border-slate-500 transition-all"
           >
-            <UserCheck className="w-4 h-4 text-indigo-400" />
-            <span>Edit Profile</span>
+            <UserCheck className="w-3.5 h-3.5" />
+            Edit Profile
           </button>
 
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-blue-600/10 border border-blue-500/20">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-400 text-white font-extrabold text-lg flex items-center justify-center shadow-lg">
-              {aiSummaryData.profileCompletenessPercentage}%
-            </div>
-            <div className="text-left">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--subtext)]">
-                Master Completeness
-              </div>
-              <div className="text-xs font-bold text-blue-600 dark:text-cyan-400 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Zero Sensitive IDs</span>
-              </div>
-            </div>
-          </div>
+          {isSubmitted && (
+            <Link
+              href="/dashboard/financial"
+              className="wizard-nav-btn bg-gradient-to-r from-emerald-600 to-teal-500 text-white text-xs shadow-lg shadow-emerald-900/20 hover:opacity-95 transition-all"
+            >
+              Next Module: Financial Health <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          )}
         </div>
       </div>
 
       {/* STEP PROGRESS NAVIGATION */}
       <div className="glass-panel p-4 rounded-2xl border border-[var(--border)] space-y-3">
-        <div className="flex justify-between items-center text-xs font-semibold">
-          <span className="text-[var(--foreground)]">
-            Step {activeStep} of 9: <strong className="text-blue-600 dark:text-cyan-400">{MASTER_STEPS[activeStep - 1].title}</strong>
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-medium text-[var(--foreground)]">
+            Step {activeStep} of 9: <strong className="text-cyan-400">{MASTER_STEPS[activeStep - 1].title}</strong>
           </span>
-          <span className="font-mono text-[var(--subtext)]">{Math.round((activeStep / 9) * 100)}% Processed</span>
+          <span className="text-xs font-mono font-semibold text-cyan-400">{Math.round((activeStep / 9) * 100)}% Processed</span>
         </div>
 
-        <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+        <div className="w-full h-1.5 rounded-full bg-slate-800/80 overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full"
+            className="h-full bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 rounded-full"
             animate={{ width: `${(activeStep / 9) * 100}%` }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           />
         </div>
 
         {/* Step Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar">
-          {MASTER_STEPS.map((step) => (
-            <button
-              key={step.id}
-              onClick={() => setActiveStep(step.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium shrink-0 transition-all ${
-                activeStep === step.id
-                  ? "bg-blue-600 text-white font-bold shadow-md"
-                  : step.id < activeStep
-                  ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                  : "bg-[var(--background)] text-[var(--subtext)] border border-[var(--border)]"
-              }`}
-            >
-              <span>{step.id}. {step.title}</span>
-            </button>
-          ))}
+        <div className="scroll-fade-container">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar pr-12">
+            {MASTER_STEPS.map((step) => (
+              <button
+                key={step.id}
+                onClick={() => setActiveStep(step.id)}
+                className={`step-chip ${
+                  activeStep === step.id
+                    ? "step-chip-active"
+                    : step.id < activeStep
+                    ? "step-chip-completed"
+                    : ""
+                }`}
+              >
+                {step.id < activeStep && <Check className="w-3 h-3" />}
+                <span>{step.id}. {step.title}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -569,7 +776,39 @@ export function CurrentStatusWizard() {
             <div className="space-y-6 text-left">
               <div className="border-b border-[var(--border)] pb-4">
                 <h2 className="text-xl font-bold text-[var(--foreground)]">Step 2: Personal Profile & Contact Information</h2>
-                <p className="text-xs text-[var(--subtext)]">Non-sensitive identity parameters and communication handles.</p>
+                <p className="text-xs text-[var(--subtext)]">Non-sensitive identity parameters, profile picture, and communication handles.</p>
+              </div>
+
+              {/* Profile Photo Uploader Card */}
+              <div className="p-4 rounded-2xl bg-[var(--background)]/60 border border-[var(--border)] flex items-center gap-4">
+                <div className="relative group shrink-0">
+                  {state.personalProfile.profilePhotoUrl ? (
+                    <img
+                      src={state.personalProfile.profilePhotoUrl}
+                      alt="Profile Avatar"
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-cyan-400/40 shadow-md"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-400 text-white font-black text-xl flex items-center justify-center shadow-md">
+                      {state.personalProfile.firstName?.[0] || "D"}
+                      {state.personalProfile.lastName?.[0] || "K"}
+                    </div>
+                  )}
+                  <label className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer text-[10px] text-white font-bold">
+                    {state.personalProfile.profilePhotoUrl ? "Change" : "Upload"}
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                  </label>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-[var(--foreground)]">Profile Picture / Avatar</div>
+                  <p className="text-[11px] text-[var(--subtext)]">Upload your profile image picture. It will display on your DK profile card.</p>
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-cyan-400 text-xs font-medium cursor-pointer hover:bg-blue-500/20 transition-all">
+                    <Upload className="w-3.5 h-3.5" />
+                    {state.personalProfile.profilePhotoUrl ? "Change Picture" : "Upload Picture"}
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                  </label>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -790,102 +1029,326 @@ export function CurrentStatusWizard() {
               </div>
 
               {state.primaryRole === "Student" && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-6">
+                  {/* Banner / Info Header */}
+                  <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-blue-600/10 via-cyan-500/10 to-transparent border border-blue-500/20 text-xs">
+                    <GraduationCap className="w-5 h-5 text-cyan-400 shrink-0" />
                     <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)]">Degree Program</label>
-                      <input
-                        type="text"
-                        value={state.studentData.degree}
-                        onChange={(e) =>
-                          setState({
-                            ...state,
-                            studentData: { ...state.studentData, degree: e.target.value },
-                          })
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)]">Specialization / Major</label>
-                      <input
-                        type="text"
-                        value={state.studentData.specialization}
-                        onChange={(e) =>
-                          setState({
-                            ...state,
-                            studentData: { ...state.studentData, specialization: e.target.value },
-                          })
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)]">University / Institution</label>
-                      <input
-                        type="text"
-                        value={state.studentData.university}
-                        onChange={(e) =>
-                          setState({
-                            ...state,
-                            studentData: { ...state.studentData, university: e.target.value, college: e.target.value },
-                          })
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
-                      />
+                      <h3 className="font-bold text-[var(--foreground)]">Student Academic Specification</h3>
+                      <p className="text-[var(--subtext)] text-[11px]">Select your degree, specialization, and institution (featuring top Tamil Nadu colleges). If your option is not in the dropdown, select "Other" to enter it manually.</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)]">College Type</label>
-                      <select
-                        value={state.studentData.collegeType}
-                        onChange={(e) =>
-                          setState({
-                            ...state,
-                            studentData: { ...state.studentData, collegeType: e.target.value as any },
-                          })
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
-                      >
-                        <option value="Government" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Government</option>
-                        <option value="Private" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Private</option>
-                        <option value="Autonomous" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Autonomous</option>
-                      </select>
+                  {/* Section 1: Academic Programs & Institution */}
+                  <div className="p-5 rounded-2xl bg-[var(--background)]/60 border border-[var(--border)] space-y-4">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2 font-mono">
+                      <BookOpen className="w-3.5 h-3.5" /> Academic Programs & Institution
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Degree Program */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-[var(--foreground)] flex items-center justify-between">
+                          <span>Degree Program <span className="text-rose-500">*</span></span>
+                          {isDegreeOther && <span className="text-[10px] text-cyan-400 font-mono">Custom Course</span>}
+                        </label>
+                        <select
+                          value={isDegreeOther ? "Other" : matchedDegree}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "Other") {
+                              setCustomDegreeActive(true);
+                              if (matchOption(DEGREE_OPTIONS, state.studentData.degree) !== "Other") {
+                                setState((prev) => ({
+                                  ...prev,
+                                  studentData: { ...prev.studentData, degree: "" },
+                                }));
+                              }
+                            } else {
+                              setCustomDegreeActive(false);
+                              setState((prev) => ({
+                                ...prev,
+                                studentData: { ...prev.studentData, degree: val },
+                              }));
+                            }
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-all"
+                        >
+                          <option value="" disabled className="bg-[#0f172a] text-slate-400">Select Degree Program...</option>
+                          {DEGREE_OPTIONS.map((deg) => (
+                            <option key={deg} value={deg} className="bg-[#0f172a] text-slate-100 font-semibold py-2">
+                              {deg}
+                            </option>
+                          ))}
+                        </select>
+
+                        {isDegreeOther && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="pt-1 space-y-1"
+                          >
+                            <input
+                              type="text"
+                              value={state.studentData.degree === "Other" ? "" : state.studentData.degree}
+                              onChange={(e) =>
+                                setState((prev) => ({
+                                  ...prev,
+                                  studentData: { ...prev.studentData, degree: e.target.value },
+                                }))
+                              }
+                              placeholder="Type your course / degree program..."
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-blue-950/20 border border-blue-500/40 text-xs text-[var(--foreground)] placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+                            />
+                          </motion.div>
+                        )}
+                      </div>
+
+                      {/* Specialization / Major */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-[var(--foreground)] flex items-center justify-between">
+                          <span>Specialization / Major</span>
+                          {isSpecOther && <span className="text-[10px] text-cyan-400 font-mono">Custom Specialization</span>}
+                        </label>
+                        <select
+                          value={isSpecOther ? "Other" : matchedSpec}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "Other") {
+                              setCustomSpecActive(true);
+                              if (matchOption(SPECIALIZATION_OPTIONS, state.studentData.specialization) !== "Other") {
+                                setState((prev) => ({
+                                  ...prev,
+                                  studentData: { ...prev.studentData, specialization: "" },
+                                }));
+                              }
+                            } else {
+                              setCustomSpecActive(false);
+                              setState((prev) => ({
+                                ...prev,
+                                studentData: { ...prev.studentData, specialization: val },
+                              }));
+                            }
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-all"
+                        >
+                          <option value="" disabled className="bg-[#0f172a] text-slate-400">Select Specialization / Major...</option>
+                          {SPECIALIZATION_OPTIONS.map((spec) => (
+                            <option key={spec} value={spec} className="bg-[#0f172a] text-slate-100 font-semibold py-2">
+                              {spec}
+                            </option>
+                          ))}
+                        </select>
+
+                        {isSpecOther && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="pt-1 space-y-1"
+                          >
+                            <input
+                              type="text"
+                              value={state.studentData.specialization === "Other" ? "" : state.studentData.specialization}
+                              onChange={(e) =>
+                                setState((prev) => ({
+                                  ...prev,
+                                  studentData: { ...prev.studentData, specialization: e.target.value },
+                                }))
+                              }
+                              placeholder="Type your specialization (e.g., Robotics & AI)"
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-blue-950/20 border border-blue-500/40 text-xs text-[var(--foreground)] placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+                            />
+                          </motion.div>
+                        )}
+                      </div>
+
+                      {/* University / Institution */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-[var(--foreground)] flex items-center justify-between">
+                          <span>University / Institution (TN) <span className="text-rose-500">*</span></span>
+                          {isUnivOther && <span className="text-[10px] text-cyan-400 font-mono">Custom Institution</span>}
+                        </label>
+                        <select
+                          value={isUnivOther ? "Other" : matchedUniv}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "Other") {
+                              setCustomUnivActive(true);
+                              if (matchOption(TAMIL_NADU_INSTITUTIONS, state.studentData.university || state.studentData.college) !== "Other") {
+                                setState((prev) => ({
+                                  ...prev,
+                                  studentData: { ...prev.studentData, university: "", college: "" },
+                                }));
+                              }
+                            } else {
+                              setCustomUnivActive(false);
+                              setState((prev) => ({
+                                ...prev,
+                                studentData: { ...prev.studentData, university: val, college: val },
+                              }));
+                            }
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-all"
+                        >
+                          <option value="" disabled className="bg-[#0f172a] text-slate-400">Select Institution / College...</option>
+                          {TAMIL_NADU_INSTITUTIONS.map((inst) => (
+                            <option key={inst} value={inst} className="bg-[#0f172a] text-slate-100 font-semibold py-2">
+                              {inst}
+                            </option>
+                          ))}
+                        </select>
+
+                        {isUnivOther && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="pt-1 space-y-1"
+                          >
+                            <input
+                              type="text"
+                              value={(state.studentData.university === "Other" || state.studentData.college === "Other") ? "" : (state.studentData.university || state.studentData.college || "")}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setState((prev) => ({
+                                  ...prev,
+                                  studentData: { ...prev.studentData, university: val, college: val },
+                                }));
+                              }}
+                              placeholder="Type your institution name"
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-blue-950/20 border border-blue-500/40 text-xs text-[var(--foreground)] placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+                            />
+                          </motion.div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)]">CGPA / Percentage</label>
-                      <input
-                        type="text"
-                        value={state.studentData.cgpaOrPercentage}
-                        onChange={(e) =>
-                          setState({
-                            ...state,
-                            studentData: { ...state.studentData, cgpaOrPercentage: e.target.value },
-                          })
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
-                      />
+                  </div>
+
+                  {/* Section 2: Performance & Placement Status */}
+                  <div className="p-5 rounded-2xl bg-[var(--background)]/60 border border-[var(--border)] space-y-4">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2 font-mono">
+                      <Award className="w-3.5 h-3.5" /> Performance & Placement Status
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">College Type</label>
+                        <select
+                          value={state.studentData.collegeType}
+                          onChange={(e) =>
+                            setState({
+                              ...state,
+                              studentData: { ...state.studentData, collegeType: e.target.value as any },
+                            })
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        >
+                          <option value="Government" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Government</option>
+                          <option value="Private" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Private</option>
+                          <option value="Autonomous" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Autonomous</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">CGPA / Percentage</label>
+                        <input
+                          type="text"
+                          value={state.studentData.cgpaOrPercentage}
+                          onChange={(e) =>
+                            setState({
+                              ...state,
+                              studentData: { ...state.studentData, cgpaOrPercentage: e.target.value },
+                            })
+                          }
+                          placeholder="e.g. 8.5 CGPA or 85%"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Placement Status</label>
+                        <select
+                          value={state.studentData.currentPlacementStatus}
+                          onChange={(e) =>
+                            setState({
+                              ...state,
+                              studentData: { ...state.studentData, currentPlacementStatus: e.target.value as any },
+                            })
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        >
+                          <option value="Applied" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Applied</option>
+                          <option value="Interviewing" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Interviewing</option>
+                          <option value="Placed" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Placed</option>
+                          <option value="Higher Studies" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Higher Studies</option>
+                          <option value="Not Applied" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Not Applied</option>
+                        </select>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)]">Placement Status</label>
-                      <select
-                        value={state.studentData.currentPlacementStatus}
-                        onChange={(e) =>
-                          setState({
-                            ...state,
-                            studentData: { ...state.studentData, currentPlacementStatus: e.target.value as any },
-                          })
-                        }
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
-                      >
-                        <option value="Applied" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Applied</option>
-                        <option value="Interviewing" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Interviewing</option>
-                        <option value="Placed" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Placed</option>
-                        <option value="Higher Studies" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Higher Studies</option>
-                        <option value="Not Applied" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Not Applied</option>
-                      </select>
+                  </div>
+
+                  {/* Section 3: Academic Category & Timeline */}
+                  <div className="p-5 rounded-2xl bg-[var(--background)]/60 border border-[var(--border)] space-y-4">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2 font-mono">
+                      <Clock className="w-3.5 h-3.5" /> Academic Category & Timeline
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Student Category</label>
+                        <select
+                          value={state.studentData.studentCategory || "Undergraduate"}
+                          onChange={(e) =>
+                            setState({
+                              ...state,
+                              studentData: { ...state.studentData, studentCategory: e.target.value },
+                            })
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        >
+                          <option value="Undergraduate" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Undergraduate (UG)</option>
+                          <option value="Postgraduate" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Postgraduate (PG)</option>
+                          <option value="Doctorate" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Doctorate (Ph.D.)</option>
+                          <option value="Diploma" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Diploma / Polytechnic</option>
+                          <option value="High School" className="bg-[#0f172a] text-slate-100 font-semibold py-2">High School / Higher Secondary</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Current Year of Study</label>
+                        <select
+                          value={state.studentData.currentYear || "1st Year"}
+                          onChange={(e) =>
+                            setState({
+                              ...state,
+                              studentData: { ...state.studentData, currentYear: e.target.value },
+                            })
+                          }
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+                        >
+                          <option value="1st Year" className="bg-[#0f172a] text-slate-100 font-semibold py-2">1st Year</option>
+                          <option value="2nd Year" className="bg-[#0f172a] text-slate-100 font-semibold py-2">2nd Year</option>
+                          <option value="3rd Year" className="bg-[#0f172a] text-slate-100 font-semibold py-2">3rd Year</option>
+                          <option value="4th Year" className="bg-[#0f172a] text-slate-100 font-semibold py-2">4th Year</option>
+                          <option value="5th Year" className="bg-[#0f172a] text-slate-100 font-semibold py-2">5th Year</option>
+                          <option value="Graduated" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Graduated</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-[var(--foreground)]">Expected Graduation Year</label>
+                        <input
+                          type="text"
+                          value={state.studentData.expectedGraduationYear || ""}
+                          onChange={(e) =>
+                            setState({
+                              ...state,
+                              studentData: { ...state.studentData, expectedGraduationYear: e.target.value },
+                            })
+                          }
+                          placeholder="e.g. 2026"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -951,12 +1414,17 @@ export function CurrentStatusWizard() {
           {/* STEP 4: CAREER INTERESTS */}
           {activeStep === 4 && (
             <div className="space-y-6 text-left">
-              <div className="border-b border-[var(--border)] pb-4">
-                <h2 className="text-xl font-bold text-[var(--foreground)]">Step 4: Career Interests & Focus Domains</h2>
-                <p className="text-xs text-[var(--subtext)]">Select the sectors and disciplines you want your AI model to prioritize.</p>
+              <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center flex-wrap gap-2">
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--foreground)]">Step 4: Career Interests & Focus Domains</h2>
+                  <p className="text-xs text-[var(--subtext)]">Select target career domains one by one. Click to select or deselect.</p>
+                </div>
+                <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-cyan-400">
+                  {state.careerInterests.length} Selected
+                </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                 {INTEREST_OPTIONS.map((interest) => {
                   const selected = state.careerInterests.includes(interest);
                   return (
@@ -971,16 +1439,41 @@ export function CurrentStatusWizard() {
                       }}
                       className={`p-3 rounded-2xl border text-xs text-left flex justify-between items-center transition-all ${
                         selected
-                          ? "bg-blue-600/15 border-blue-500 text-[var(--foreground)] font-bold shadow-md"
-                          : "bg-[var(--background)] border-[var(--border)] text-[var(--subtext)] hover:border-slate-500"
+                          ? "bg-blue-600/20 border-blue-500 text-[var(--foreground)] font-bold shadow-md scale-[1.01]"
+                          : "bg-[var(--background)] border-[var(--border)] text-[var(--subtext)] hover:border-slate-500 hover:text-[var(--foreground)]"
                       }`}
                     >
-                      <span>{interest}</span>
-                      {selected && <CheckCircle2 className="w-4 h-4 text-blue-500 dark:text-cyan-400 shrink-0" />}
+                      <span className="leading-tight">{interest}</span>
+                      {selected && <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 ml-2" />}
                     </button>
                   );
                 })}
               </div>
+
+              {state.careerInterests.includes("Other") && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-2xl bg-blue-950/20 border border-blue-500/30 space-y-2"
+                >
+                  <label className="text-xs font-semibold text-[var(--foreground)] flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Specify Custom Career Interests / Domains
+                  </label>
+                  <input
+                    type="text"
+                    value={customInterestInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomInterestInput(val);
+                      const filtered = state.careerInterests.filter((i) => i !== "Other" && !i.startsWith("Other: "));
+                      const updated = val.trim() ? [...filtered, `Other: ${val.trim()}`] : [...filtered, "Other"];
+                      setState((prev) => ({ ...prev, careerInterests: updated }));
+                    }}
+                    placeholder="Type custom focus domain (e.g. Quantum Computing, BioInformatics)"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-cyan-400 focus:outline-none"
+                  />
+                </motion.div>
+              )}
             </div>
           )}
 
@@ -992,61 +1485,255 @@ export function CurrentStatusWizard() {
                 <p className="text-xs text-[var(--subtext)]">Target company types, remote/hybrid preferences, and international mobility.</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[var(--foreground)]">Preferred Company Type</label>
-                  <select
-                    value={state.careerPreferences.preferredCompanyType}
-                    onChange={(e) =>
-                      setState({
-                        ...state,
-                        careerPreferences: { ...state.careerPreferences, preferredCompanyType: e.target.value as any },
-                      })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
-                  >
-                    <option value="Startup" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Startup</option>
-                    <option value="MNC" className="bg-[#0f172a] text-slate-100 font-semibold py-2">MNC / Corporate</option>
-                    <option value="Government" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Government / Public Sector</option>
-                    <option value="Research" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Research Lab</option>
-                    <option value="NGO" className="bg-[#0f172a] text-slate-100 font-semibold py-2">NGO / Non-Profit</option>
-                  </select>
-                </div>
+              {/* Card 1: Company Type & Work Setup */}
+              <div className="p-5 rounded-2xl bg-[var(--background)]/60 border border-[var(--border)] space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2 font-mono">
+                  <Building2 className="w-3.5 h-3.5" /> Organization & Work Environment
+                </h3>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[var(--foreground)]">Preferred Work Style</label>
-                  <select
-                    value={state.careerPreferences.preferredWorkStyle}
-                    onChange={(e) =>
-                      setState({
-                        ...state,
-                        careerPreferences: { ...state.careerPreferences, preferredWorkStyle: e.target.value as any },
-                      })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
-                  >
-                    <option value="Remote" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Remote First</option>
-                    <option value="Hybrid" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Hybrid</option>
-                    <option value="On Site" className="bg-[#0f172a] text-slate-100 font-semibold py-2">On Site</option>
-                  </select>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Preferred Company Type */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-[var(--foreground)] flex items-center justify-between">
+                      <span>Preferred Company Type</span>
+                      {isCompTypeOther && <span className="text-[10px] text-cyan-400 font-mono">Custom Input</span>}
+                    </label>
+                    <select
+                      value={isCompTypeOther ? "Other" : matchedCompType}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "Other") {
+                          setCustomCompTypeActive(true);
+                          if (matchOption(COMPANY_TYPE_OPTIONS, state.careerPreferences.preferredCompanyType) !== "Other") {
+                            setState((prev) => ({
+                              ...prev,
+                              careerPreferences: { ...prev.careerPreferences, preferredCompanyType: "" },
+                            }));
+                          }
+                        } else {
+                          setCustomCompTypeActive(false);
+                          setState((prev) => ({
+                            ...prev,
+                            careerPreferences: { ...prev.careerPreferences, preferredCompanyType: val },
+                          }));
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-all"
+                    >
+                      <option value="" disabled className="bg-[#0f172a] text-slate-400">Select Preferred Company Type...</option>
+                      {COMPANY_TYPE_OPTIONS.map((type) => (
+                        <option key={type} value={type} className="bg-[#0f172a] text-slate-100 font-semibold py-2">
+                          {type}
+                        </option>
+                      ))}
+                    </select>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[var(--foreground)]">Relocation Willingness</label>
-                  <select
-                    value={state.careerPreferences.relocationPreference}
-                    onChange={(e) =>
-                      setState({
-                        ...state,
-                        careerPreferences: { ...state.careerPreferences, relocationPreference: e.target.value as any },
-                      })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
-                  >
-                    <option value="Yes" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Yes, willing to relocate</option>
-                    <option value="No" className="bg-[#0f172a] text-slate-100 font-semibold py-2">No, local only</option>
-                    <option value="Maybe" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Maybe for right offer</option>
-                  </select>
+                    {isCompTypeOther && (
+                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="pt-1">
+                        <input
+                          type="text"
+                          value={state.careerPreferences.preferredCompanyType === "Other" ? "" : state.careerPreferences.preferredCompanyType}
+                          onChange={(e) =>
+                            setState((prev) => ({
+                              ...prev,
+                              careerPreferences: { ...prev.careerPreferences, preferredCompanyType: e.target.value },
+                            }))
+                          }
+                          placeholder="Type custom company type..."
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-blue-950/20 border border-blue-500/40 text-xs text-[var(--foreground)] placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Preferred Work Style */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-[var(--foreground)] flex items-center justify-between">
+                      <span>Preferred Work Style</span>
+                      {isWorkStyleOther && <span className="text-[10px] text-cyan-400 font-mono">Custom Input</span>}
+                    </label>
+                    <select
+                      value={isWorkStyleOther ? "Other" : matchedWorkStyle}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "Other") {
+                          setCustomWorkStyleActive(true);
+                          if (matchOption(WORK_STYLE_OPTIONS, state.careerPreferences.preferredWorkStyle) !== "Other") {
+                            setState((prev) => ({
+                              ...prev,
+                              careerPreferences: { ...prev.careerPreferences, preferredWorkStyle: "" },
+                            }));
+                          }
+                        } else {
+                          setCustomWorkStyleActive(false);
+                          setState((prev) => ({
+                            ...prev,
+                            careerPreferences: { ...prev.careerPreferences, preferredWorkStyle: val },
+                          }));
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-all"
+                    >
+                      <option value="" disabled className="bg-[#0f172a] text-slate-400">Select Preferred Work Style...</option>
+                      {WORK_STYLE_OPTIONS.map((ws) => (
+                        <option key={ws} value={ws} className="bg-[#0f172a] text-slate-100 font-semibold py-2">
+                          {ws}
+                        </option>
+                      ))}
+                    </select>
+
+                    {isWorkStyleOther && (
+                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="pt-1">
+                        <input
+                          type="text"
+                          value={state.careerPreferences.preferredWorkStyle === "Other" ? "" : state.careerPreferences.preferredWorkStyle}
+                          onChange={(e) =>
+                            setState((prev) => ({
+                              ...prev,
+                              careerPreferences: { ...prev.careerPreferences, preferredWorkStyle: e.target.value },
+                            }))
+                          }
+                          placeholder="Type custom work style..."
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-blue-950/20 border border-blue-500/40 text-xs text-[var(--foreground)] placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Relocation Willingness */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-[var(--foreground)] flex items-center justify-between">
+                      <span>Relocation Willingness</span>
+                      {isRelocationOther && <span className="text-[10px] text-cyan-400 font-mono">Custom Input</span>}
+                    </label>
+                    <select
+                      value={isRelocationOther ? "Other" : matchedRelocation}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "Other") {
+                          setCustomRelocActive(true);
+                          if (matchOption(RELOCATION_OPTIONS, state.careerPreferences.relocationPreference) !== "Other") {
+                            setState((prev) => ({
+                              ...prev,
+                              careerPreferences: { ...prev.careerPreferences, relocationPreference: "" },
+                            }));
+                          }
+                        } else {
+                          setCustomRelocActive(false);
+                          setState((prev) => ({
+                            ...prev,
+                            careerPreferences: { ...prev.careerPreferences, relocationPreference: val },
+                          }));
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-all"
+                    >
+                      <option value="" disabled className="bg-[#0f172a] text-slate-400">Select Relocation Preference...</option>
+                      {RELOCATION_OPTIONS.map((rel) => (
+                        <option key={rel} value={rel} className="bg-[#0f172a] text-slate-100 font-semibold py-2">
+                          {rel}
+                        </option>
+                      ))}
+                    </select>
+
+                    {isRelocationOther && (
+                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="pt-1">
+                        <input
+                          type="text"
+                          value={state.careerPreferences.relocationPreference === "Other" ? "" : state.careerPreferences.relocationPreference}
+                          onChange={(e) =>
+                            setState((prev) => ({
+                              ...prev,
+                              careerPreferences: { ...prev.careerPreferences, relocationPreference: e.target.value },
+                            }))
+                          }
+                          placeholder="Type custom relocation preference..."
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-blue-950/20 border border-blue-500/40 text-xs text-[var(--foreground)] placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Industry Sector & Global Mobility */}
+              <div className="p-5 rounded-2xl bg-[var(--background)]/60 border border-[var(--border)] space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2 font-mono">
+                  <Globe className="w-3.5 h-3.5" /> Target Sector & International Mobility
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Preferred Industry Sector */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-[var(--foreground)] flex items-center justify-between">
+                      <span>Target Industry / Sector</span>
+                      {isIndustryOther && <span className="text-[10px] text-cyan-400 font-mono">Custom Input</span>}
+                    </label>
+                    <select
+                      value={isIndustryOther ? "Other" : matchedIndustry}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "Other") {
+                          setCustomIndustryActive(true);
+                          if (matchOption(TARGET_INDUSTRY_OPTIONS, state.careerPreferences.preferredIndustry) !== "Other") {
+                            setState((prev) => ({
+                              ...prev,
+                              careerPreferences: { ...prev.careerPreferences, preferredIndustry: "" },
+                            }));
+                          }
+                        } else {
+                          setCustomIndustryActive(false);
+                          setState((prev) => ({
+                            ...prev,
+                            careerPreferences: { ...prev.careerPreferences, preferredIndustry: val },
+                          }));
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-all"
+                    >
+                      <option value="" disabled className="bg-[#0f172a] text-slate-400">Select Target Industry...</option>
+                      {TARGET_INDUSTRY_OPTIONS.map((ind) => (
+                        <option key={ind} value={ind} className="bg-[#0f172a] text-slate-100 font-semibold py-2">
+                          {ind}
+                        </option>
+                      ))}
+                    </select>
+
+                    {isIndustryOther && (
+                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="pt-1">
+                        <input
+                          type="text"
+                          value={state.careerPreferences.preferredIndustry === "Other" ? "" : state.careerPreferences.preferredIndustry}
+                          onChange={(e) =>
+                            setState((prev) => ({
+                              ...prev,
+                              careerPreferences: { ...prev.careerPreferences, preferredIndustry: e.target.value },
+                            }))
+                          }
+                          placeholder="Type custom industry / sector..."
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-blue-950/20 border border-blue-500/40 text-xs text-[var(--foreground)] placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* International Opportunities & Visas */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-[var(--foreground)]">International Opportunities & Visa Preference</label>
+                    <select
+                      value={state.careerPreferences.openToInternationalOpportunities ? "Yes" : "No"}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          careerPreferences: { ...state.careerPreferences, openToInternationalOpportunities: e.target.value === "Yes" },
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 focus:outline-none transition-all"
+                    >
+                      <option value="Yes" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Open to International Roles (Visa Sponsorship Required)</option>
+                      <option value="No" className="bg-[#0f172a] text-slate-100 font-semibold py-2">Domestic / Local Opportunities Only</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1055,12 +1742,17 @@ export function CurrentStatusWizard() {
           {/* STEP 6: CAREER MOTIVATION */}
           {activeStep === 6 && (
             <div className="space-y-6 text-left">
-              <div className="border-b border-[var(--border)] pb-4">
-                <h2 className="text-xl font-bold text-[var(--foreground)]">Step 6: Primary Career Motivations</h2>
-                <p className="text-xs text-[var(--subtext)]">What drives your decision making and career commitment?</p>
+              <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center flex-wrap gap-2">
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--foreground)]">Step 6: Primary Career Motivations</h2>
+                  <p className="text-xs text-[var(--subtext)]">What drives your decision making and career commitment? Select your key drivers one by one.</p>
+                </div>
+                <span className="text-xs font-mono px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-cyan-400">
+                  {state.careerMotivations.length} Selected
+                </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {MOTIVATION_OPTIONS.map((motivation) => {
                   const selected = state.careerMotivations.includes(motivation);
                   return (
@@ -1073,18 +1765,43 @@ export function CurrentStatusWizard() {
                           : [...state.careerMotivations, motivation];
                         setState({ ...state, careerMotivations: updated });
                       }}
-                      className={`p-4 rounded-2xl border text-left flex justify-between items-center transition-all ${
+                      className={`p-3.5 rounded-2xl border text-xs text-left flex justify-between items-center transition-all ${
                         selected
-                          ? "bg-blue-600/15 border-blue-500 text-[var(--foreground)] font-bold shadow-md"
-                          : "bg-[var(--background)] border-[var(--border)] text-[var(--subtext)] hover:border-slate-500"
+                          ? "bg-blue-600/20 border-blue-500 text-[var(--foreground)] font-bold shadow-md scale-[1.01]"
+                          : "bg-[var(--background)] border-[var(--border)] text-[var(--subtext)] hover:border-slate-500 hover:text-[var(--foreground)]"
                       }`}
                     >
-                      <span className="text-xs">{motivation}</span>
-                      {selected && <CheckCircle2 className="w-4 h-4 text-blue-500 dark:text-cyan-400 shrink-0" />}
+                      <span className="leading-snug">{motivation}</span>
+                      {selected && <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 ml-2" />}
                     </button>
                   );
                 })}
               </div>
+
+              {state.careerMotivations.includes("Other") && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-2xl bg-blue-950/20 border border-blue-500/30 space-y-2"
+                >
+                  <label className="text-xs font-semibold text-[var(--foreground)] flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Specify Custom Career Motivation
+                  </label>
+                  <input
+                    type="text"
+                    value={customMotivationInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomMotivationInput(val);
+                      const filtered = state.careerMotivations.filter((m) => m !== "Other" && !m.startsWith("Other: "));
+                      const updated = val.trim() ? [...filtered, `Other: ${val.trim()}`] : [...filtered, "Other"];
+                      setState((prev) => ({ ...prev, careerMotivations: updated }));
+                    }}
+                    placeholder="Type custom motivation (e.g. Early Retirement FIRE, Open Source Impact)"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-cyan-400 focus:outline-none"
+                  />
+                </motion.div>
+              )}
             </div>
           )}
 
@@ -1093,7 +1810,7 @@ export function CurrentStatusWizard() {
             <div className="space-y-6 text-left">
               <div className="border-b border-[var(--border)] pb-4">
                 <h2 className="text-xl font-bold text-[var(--foreground)]">Step 7: Current Availability Status</h2>
-                <p className="text-xs text-[var(--subtext)]">Indicate your readiness for immediate opportunities or networking.</p>
+                <p className="text-xs text-[var(--subtext)]">Indicate your readiness for immediate opportunities or networking. Select one by one.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1103,19 +1820,48 @@ export function CurrentStatusWizard() {
                     <button
                       key={option}
                       type="button"
-                      onClick={() => setState({ ...state, currentAvailability: option })}
+                      onClick={() => {
+                        if (option === "Other") {
+                          setCustomAvailActive(true);
+                        } else {
+                          setCustomAvailActive(false);
+                        }
+                        setState({ ...state, currentAvailability: option });
+                      }}
                       className={`p-4 rounded-2xl border text-left flex justify-between items-center transition-all ${
                         selected
-                          ? "bg-blue-600/15 border-blue-500 text-[var(--foreground)] font-bold shadow-md"
-                          : "bg-[var(--background)] border-[var(--border)] text-[var(--subtext)] hover:border-slate-500"
+                          ? "bg-blue-600/20 border-blue-500 text-[var(--foreground)] font-bold shadow-md scale-[1.01]"
+                          : "bg-[var(--background)] border-[var(--border)] text-[var(--subtext)] hover:border-slate-500 hover:text-[var(--foreground)]"
                       }`}
                     >
-                      <span className="text-xs font-semibold">{option}</span>
-                      {selected && <CheckCircle2 className="w-4 h-4 text-blue-500 dark:text-cyan-400 shrink-0" />}
+                      <span className="text-xs font-semibold leading-tight">{option}</span>
+                      {selected && <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 ml-2" />}
                     </button>
                   );
                 })}
               </div>
+
+              {(isAvailabilityOther || state.currentAvailability === "Other") && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-2xl bg-blue-950/20 border border-blue-500/30 space-y-2"
+                >
+                  <label className="text-xs font-semibold text-[var(--foreground)] flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Specify Custom Availability Status
+                  </label>
+                  <input
+                    type="text"
+                    value={customAvailInput}
+                    onChange={(e) => {
+                      setCustomAvailInput(e.target.value);
+                      setState((prev) => ({ ...prev, currentAvailability: e.target.value }));
+                    }}
+                    placeholder="Type custom availability status (e.g. Sabbatical, Starting Studies Next Semester)"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-cyan-400 focus:outline-none"
+                  />
+                </motion.div>
+              )}
             </div>
           )}
 
@@ -1124,12 +1870,19 @@ export function CurrentStatusWizard() {
             <div className="space-y-6 text-left">
               <div className="border-b border-[var(--border)] pb-4">
                 <h2 className="text-xl font-bold text-[var(--foreground)]">Step 8: Three-Horizon Career Goals</h2>
-                <p className="text-xs text-[var(--subtext)]">Define your short, medium, and long-term milestones.</p>
+                <p className="text-xs text-[var(--subtext)]">Define your short, medium, and long-term milestones. Tap quick suggestion tags or type your custom goals.</p>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[var(--foreground)]">Short-Term Goal (1 Year)</label>
+              <div className="space-y-5">
+                {/* Horizon 1: Short-Term Goal */}
+                <div className="p-5 rounded-2xl bg-[var(--background)]/60 border border-[var(--border)] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2 font-mono">
+                      <Target className="w-4 h-4 text-cyan-400" /> Short-Term Goal (1 Year)
+                    </label>
+                    <span className="text-[10px] text-[var(--subtext)] font-mono">12-Month Horizon</span>
+                  </div>
+
                   <input
                     type="text"
                     value={state.goals.shortTermGoal1Yr}
@@ -1139,13 +1892,45 @@ export function CurrentStatusWizard() {
                         goals: { ...state.goals, shortTermGoal1Yr: e.target.value },
                       })
                     }
-                    placeholder="e.g. Secure campus placement or 30% promotion"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                    placeholder="e.g. Secure campus placement or master AI/Full Stack development"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-cyan-400 focus:outline-none transition-all"
                   />
+
+                  {/* Suggestion Chips */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                    <span className="text-[10px] text-[var(--subtext)] font-mono">Suggestions:</span>
+                    {[
+                      "🚀 Secure Campus Placement",
+                      "💻 Master Full Stack & AI Skills",
+                      "📈 Achieve 30% Promotion/Growth",
+                      "🎓 Complete GRE / GATE Exams",
+                    ].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() =>
+                          setState({
+                            ...state,
+                            goals: { ...state.goals, shortTermGoal1Yr: chip.replace(/^[^\s]+\s/, "") },
+                          })
+                        }
+                        className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] text-cyan-300 hover:bg-blue-500/20 transition-all"
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[var(--foreground)]">Medium-Term Goal (3 Years)</label>
+                {/* Horizon 2: Medium-Term Goal */}
+                <div className="p-5 rounded-2xl bg-[var(--background)]/60 border border-[var(--border)] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2 font-mono">
+                      <TrendingUp className="w-4 h-4 text-cyan-400" /> Medium-Term Goal (3 Years)
+                    </label>
+                    <span className="text-[10px] text-[var(--subtext)] font-mono">36-Month Horizon</span>
+                  </div>
+
                   <input
                     type="text"
                     value={state.goals.mediumTermGoal3Yr}
@@ -1155,13 +1940,45 @@ export function CurrentStatusWizard() {
                         goals: { ...state.goals, mediumTermGoal3Yr: e.target.value },
                       })
                     }
-                    placeholder="e.g. Lead an engineering squad or complete higher studies"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                    placeholder="e.g. Lead an engineering team or complete Master's degree"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-cyan-400 focus:outline-none transition-all"
                   />
+
+                  {/* Suggestion Chips */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                    <span className="text-[10px] text-[var(--subtext)] font-mono">Suggestions:</span>
+                    {[
+                      "👨‍💻 Become Senior Engineer / Tech Lead",
+                      "📚 Complete Higher Degree / MS",
+                      "🚀 Launch Seed-Funded Startup",
+                      "💼 Transition into Product Management",
+                    ].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() =>
+                          setState({
+                            ...state,
+                            goals: { ...state.goals, mediumTermGoal3Yr: chip.replace(/^[^\s]+\s/, "") },
+                          })
+                        }
+                        className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] text-cyan-300 hover:bg-blue-500/20 transition-all"
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[var(--foreground)]">Long-Term Goal (5–10 Years)</label>
+                {/* Horizon 3: Long-Term Goal */}
+                <div className="p-5 rounded-2xl bg-[var(--background)]/60 border border-[var(--border)] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2 font-mono">
+                      <Award className="w-4 h-4 text-cyan-400" /> Long-Term Goal (5–10 Years)
+                    </label>
+                    <span className="text-[10px] text-[var(--subtext)] font-mono">Visionary Horizon</span>
+                  </div>
+
                   <input
                     type="text"
                     value={state.goals.longTermGoal5To10Yr}
@@ -1171,34 +1988,70 @@ export function CurrentStatusWizard() {
                         goals: { ...state.goals, longTermGoal5To10Yr: e.target.value },
                       })
                     }
-                    placeholder="e.g. Achieve financial independence or become Chief AI Officer"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
+                    placeholder="e.g. Become Chief AI Officer or achieve financial independence"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-cyan-400 focus:outline-none transition-all"
                   />
+
+                  {/* Suggestion Chips */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                    <span className="text-[10px] text-[var(--subtext)] font-mono">Suggestions:</span>
+                    {[
+                      "🏆 Chief Technology Officer (CTO)",
+                      "💰 Achieve Financial Freedom (FIRE)",
+                      "🌐 Recognized Global Specialist",
+                      "🏢 Founder & Managing Director",
+                    ].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() =>
+                          setState({
+                            ...state,
+                            goals: { ...state.goals, longTermGoal5To10Yr: chip.replace(/^[^\s]+\s/, "") },
+                          })
+                        }
+                        className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] text-cyan-300 hover:bg-blue-500/20 transition-all"
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* STEP 9: AI MASTER PROFILE SUMMARY */}
+          {/* STEP 9: MASTER PROFILE SUMMARY */}
           {activeStep === 9 && (
             <div className="space-y-6 text-left">
               <div className="border-b border-[var(--border)] pb-4 flex justify-between items-center">
                 <div>
-                  <h2 className="text-xl font-bold text-[var(--foreground)]">Step 9: Master Profile AI Synthesis</h2>
-                  <p className="text-xs text-[var(--subtext)]">Live profile card and confidence score.</p>
+                  <h2 className="text-xl font-bold text-[var(--foreground)]">Step 9: Master Profile Summary</h2>
+                  <p className="text-xs text-[var(--subtext)]">Executive profile card summary.</p>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-mono font-bold">
-                  AI Confidence: {aiSummaryData.aiConfidencePercentage}%
-                </span>
               </div>
 
-              {/* Master AI Card */}
+              {/* Master Profile Card */}
               <div className="p-6 rounded-3xl bg-gradient-to-br from-blue-600/10 via-cyan-500/5 to-transparent border border-blue-500/30 space-y-4 shadow-xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-400 text-white font-black text-xl flex items-center justify-center shadow-md">
-                      {state.personalProfile.firstName[0]}
-                      {state.personalProfile.lastName[0]}
+                    <div className="relative group shrink-0">
+                      {state.personalProfile.profilePhotoUrl ? (
+                        <img
+                          src={state.personalProfile.profilePhotoUrl}
+                          alt={`${state.personalProfile.firstName} ${state.personalProfile.lastName}`}
+                          className="w-14 h-14 rounded-2xl object-cover border-2 border-cyan-400/40 shadow-md"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-400 text-white font-black text-xl flex items-center justify-center shadow-md">
+                          {state.personalProfile.firstName?.[0] || "D"}
+                          {state.personalProfile.lastName?.[0] || "K"}
+                        </div>
+                      )}
+                      <label className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer text-[10px] text-white font-bold">
+                        {state.personalProfile.profilePhotoUrl ? "Change" : "Upload"}
+                        <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                      </label>
                     </div>
                     <div>
                       <h3 className="text-base font-extrabold text-[var(--foreground)]">
@@ -1222,7 +2075,7 @@ export function CurrentStatusWizard() {
                   <ul className="space-y-1.5 text-xs text-[var(--foreground)]">
                     {aiSummaryData.summaryBullets.map((bullet, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-blue-500 dark:text-cyan-400 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
                         <span>{bullet}</span>
                       </li>
                     ))}
@@ -1246,31 +2099,31 @@ export function CurrentStatusWizard() {
       )}
 
       {/* FOOTER WIZARD NAVIGATION BUTTONS */}
-      <div className="flex justify-between items-center pt-2">
+      <div className="flex justify-between items-center pt-3">
         <button
           onClick={handleBack}
           disabled={activeStep === 1}
-          className="px-5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold text-[var(--foreground)] disabled:opacity-40 flex items-center gap-1.5 hover:bg-[var(--glass-bg)] transition-all"
+          className="wizard-nav-btn bg-[var(--surface-1)] border border-[var(--border-subtle)] text-[var(--text-secondary)] text-xs"
         >
           <ChevronLeft className="w-4 h-4" />
-          <span>Previous Step</span>
+          Previous Step
         </button>
 
         {activeStep < 9 ? (
           <button
             onClick={handleNext}
-            className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md hover:bg-blue-500 transition-all flex items-center gap-1.5"
+            className="wizard-nav-btn bg-blue-600 text-white text-xs shadow-md shadow-blue-900/30"
           >
-            <span>Next Step</span>
+            Next Step
             <ChevronRight className="w-4 h-4" />
           </button>
         ) : (
           <button
             onClick={handleSubmitProfile}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-500 text-white font-extrabold text-xs shadow-lg hover:opacity-95 transition-all flex items-center gap-1.5"
+            className="wizard-nav-btn bg-gradient-to-r from-emerald-600 to-teal-500 text-white text-xs shadow-lg shadow-emerald-900/25"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>{isSubmitted ? "Update & Save Profile" : "Submit & Save Profile"}</span>
+            {isSubmitted ? "Update & Save Profile" : "Submit & Save Profile"}
           </button>
         )}
       </div>

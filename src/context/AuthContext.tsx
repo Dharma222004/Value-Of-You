@@ -25,6 +25,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Sync the Supabase access token into the middleware cookie.
+  // NOTE: this cookie cannot be HttpOnly — Supabase's JS client and the Next.js
+  // middleware both read it from the browser. Adding `Secure` (on HTTPS) and
+  // `SameSite=Lax` limits exfiltration over plain HTTP and cross-site sends.
+  const setAuthCookie = (token?: string | null) => {
+    if (typeof document === "undefined") return;
+    if (token) {
+      const secure = typeof window !== "undefined" && window.location.protocol === "https:";
+      document.cookie = `sb-auth-token=${token}; path=/; max-age=2592000; SameSite=Lax;${secure ? " Secure;" : ""}`;
+    } else {
+      document.cookie = "sb-auth-token=; path=/; max-age=0; SameSite=Lax;";
+    }
+  };
+
   const fetchSession = async () => {
     try {
       const { data, error } = await supabase.auth.getSession();
@@ -62,8 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userPayload);
 
         // Set auth cookie for Next.js middleware
-        if (typeof document !== "undefined" && sbSession.access_token) {
-          document.cookie = `sb-auth-token=${sbSession.access_token}; path=/; max-age=2592000; SameSite=Lax;`;
+        if (sbSession.access_token) {
+          setAuthCookie(sbSession.access_token);
         }
 
         // Sync profile to database
@@ -72,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
         setUser(null);
         if (typeof document !== "undefined") {
-          document.cookie = "sb-auth-token=; path=/; max-age=0; SameSite=Lax;";
+          setAuthCookie(null);
         }
       }
     } catch (err) {
@@ -116,8 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userPayload);
 
         // Set auth cookie for Next.js middleware
-        if (typeof document !== "undefined" && sbSession.access_token) {
-          document.cookie = `sb-auth-token=${sbSession.access_token}; path=/; max-age=2592000; SameSite=Lax;`;
+        if (sbSession.access_token) {
+          setAuthCookie(sbSession.access_token);
         }
 
         // Synchronize to profiles table
@@ -126,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
         setUser(null);
         if (typeof document !== "undefined") {
-          document.cookie = "sb-auth-token=; path=/; max-age=0; SameSite=Lax;";
+          setAuthCookie(null);
         }
       }
     });
@@ -321,7 +335,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Ignore
     }
     if (typeof document !== "undefined") {
-      document.cookie = "sb-auth-token=; path=/; max-age=0; SameSite=Lax;";
+      setAuthCookie(null);
     }
     setSession(null);
     setUser(null);
