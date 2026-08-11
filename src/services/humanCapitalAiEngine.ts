@@ -292,20 +292,31 @@ export async function collectLayer1Metrics(): Promise<Layer1Metrics> {
       if (parsedFin.incomeProfile) {
         hasAnyData = true;
         const fMetrics = calculateFinancialHealthMetrics(parsedFin);
+        // Detect insurance from insuranceProtection array (actual saved structure)
+        const insuranceArr: any[] = Array.isArray(parsedFin.insuranceProtection) ? parsedFin.insuranceProtection : [];
+        const hasHealthIns = insuranceArr.some((ins: any) =>
+          ins?.type === "Health Insurance" || ins?.insuranceType === "Health Insurance" || ins?.hasHealthInsurance === true
+        );
+        const hasLifeIns = insuranceArr.some((ins: any) =>
+          ins?.type === "Life Insurance" || ins?.type === "Term Life Insurance" || ins?.insuranceType === "Life Insurance" || ins?.hasLifeInsurance === true
+        );
+        // Sum monthly expenses from the expenses object
+        const exp = parsedFin.expenses || {};
+        const totalMonthlyExpenses = Object.values(exp).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0);
         defaultMetrics.financial = {
           isCompleted: true,
           monthlyActiveIncome: parsedFin.incomeProfile.monthlyActiveIncome || 0,
           monthlyPassiveIncome: parsedFin.incomeProfile.monthlyPassiveIncome || 0,
           totalMonthlyIncome: fMetrics.totalMonthlyIncome,
           monthlySavings: fMetrics.totalSavingsBalance,
-          monthlyExpenses: parsedFin.expenseProfile?.monthlyEssentialExpenses || 0,
+          monthlyExpenses: totalMonthlyExpenses,
           savingsRatePct: Math.round(fMetrics.savingsRate),
-          emergencyFundMonths: fMetrics.emergencyFundMonths,
+          emergencyFundMonths: fMetrics.emergencyCoverageMonths,
           debtToIncomeRatioPct: Math.round(fMetrics.debtToIncomeRatio),
           netWorthINR: fMetrics.netWorth,
           netWorthFormatted: formatINR(fMetrics.netWorth),
-          hasHealthInsurance: Boolean(parsedFin.riskInsurance?.hasHealthInsurance),
-          hasLifeInsurance: Boolean(parsedFin.riskInsurance?.hasLifeInsurance),
+          hasHealthInsurance: hasHealthIns,
+          hasLifeInsurance: hasLifeIns,
           financialScore: fMetrics.financialHealthScore,
         };
       }
@@ -325,10 +336,12 @@ export async function collectLayer1Metrics(): Promise<Layer1Metrics> {
           employabilityIndex: pMetrics.employabilityIndex,
           aiReadinessScore: pMetrics.aiReadinessScore,
           technicalSkillsCount: parsedSkills.technicalSkills?.length || 0,
-          leadershipSkillsCount: parsedSkills.softSkills?.length || 0,
+          leadershipSkillsCount: parsedSkills.industryExpertise?.length || parsedSkills.softSkills?.length || 0,
         };
         if (parsedSkills.academic.degree) defaultMetrics.profile.degree = parsedSkills.academic.degree;
-        if (parsedSkills.academic.gpa) defaultMetrics.profile.cgpa = parsedSkills.academic.gpa;
+        if (parsedSkills.academic.cgpa || parsedSkills.academic.gpa) {
+          defaultMetrics.profile.cgpa = parseFloat(parsedSkills.academic.cgpa || parsedSkills.academic.gpa) || 0;
+        }
         if (parsedSkills.certifications) defaultMetrics.profile.certificationsCount = parsedSkills.certifications.length;
         if (parsedSkills.projects) defaultMetrics.profile.projectsCount = parsedSkills.projects.length;
       }
@@ -342,16 +355,34 @@ export async function collectLayer1Metrics(): Promise<Layer1Metrics> {
       if (parsedHealth.bodyMetrics) {
         hasAnyData = true;
         const hMetrics = calculateHealthCapitalScore(parsedHealth);
+        // stressLevel is the actual field name (not perceivedStressLevel1To10)
+        const stressLevel = parsedHealth.mentalWellbeing?.stressLevel
+          ?? parsedHealth.mentalWellbeing?.perceivedStressLevel1To10
+          ?? 4;
+        // mindfulnessPracticed is the actual field name (not practicesMindfulness)
+        const hasMindfulness = Boolean(
+          parsedHealth.mentalWellbeing?.mindfulnessPracticed
+          ?? parsedHealth.mentalWellbeing?.practicesMindfulness
+        );
+        // tobaccoStatus is the actual field (not usesTobacco)
+        const hasHarmfulHabits = Boolean(
+          parsedHealth.lifestyleHabits?.tobaccoStatus && parsedHealth.lifestyleHabits.tobaccoStatus !== "None"
+          || parsedHealth.lifestyleHabits?.smokingStatus && parsedHealth.lifestyleHabits.smokingStatus !== "Non-Smoker"
+          || parsedHealth.lifestyleHabits?.usesTobacco
+        );
+        const bmiVal = parsedHealth.bodyMetrics?.heightCm > 0 && parsedHealth.bodyMetrics?.weightKg > 0
+          ? Math.round((parsedHealth.bodyMetrics.weightKg / Math.pow(parsedHealth.bodyMetrics.heightCm / 100, 2)) * 10) / 10
+          : parsedHealth.bodyMetrics?.bmi || 0;
         defaultMetrics.health = {
           isCompleted: true,
-          bmi: hMetrics.bmi,
+          bmi: bmiVal,
           workoutFrequencyPerWeek: parsedHealth.physicalActivity?.workoutFrequencyPerWeek || 0,
           sleepHoursPerNight: parsedHealth.sleepIntelligence?.averageSleepHoursPerNight || 7,
-          sleepScore: hMetrics.scores.sleepRecovery,
-          stressLevel: parsedHealth.mentalWellbeing?.perceivedStressLevel1To10 || 4,
-          dietQualityScore: hMetrics.scores.nutritionMetabolic,
-          hasMindfulnessPractice: Boolean(parsedHealth.mentalWellbeing?.practicesMindfulness),
-          hasHarmfulHabits: Boolean(parsedHealth.lifestyleHabits?.usesTobacco),
+          sleepScore: hMetrics.scores.sleep,
+          stressLevel,
+          dietQualityScore: hMetrics.scores.nutrition,
+          hasMindfulnessPractice: hasMindfulness,
+          hasHarmfulHabits,
           healthCapitalScore: hMetrics.healthCapitalScore,
         };
       }

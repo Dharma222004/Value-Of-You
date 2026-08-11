@@ -8,16 +8,20 @@ const supabasePublishableKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "placeholder-anon-key";
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || (!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
-  if (typeof window !== "undefined") {
-    console.warn(
-      "[Supabase] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY environment variables."
-    );
-  }
+const isMissingConfig =
+  !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  (!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY &&
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+if (isMissingConfig && typeof window !== "undefined") {
+  console.error(
+    "[Supabase] ❌ MISSING CREDENTIALS: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY not set. " +
+    "Data will NOT be persisted to Supabase. Check your .env.local file."
+  );
 }
 
 /**
- * Reusable Supabase client instance built with @supabase/supabase-js
+ * Reusable Supabase client instance.
  * Safe for client-side and server-side usage without secret keys.
  */
 export const supabase: SupabaseClient = createClient(
@@ -33,7 +37,32 @@ export const supabase: SupabaseClient = createClient(
 );
 
 /**
- * Helper function to fetch current authenticated user session
+ * Tests whether the Supabase connection is functional.
+ * Attempts a simple read from `profiles` table.
+ * Returns { ok: true } on success, { ok: false, reason } on failure.
+ */
+export async function testSupabaseConnection(): Promise<{
+  ok: boolean;
+  reason?: string;
+}> {
+  if (isMissingConfig) {
+    return { ok: false, reason: "Missing Supabase URL or API key in environment variables." };
+  }
+  try {
+    const { error } = await supabase.from("profiles").select("id").limit(1);
+    if (error) {
+      console.error("[Supabase] Connection test failed:", error.message, "Code:", error.code);
+      return { ok: false, reason: error.message };
+    }
+    return { ok: true };
+  } catch (err: any) {
+    console.error("[Supabase] Connection test exception:", err);
+    return { ok: false, reason: err?.message || "Unknown connection error" };
+  }
+}
+
+/**
+ * Helper to fetch current authenticated user session.
  */
 export async function getSupabaseSession(): Promise<{
   session: Session | null;
@@ -58,7 +87,7 @@ export async function getSupabaseSession(): Promise<{
 }
 
 /**
- * Helper function to get the current authenticated user directly
+ * Helper to get the current authenticated user directly.
  */
 export async function getSupabaseUser(): Promise<User | null> {
   try {
@@ -68,4 +97,3 @@ export async function getSupabaseUser(): Promise<User | null> {
     return null;
   }
 }
-

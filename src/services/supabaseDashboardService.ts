@@ -65,9 +65,10 @@ export async function getDashboardData(providedUserId?: string): Promise<Dashboa
   const latestAiEvaluation = (aiEvalRes.data as AiEvaluation) || null;
 
   // Calculate overall score from profile or latest assessment result
-  const overallHumanValueScore =
+  const rawScore =
     profile?.human_value_score ||
     (assessmentResults.length > 0 ? assessmentResults[0].overall_score : 0);
+  const overallHumanValueScore = Math.min(100, Math.max(0, Math.round(Number(rawScore) || 0)));
 
   return {
     user: {

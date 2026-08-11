@@ -52,42 +52,43 @@ interface ModelConfig {
   maxTokens: number;
 }
 
-// STRATEGY: Multi-Agent execution across Groq, NVIDIA, Gemini & Oxlo AI
-// Agent 1 (Values)  → NVIDIA nemotron-3-super-120b → Groq gpt-oss-120b → Oxlo DeepSeek-V3.2 → Gemini 2.5 Flash
-// Agent 2 (Finance) → NVIDIA nemotron-3-super-120b → Groq gpt-oss-120b → Oxlo DeepSeek-R1-8B → Gemini 2.5 Flash
-// Agent 3 (Career)  → Groq gpt-oss-120b → NVIDIA llama-3.3-70b-instruct → Oxlo Mistral-7B → Gemini 2.5 Flash
-// Agent 4 (Habits)  → Groq gpt-oss-120b → NVIDIA gpt-oss-120b → Oxlo Gemma-3-4B → Gemini 2.5 Flash
-// Master Synthesizer → NVIDIA nemotron-3-super-120b → Groq gpt-oss-120b → Oxlo DeepSeek-V3.2 → Gemini 2.5 Flash
+// STRATEGY: High-Speed Multi-Agent execution across Groq, Google Gemini & Oxlo AI
+// Diversified primary models across concurrent agents prevent rate-limit congestion:
+// Agent 1 (Values)  → Groq llama-3.3-70b-versatile → Gemini 2.5 Flash → Groq openai/gpt-oss-120b → Oxlo DeepSeek-V3.2
+// Agent 2 (Finance) → Groq openai/gpt-oss-120b → Groq llama-3.3-70b-versatile → Gemini 2.5 Flash → Oxlo DeepSeek-R1-8B
+// Agent 3 (Career)  → Gemini 2.5 Flash → Groq llama-3.3-70b-versatile → Groq openai/gpt-oss-120b → Oxlo Mistral-7B
+// Agent 4 (Habits)  → Groq llama-3.1-8b-instant → Gemini 2.5 Flash → Groq openai/gpt-oss-120b → Oxlo Gemma-3-4B
+// Master Synthesizer → Groq llama-3.3-70b-versatile → Gemini 2.5 Flash → Groq openai/gpt-oss-120b → Oxlo DeepSeek-V3.2
 const AGENT_MODELS: Record<string, ModelConfig[]> = {
   values: [
-    { name: "nvidia/nemotron-3-super-120b-a12b", provider: "nvidia", maxTokens: 2000 },
+    { name: "llama-3.3-70b-versatile", provider: "groq", maxTokens: 3000 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
     { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
     { name: "deepseek-ai/DeepSeek-V3.2", provider: "oxlo", maxTokens: 3000 },
-    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
   ],
   finance: [
-    { name: "nvidia/nemotron-3-super-120b-a12b", provider: "nvidia", maxTokens: 2000 },
     { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
-    { name: "deepseek-ai/DeepSeek-R1-8B", provider: "oxlo", maxTokens: 3000 },
+    { name: "llama-3.3-70b-versatile", provider: "groq", maxTokens: 3000 },
     { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
+    { name: "deepseek-ai/DeepSeek-R1-8B", provider: "oxlo", maxTokens: 3000 },
   ],
   career: [
-    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
-    { name: "meta/llama-3.3-70b-instruct", provider: "nvidia", maxTokens: 2000 },
-    { name: "mistralai/Mistral-7B-Instruct-v0.3", provider: "oxlo", maxTokens: 3000 },
     { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
+    { name: "llama-3.3-70b-versatile", provider: "groq", maxTokens: 3000 },
+    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
+    { name: "mistralai/Mistral-7B-Instruct-v0.3", provider: "oxlo", maxTokens: 3000 },
   ],
   habits: [
-    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
-    { name: "gpt-oss-120b", provider: "nvidia", maxTokens: 2000 },
-    { name: "google/gemma-3-4b-it", provider: "oxlo", maxTokens: 3000 },
+    { name: "llama-3.1-8b-instant", provider: "groq", maxTokens: 3000 },
     { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
+    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
+    { name: "google/gemma-3-4b-it", provider: "oxlo", maxTokens: 3000 },
   ],
   master: [
-    { name: "nvidia/nemotron-3-super-120b-a12b", provider: "nvidia", maxTokens: 2500 },
+    { name: "llama-3.3-70b-versatile", provider: "groq", maxTokens: 3500 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3500 },
     { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3500 },
     { name: "deepseek-ai/DeepSeek-V3.2", provider: "oxlo", maxTokens: 3500 },
-    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3500 },
   ],
 };
 
@@ -422,7 +423,12 @@ async function invokeAgent(
   userPrompt: string,
   models: ModelConfig[],
 ): Promise<{ result: any; modelUsed: string; provider: string } | null> {
+  const allowNvidia = process.env.ENABLE_NVIDIA_API === "true";
+
   for (const m of models) {
+    if (m.provider === "nvidia" && !allowNvidia) {
+      continue;
+    }
     try {
       console.log(`[Multi-Agent] → ${m.provider}/${m.name}`);
       let rawContent: string | null = null;
@@ -461,12 +467,24 @@ async function fetchAllUserData(supabase: ReturnType<typeof createClient>, userI
     supabase.from("assessments").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
     supabase.from("human_values_tests").select("*").eq("user_id", userId).order("completed_at", { ascending: false }).limit(5),
   ]);
-  return {
-    profile: profileRes.status === "fulfilled" ? profileRes.value.data : null,
-    moduleData: moduleRes.status === "fulfilled" ? moduleRes.value.data || [] : [],
-    assessments: assessRes.status === "fulfilled" ? assessRes.value.data || [] : [],
-    humanValuesTests: hvRes.status === "fulfilled" ? hvRes.value.data || [] : [],
-  };
+
+  const profile = profileRes.status === "fulfilled" ? profileRes.value.data : null;
+  const moduleData = moduleRes.status === "fulfilled" ? moduleRes.value.data || [] : [];
+  const assessments = assessRes.status === "fulfilled" ? assessRes.value.data || [] : [];
+  const humanValuesTests = hvRes.status === "fulfilled" ? hvRes.value.data || [] : [];
+
+  // DEBUG: log what was actually fetched from Supabase
+  console.log(`[AI Data Pipeline] User: ${userId}`);
+  console.log(`[AI Data Pipeline] Profile: ${profile ? JSON.stringify(Object.keys(profile)) : 'NULL'}`);
+  console.log(`[AI Data Pipeline] Module rows: ${moduleData.length} — keys: [${moduleData.map((m: any) => m.module_key).join(', ')}]`);
+  moduleData.forEach((m: any) => {
+    const dataKeys = m.data ? Object.keys(m.data) : [];
+    const totalFields = JSON.stringify(m.data || {}).length;
+    console.log(`[AI Data Pipeline]   ${m.module_key}: ${dataKeys.length} top-level keys, ${totalFields} chars — is_completed: ${m.is_completed}`);
+  });
+  console.log(`[AI Data Pipeline] Assessments: ${assessments.length}, HV Tests: ${humanValuesTests.length}`);
+
+  return { profile, moduleData, assessments, humanValuesTests };
 }
 
 // ====================================================================
@@ -475,8 +493,12 @@ async function fetchAllUserData(supabase: ReturnType<typeof createClient>, userI
 
 function buildComprehensiveProfile(rawData: Awaited<ReturnType<typeof fetchAllUserData>>) {
   const { profile, moduleData, humanValuesTests } = rawData;
+
+  // Build module map from fetched rows
   const modules: Record<string, any> = {};
-  for (const mod of moduleData) { if (mod.module_key && mod.data) modules[mod.module_key] = mod.data; }
+  for (const mod of moduleData) {
+    if (mod.module_key && mod.data) modules[mod.module_key] = mod.data;
+  }
 
   const master = modules["master_profile"] || {};
   const financial = modules["financial"] || {};
@@ -484,151 +506,307 @@ function buildComprehensiveProfile(rawData: Awaited<ReturnType<typeof fetchAllUs
   const health = modules["health"] || {};
   const assessData = modules["assessments"] || {};
 
+  const hasMaster = Object.keys(master).length > 0;
+  const hasFinancial = Object.keys(financial).length > 0;
+  const hasSkills = Object.keys(skills).length > 0;
+  const hasHealth = Object.keys(health).length > 0;
+  const hasAssessments = Object.keys(assessData).length > 0;
+
+  console.log(`[AI Data Pipeline] Module data presence — profile:${hasMaster} financial:${hasFinancial} skills:${hasSkills} health:${hasHealth} assessments:${hasAssessments}`);
+
+  // Compute metrics ONLY when real data exists — no fallback values
   let finMetrics: any = null;
-  try { if (Object.keys(financial).length) finMetrics = calculateFinancialHealthMetrics(financial); } catch {}
+  try { if (hasFinancial) finMetrics = calculateFinancialHealthMetrics(financial); } catch {}
   let proMetrics: any = null;
-  try { if (Object.keys(skills).length) proMetrics = calculateProfessionalCapitalScore(skills); } catch {}
+  try { if (hasSkills) proMetrics = calculateProfessionalCapitalScore(skills); } catch {}
   let healthMetrics: any = null;
-  try { if (Object.keys(health).length) healthMetrics = calculateHealthCapitalScore(health); } catch {}
+  try { if (hasHealth) healthMetrics = calculateHealthCapitalScore(health); } catch {}
   let assessMetrics: any = null;
-  try { if (assessData.answers && Object.keys(assessData.answers).length) assessMetrics = calculateAssessmentMetrics(assessData); } catch {}
+  try { if (hasAssessments && assessData.answers && Object.keys(assessData.answers).length > 0) assessMetrics = calculateAssessmentMetrics(assessData); } catch {}
 
   const availableDomains: string[] = [];
-  if (profile?.full_name || master.personalProfile?.firstName) availableDomains.push("Personal Profile");
-  if (master.studentData?.degree || master.employeeData?.company || master.founderData?.startupName) availableDomains.push("Role Data");
-  if (master.careerInterests?.length) availableDomains.push("Career Interests");
-  if (master.goals?.shortTermGoal1Yr) availableDomains.push("Goals");
-  if (finMetrics) availableDomains.push("Financial Health");
-  if (proMetrics) availableDomains.push("Professional Capital");
-  if (healthMetrics) availableDomains.push("Health Capital");
-  if (assessMetrics) availableDomains.push("Human Assessments");
-  if (humanValuesTests.length) availableDomains.push("Human Values Tests");
+  if (hasMaster) availableDomains.push("Master Profile");
+  if (hasFinancial) availableDomains.push("Financial Health");
+  if (hasSkills) availableDomains.push("Skills Capital");
+  if (hasHealth) availableDomains.push("Health Capital");
+  if (hasAssessments) availableDomains.push("Human Assessments");
+  if (humanValuesTests.length > 0) availableDomains.push("Human Values Tests");
 
-  const fullName = profile?.full_name || `${master.personalProfile?.firstName || ""} ${master.personalProfile?.lastName || ""}`.trim() || "User";
+  const fullName = profile?.full_name
+    || `${master.personalProfile?.firstName || ""} ${master.personalProfile?.lastName || ""}`.trim()
+    || "User";
 
+  // ────────────────────────────────────────────────────────────────
+  // COMPREHENSIVE PROFILE — pass ALL raw data to agents, no filtering
+  // ────────────────────────────────────────────────────────────────
   const comprehensive: Record<string, any> = {
+    // Section 1: Identity (from Supabase profiles + master_profile)
     identity: {
-      fullName, email: profile?.email || master.contactInformation?.email,
-      dateOfBirth: master.personalProfile?.dateOfBirth, age: master.personalProfile?.calculatedAge,
-      gender: master.personalProfile?.gender, nationality: master.personalProfile?.nationality,
-      location: [master.personalProfile?.city, master.personalProfile?.stateOrProvince, master.personalProfile?.country].filter(Boolean).join(", "),
+      fullName,
+      email: profile?.email || master.contactInformation?.email,
+      dateOfBirth: master.personalProfile?.dateOfBirth,
+      age: master.personalProfile?.calculatedAge,
+      gender: master.personalProfile?.gender,
+      nationality: master.personalProfile?.nationality,
+      location: [
+        master.personalProfile?.city,
+        master.personalProfile?.stateOrProvince,
+        master.personalProfile?.country,
+      ].filter(Boolean).join(", ") || null,
       language: master.personalProfile?.preferredLanguage,
-      linkedIn: master.contactInformation?.linkedInUrl, gitHub: master.contactInformation?.gitHubUrl,
+      linkedIn: master.contactInformation?.linkedInUrl,
+      gitHub: master.contactInformation?.gitHubUrl,
       portfolio: master.contactInformation?.portfolioUrl,
     },
+
+    // Section 2: Current Role (raw master_profile fields)
     currentRole: {
-      primaryRole: master.primaryRole, availability: master.currentAvailability,
-      studentCategory: master.studentData?.studentCategory, degree: master.studentData?.degree,
-      specialization: master.studentData?.specialization, college: master.studentData?.college,
-      university: master.studentData?.university, currentYear: master.studentData?.currentYear,
-      expectedGraduation: master.studentData?.expectedGraduationYear, cgpa: master.studentData?.cgpaOrPercentage,
-      hasScholarship: master.studentData?.hasScholarship, placementStatus: master.studentData?.currentPlacementStatus,
-      company: master.employeeData?.company, designation: master.employeeData?.designation,
-      department: master.employeeData?.department, industry: master.employeeData?.industry,
-      employmentType: master.employeeData?.employmentType, yearsOfExperience: master.employeeData?.yearsOfExperience,
-      salaryBand: master.employeeData?.currentSalaryBand, teamSize: master.employeeData?.teamSizeManaged,
+      primaryRole: master.primaryRole,
+      // Student fields
+      studentCategory: master.studentData?.studentCategory,
+      degree: master.studentData?.degree,
+      specialization: master.studentData?.specialization,
+      college: master.studentData?.college || master.studentData?.university,
+      currentYear: master.studentData?.currentYear,
+      expectedGraduation: master.studentData?.expectedGraduationYear,
+      cgpa: master.studentData?.cgpaOrPercentage,
+      hasScholarship: master.studentData?.hasScholarship,
+      placementStatus: master.studentData?.currentPlacementStatus,
+      // Employee fields
+      company: master.employeeData?.company,
+      designation: master.employeeData?.designation,
+      department: master.employeeData?.department,
+      industry: master.employeeData?.industry,
+      employmentType: master.employeeData?.employmentType,
+      yearsOfExperience: master.employeeData?.yearsOfExperience,
+      salaryBand: master.employeeData?.currentSalaryBand,
+      teamSize: master.employeeData?.teamSizeManaged,
       hasManagerialRole: master.employeeData?.hasManagerialResponsibility,
-      startupName: master.founderData?.startupName, startupStage: master.founderData?.startupStage,
-      fundingStage: master.founderData?.fundingStage, employeeCount: master.founderData?.employeeCount,
+      // Founder fields
+      startupName: master.founderData?.startupName,
+      startupStage: master.founderData?.startupStage,
+      fundingStage: master.founderData?.fundingStage,
+      employeeCount: master.founderData?.employeeCount,
     },
+
+    // Section 3: Career Direction
     careerDirection: {
-      interests: master.careerInterests, preferredIndustry: master.careerPreferences?.preferredIndustry,
+      interests: master.careerInterests,
+      preferredIndustry: master.careerPreferences?.preferredIndustry,
       preferredWorkStyle: master.careerPreferences?.preferredWorkStyle,
       motivations: master.careerMotivations,
     },
+
+    // Section 4: Goals (exact user text)
     goals: {
       shortTerm1Year: master.goals?.shortTermGoal1Yr,
       mediumTerm3Years: master.goals?.mediumTermGoal3Yr,
       longTerm5to10Years: master.goals?.longTermGoal5To10Yr,
     },
-    financialIntelligence: finMetrics ? {
-      score: finMetrics.financialHealthScore, tier: scoreTier(finMetrics.financialHealthScore),
-      totalMonthlyIncome: finMetrics.totalMonthlyIncome, incomeFormatted: formatINR(finMetrics.totalMonthlyIncome),
-      totalSavings: finMetrics.totalSavingsBalance, savingsFormatted: formatINR(finMetrics.totalSavingsBalance),
-      savingsRatePct: Math.round(finMetrics.savingsRate), emergencyFundMonths: finMetrics.emergencyFundMonths,
-      debtToIncomeRatioPct: Math.round(finMetrics.debtToIncomeRatio),
-      netWorth: finMetrics.netWorth, netWorthFormatted: formatINR(finMetrics.netWorth),
-      hasHealthInsurance: boolToText(financial.riskInsurance?.hasHealthInsurance),
-      hasLifeInsurance: boolToText(financial.riskInsurance?.hasLifeInsurance),
-      budgetingHabit: financial.behaviour?.maintainMonthlyBudget,
-      trackExpenses: financial.behaviour?.trackExpensesRegularly,
+
+    // Section 5: Financial Health (RAW + computed metrics)
+    financialIntelligence: hasFinancial ? {
+      // Income fields (from incomeProfile)
+      monthlySalary: financial.incomeProfile?.monthlyActiveIncome,
+      otherIncome: financial.incomeProfile?.monthlyOtherIncome,
+      passiveIncome: financial.incomeProfile?.monthlyPassiveIncome,
+      freelanceIncome: financial.incomeProfile?.monthlyFreelanceIncome,
+      totalMonthlyIncome: finMetrics?.totalMonthlyIncome,
+      // Expense fields (summed from expenses object)
+      monthlyExpenses: finMetrics
+        ? (() => {
+            const e = financial.expenses || {};
+            return Object.values(e).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+          })()
+        : null,
+      rentOrEMI: (financial.expenses?.housing || 0) + finMetrics?.totalMonthlyEMI,
+      // Savings (from savingsPosition)
+      emergencyFundBalance: financial.savingsPosition?.emergencyFundBalance,
+      emergencyFundMonths: finMetrics?.emergencyCoverageMonths,
+      savingsRatePct: finMetrics?.savingsRate !== undefined ? Math.round(finMetrics.savingsRate) : null,
+      totalSavingsBalance: finMetrics?.totalSavingsBalance,
+      // Investments (from investments array)
+      investmentsTotal: finMetrics?.totalPortfolioValue,
       investFrequency: financial.behaviour?.investFrequency,
       riskAppetite: financial.riskProfile?.riskAppetite,
       investmentHorizon: financial.riskProfile?.investmentHorizon,
+      // Liabilities (from liabilities array)
+      totalDebt: finMetrics?.totalLiabilitiesAmount,
+      monthlyEMI: finMetrics?.totalMonthlyEMI,
+      debtToIncomeRatioPct: finMetrics?.debtToIncomeRatio !== undefined ? Math.round(finMetrics.debtToIncomeRatio) : null,
+      // Insurance (from insuranceProtection array)
+      hasHealthInsurance: boolToText(
+        (financial.insuranceProtection || []).some((ins: any) =>
+          ins?.type === "Health Insurance" || ins?.insuranceType === "Health Insurance"
+        )
+      ),
+      hasLifeInsurance: boolToText(
+        (financial.insuranceProtection || []).some((ins: any) =>
+          ins?.type === "Life Insurance" || ins?.type === "Term Life Insurance" || ins?.insuranceType === "Life Insurance"
+        )
+      ),
+      // Net worth
+      netWorth: finMetrics?.netWorth,
+      financialHealthScore: finMetrics?.financialHealthScore || null,
+      // Behaviour
+      maintainsBudget: boolToText(financial.behaviour?.maintainMonthlyBudget),
+      tracksExpenses: boolToText(financial.behaviour?.trackExpensesRegularly),
       financialGoals: financial.goals,
-    } : undefined,
-    professionalCapital: proMetrics ? {
-      score: proMetrics.professionalCapitalScore, tier: scoreTier(proMetrics.professionalCapitalScore),
-      employabilityIndex: proMetrics.employabilityIndex, aiReadinessScore: proMetrics.aiReadinessScore,
-      degree: skills.academic?.degree, field: skills.academic?.field || skills.academic?.major,
-      institution: skills.academic?.institution, gpa: skills.academic?.gpa,
-      certifications: skills.certifications?.map((c: any) => typeof c === "string" ? c : c.name || c.title),
-      technicalSkills: skills.technicalSkills?.map((s: any) => typeof s === "string" ? s : s.name),
-      softSkills: skills.softSkills?.map((s: any) => typeof s === "string" ? s : s.name),
-      projects: skills.projects?.map((p: any) => typeof p === "string" ? p : { name: p.name, description: p.description }),
+    } : { DATA_MISSING: true, reason: "User has not completed the Financial Health module" },
+
+    // Section 6: Professional Capital (RAW + computed metrics)
+    professionalCapital: hasSkills ? {
+      degree: skills.academic?.degree,
+      field: skills.academic?.major || skills.academic?.field,
+      institution: skills.academic?.university || skills.academic?.college || skills.academic?.institution,
+      gpa: skills.academic?.cgpa || skills.academic?.percentage || skills.academic?.gpa,
+      certifications: skills.certifications?.map((c: any) => typeof c === "string" ? c : (c.name || c.title || c.certificationName)).filter(Boolean),
+      technicalSkills: skills.technicalSkills?.map((s: any) => typeof s === "string" ? s : (s.name || s.skillName)).filter(Boolean),
+      industryExpertise: skills.industryExpertise?.map((s: any) => typeof s === "string" ? s : (s.name || s.domain)).filter(Boolean),
+      projects: skills.projects?.map((p: any) => typeof p === "string" ? p : { name: p.name || p.projectName, description: p.description || p.role }),
       achievements: skills.achievements,
-    } : undefined,
-    healthCapital: healthMetrics ? {
-      score: healthMetrics.healthCapitalScore, tier: scoreTier(healthMetrics.healthCapitalScore),
-      bmi: healthMetrics.bmi, sleepHours: health.sleepIntelligence?.averageSleepHoursPerNight,
-      sleepScore: healthMetrics.scores?.sleepRecovery,
-      workoutFrequency: health.physicalActivity?.workoutFrequencyPerWeek,
-      stressLevel: health.mentalWellbeing?.perceivedStressLevel1To10,
-      dietScore: healthMetrics.scores?.nutritionMetabolic,
-      practicesMindfulness: boolToText(health.mentalWellbeing?.practicesMindfulness),
-      usesTobacco: boolToText(health.lifestyleHabits?.usesTobacco),
-    } : undefined,
-    humanAssessments: assessMetrics ? {
-      score: assessMetrics.assessmentScore, tier: scoreTier(assessMetrics.assessmentScore),
-      questionsAnswered: Object.keys(assessData.answers || {}).length,
+      aiReadinessScore: proMetrics?.aiReadinessScore,
+      employabilityIndex: proMetrics?.employabilityIndex,
+      professionalCapitalScore: proMetrics?.professionalCapitalScore || null,
+    } : { DATA_MISSING: true, reason: "User has not completed the Skills Capital module" },
+
+    // Section 7: Health Capital (RAW + computed metrics)
+    healthCapital: hasHealth ? {
+      heightCm: health.bodyMetrics?.heightCm,
+      weightKg: health.bodyMetrics?.weightKg,
+      bmi: (() => {
+        const h = health.bodyMetrics?.heightCm;
+        const w = health.bodyMetrics?.weightKg;
+        if (h > 0 && w > 0) return Math.round((w / Math.pow(h / 100, 2)) * 10) / 10;
+        return health.bodyMetrics?.bmi || null;
+      })(),
+      bmiCategory: (() => {
+        const h = health.bodyMetrics?.heightCm;
+        const w = health.bodyMetrics?.weightKg;
+        if (h > 0 && w > 0) {
+          const bmi = w / Math.pow(h / 100, 2);
+          if (bmi < 18.5) return "Underweight";
+          if (bmi < 25) return "Normal";
+          if (bmi < 30) return "Overweight";
+          return "Obese";
+        }
+        return null;
+      })(),
+      sleepHoursPerNight: health.sleepIntelligence?.averageSleepHoursPerNight,
+      sleepQuality: health.sleepIntelligence?.sleepQuality,
+      workoutFrequencyPerWeek: health.physicalActivity?.workoutFrequencyPerWeek,
+      workoutType: health.physicalActivity?.workoutIntensity,
+      // stressLevel is the actual field (perceivedStressLevel1To10 is a wrong alias)
+      stressLevel_1to10: health.mentalWellbeing?.stressLevel ?? health.mentalWellbeing?.perceivedStressLevel1To10,
+      // mindfulnessPracticed is the actual field name
+      practicesMindfulness: boolToText(
+        health.mentalWellbeing?.mindfulnessPracticed ?? health.mentalWellbeing?.practicesMindfulness
+      ),
+      dietQuality: health.nutritionIntelligence?.sugarIntakeLevel,
+      // tobaccoStatus is the actual field (usesTobacco is wrong)
+      usesTobacco: boolToText(
+        health.lifestyleHabits?.tobaccoStatus && health.lifestyleHabits.tobaccoStatus !== "None"
+        || health.lifestyleHabits?.smokingStatus && health.lifestyleHabits.smokingStatus !== "Non-Smoker"
+        || health.lifestyleHabits?.usesTobacco
+      ),
+      alcoholConsumption: health.lifestyleHabits?.alcoholStatus || health.lifestyleHabits?.alcoholConsumption,
+      screenTimeHrsPerDay: health.lifestyleHabits?.dailyScreenTimeHours,
+      healthCapitalScore: healthMetrics?.healthCapitalScore || null,
+    } : { DATA_MISSING: true, reason: "User has not completed the Health Capital module" },
+
+    // Section 8: Human Assessments (RAW answers + computed results)
+    humanAssessments: hasAssessments ? {
+      isPersonalityCompleted: assessData.isPersonalityCompleted,
+      isMindsetCompleted: assessData.isMindsetCompleted,
+      isDecisionCompleted: assessData.isDecisionCompleted,
+      isAwarenessCompleted: assessData.isAwarenessCompleted,
+      isAptitudeCompleted: assessData.isAptitudeCompleted,
+      isCommunicationCompleted: assessData.isCommunicationCompleted,
       stagesCompleted: [
-        assessData.isPersonalityCompleted && "Personality", assessData.isMindsetCompleted && "Mindset",
-        assessData.isDecisionCompleted && "Decision", assessData.isAwarenessCompleted && "Awareness",
-        assessData.isAptitudeCompleted && "Aptitude", assessData.isCommunicationCompleted && "Communication",
+        assessData.isPersonalityCompleted && "Personality",
+        assessData.isMindsetCompleted && "Mindset",
+        assessData.isDecisionCompleted && "Decision Making",
+        assessData.isAwarenessCompleted && "Self Awareness",
+        assessData.isAptitudeCompleted && "Aptitude",
+        assessData.isCommunicationCompleted && "Communication",
       ].filter(Boolean),
-      personalityTraits: assessMetrics.traits, mindsetProfile: assessMetrics.mindset,
-      decisionJudgment: assessMetrics.decision, awarenessProfile: assessMetrics.awareness,
-      aptitudeProfile: assessMetrics.aptitude, communicationProfile: assessMetrics.communication,
-    } : undefined,
+      personalityTraits: assessMetrics?.traits,
+      mindsetProfile: assessMetrics?.mindset,
+      decisionJudgment: assessMetrics?.decision,
+      awarenessProfile: assessMetrics?.awareness,
+      aptitudeProfile: assessMetrics?.aptitude,
+      communicationProfile: assessMetrics?.communication,
+      assessmentScore: assessMetrics?.assessmentScore || null,
+    } : { DATA_MISSING: true, reason: "User has not completed the Human Assessments module" },
+
+    // Section 9: Human Values Test history
     humanValuesHistory: humanValuesTests.length > 0 ? {
-      latestScore: humanValuesTests[0]?.score, latestLevel: humanValuesTests[0]?.level,
+      latestScore: humanValuesTests[0]?.score,
+      latestLevel: humanValuesTests[0]?.level,
+      categoryScores: humanValuesTests[0]?.category_scores,
       totalAttempts: humanValuesTests.length,
-    } : undefined,
-    dataAvailability: { domains: availableDomains, totalDomains: availableDomains.length },
+    } : { DATA_MISSING: true, reason: "No human values tests completed" },
+
+    // Section 10: Data availability manifest (exact truth for the AI)
+    _dataAvailability: {
+      availableDomains,
+      masterProfile: hasMaster,
+      financial: hasFinancial,
+      skills: hasSkills,
+      health: hasHealth,
+      assessments: hasAssessments,
+      humanValues: humanValuesTests.length > 0,
+      totalModulesCompleted: availableDomains.filter(d => d !== "Human Values Tests").length,
+      WARNING: availableDomains.length < 5
+        ? `INCOMPLETE DATA: Only ${availableDomains.length}/5 modules submitted. Agents MUST note this explicitly and MUST NOT assign high scores to missing domains.`
+        : "All 5 modules present — full evaluation enabled.",
+    },
   };
 
-  const computedScores: Record<string, number> = {
-    overall: assessMetrics?.assessmentScore || (finMetrics?.financialHealthScore ? Math.round((finMetrics.financialHealthScore + (proMetrics?.professionalCapitalScore || 75)) / 2) : 78),
-    humanValues: assessMetrics?.assessmentScore || 78,
-    financialIntelligence: finMetrics?.financialHealthScore || 75,
-    leadership: assessMetrics?.traits?.leadership || 78,
-    communication: assessMetrics?.communication?.businessCommunication || 80,
-    selfAwareness: assessMetrics?.traits?.selfAwareness || 78,
-    decisionMaking: assessMetrics?.decision?.financialDecisionMaking || 76,
-    growthMindset: assessMetrics?.mindset?.growthMindsetScore || 82,
-    consistency: assessMetrics?.mindset?.disciplineScore || 78,
-    learningAbility: assessMetrics?.communication?.learningAgility || 80,
-    professionalReadiness: proMetrics?.professionalCapitalScore || 78,
+  // Compute scores ONLY from real data — null = data not available (no fake defaults)
+  const computedScores: Record<string, number | null> = {
+    overall: assessMetrics?.assessmentScore || (finMetrics?.financialHealthScore && proMetrics?.professionalCapitalScore
+      ? Math.round((finMetrics.financialHealthScore + proMetrics.professionalCapitalScore) / 2)
+      : null),
+    humanValues: assessMetrics?.assessmentScore || (humanValuesTests[0]?.score ? Math.round(humanValuesTests[0].score) : null),
+    financialIntelligence: finMetrics?.financialHealthScore || null,
+    leadership: assessMetrics?.traits?.leadership || null,
+    communication: assessMetrics?.communication?.businessCommunication || null,
+    selfAwareness: assessMetrics?.traits?.selfAwareness || null,
+    decisionMaking: assessMetrics?.decision?.financialDecisionMaking || null,
+    growthMindset: assessMetrics?.mindset?.growthMindsetScore || null,
+    consistency: healthMetrics?.scores?.disciplineScore || assessMetrics?.mindset?.disciplineScore || null,
+    learningAbility: proMetrics?.aiReadinessScore || assessMetrics?.communication?.learningAgility || null,
+    professionalReadiness: proMetrics?.professionalCapitalScore || null,
   };
 
-  return { cleanProfile: deepClean(comprehensive) || {}, computedScores, availableDomains };
+  // Log what scores we actually have
+  const nullScores = Object.entries(computedScores).filter(([, v]) => v === null).map(([k]) => k);
+  const realScores = Object.entries(computedScores).filter(([, v]) => v !== null).map(([k, v]) => `${k}:${v}`);
+  console.log(`[AI Data Pipeline] Real scores (${realScores.length}): ${realScores.join(', ')}`);
+  if (nullScores.length) console.log(`[AI Data Pipeline] NULL scores (no data): ${nullScores.join(', ')}`);
+
+  return {
+    cleanProfile: deepClean(comprehensive) || {},
+    rawModules: { master, financial, skills, health, assessData },
+    computedScores,
+    availableDomains,
+  };
 }
 
 // ====================================================================
-// CORE RULES (shared across all agents)
-// ====================================================================
-
-// ====================================================================
-// CORE RULES (Strict Evaluator, Corporate HR Director & Master Teacher)
+// CORE RULES — ANTI-OVERCOATING & STRICT GROUNDING MANDATE
 // ====================================================================
 
 const CORE_RULES = `
-ABSOLUTE EVALUATION RULES (EXECUTIVE AUDITOR & MASTER PERFORMANCE COACH):
-1. EXECUTIVE SYNTHESIS & ELEGANCE: Act as an Executive Performance Auditor and Master Leadership Coach. Produce immaculate, highly structured, polished executive analyses. BANNED: Awkward meta-complaints about missing data, repetitive disclaimers, or robotic fluff.
-2. CONSTRUCTIVE & GROUNDED EVALUATION: Focus on evaluating actual user capabilities, strengths, and high-impact growth levers based on available telemetry. Where data points exist, reference them directly. Where data is sparse, provide constructive baseline guidance and positive strategic trajectory.
-3. CONFIDENCE MODEL: High (80-100%), Medium (50-79%), Low (25-49%).
-4. STRUCTURED PARAGRAPHS: Provide narratives as arrays of clean, distinct, well-written paragraphs (3-4 paragraphs for executive summaries).
-5. Response MUST be valid JSON only. No markdown formatting, no text outside JSON.
+ABSOLUTE EVALUATION RULES (STRICT PERFORMANCE AUDITOR):
+1. DATA-GROUNDED ONLY: Every score, observation, and recommendation MUST reference specific user data provided. Never praise without referencing a specific telemetry fact.
+2. NO SUGARCOATING: Do NOT inflate scores. A user with 0 savings rate CANNOT score above 40 on financial discipline. A user with no certifications CANNOT score 90 on professional readiness.
+3. REALISTIC SCORING: Scores 80-100 = demonstrably exceptional (cite exact evidence). Scores 60-79 = above average with specific evidence. Scores 40-59 = average. Scores below 40 = genuine deficiency that must be directly named.
+4. CONSTRUCTIVE BUT HONEST: Identify actual strengths (with evidence) AND actual weaknesses (named directly, not softened). Provide precise corrective steps.
+5. NO FILLER: Banned phrases: "comprehensive approach", "well-rounded", "great potential" without evidence. Every sentence must contain actionable information.
+6. JSON ONLY: Response MUST be valid JSON. No markdown formatting, no text outside JSON.
+7. MENTOR FUNCTION: Act as a trusted senior mentor who will not lie to protect feelings — only truthful guidance creates real growth.
 `;
 
 // ====================================================================
@@ -637,33 +815,37 @@ ABSOLUTE EVALUATION RULES (EXECUTIVE AUDITOR & MASTER PERFORMANCE COACH):
 
 async function runMultiAgentPipeline(
   cleanProfile: Record<string, any>,
-  computedScores: Record<string, number>,
+  computedScores: Record<string, number | null>,
   availableDomains: string[],
 ): Promise<{ report: any; modelsUsed: string[] }> {
   const modelsUsed: string[] = [];
   const profileStr = JSON.stringify(cleanProfile, null, 2);
 
+  // AGENT 1: Profile & Vision Evaluator — analyzes identity, background, career stage
   const a1 = invokeAgent(
-    `You are Agent 1 — Senior Evaluator & Behavioral Psychologist.\n${CORE_RULES}\nConduct an uncompromising evaluation of personality traits, human values, core strengths, psychological blind spots, communication style, and emotional intelligence. Function as a Master Teacher identifying exact emotional and interpersonal upgrades required.\nOUTPUT (valid JSON): {"personalityAnalysis":{"title":"Personality Analysis & Behavioral Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"humanValuesAnalysis":{"title":"Human Values & Moral Framework","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"coreStrengths":{"title":"Verified Capability Strengths","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"areasOfImprovement":{"title":"Critical Vulnerabilities & Upgrade Focus Areas","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"communicationStyle":{"title":"Communication & Interpersonal Impact","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"emotionalIntelligence":{"title":"Emotional Intelligence & Resilience Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
-    `User telemetry:\n${profileStr}`,
+    `You are Agent 1 — Senior Background & Vision Evaluator.\n${CORE_RULES}\nEvaluate ONLY what is present in the user's profile data: name, age, location, role, education (degree/CGPA/college), work experience (years/company/designation/salary band), startup details, career interests, and stated goals. Score identity maturity, career stage appropriateness, and goal clarity using EXACT values from the data. Do NOT praise if data is missing.\nOUTPUT (valid JSON): {"personalityAnalysis":{"title":"Background & Career Stage Evaluation","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"humanValuesAnalysis":{"title":"Goal Clarity & Life Direction","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"coreStrengths":{"title":"Verified Profile Strengths","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"areasOfImprovement":{"title":"Profile Gaps & Urgent Upgrades","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
+    `User profile telemetry:\n${profileStr}`,
     AGENT_MODELS.values,
   );
 
+  // AGENT 2: Financial Health Auditor — strict financial analysis
   const a2 = invokeAgent(
-    `You are Agent 2 — Corporate Financial Auditor & Wealth Coach.\n${CORE_RULES}\nConduct a strict financial health audit evaluating monthly income, savings rate, emergency fund adequacy, debt exposure, risk management, and investment behavior. Act as a Wealth Teacher prescribing exact financial targets and capital growth milestones.\nOUTPUT (valid JSON): {"financialIntelligence":{"title":"Financial Health & Capital Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"investmentBehaviour":{"title":"Asset Allocation & Investment Discipline","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"moneyManagement":{"title":"Cash Flow & Budgeting Rigor","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"savingsBehaviour":{"title":"Savings Rate & Emergency Reserves Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"riskProfile":{"title":"Risk Appetite & Insurance Protection Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
-    `User telemetry:\n${profileStr}`,
+    `You are Agent 2 — Strict Financial Health Auditor & Wealth Coach.\n${CORE_RULES}\nConduct a strict financial audit using ONLY the actual numbers in the data: monthly active income, passive income, total expenses, savings amount, savings rate %, emergency fund months, total debt, EMIs, net worth, insurance coverage, investment frequency, risk appetite. If savings rate < 10% flag it clearly. If no emergency fund exists, say so directly. Score financial health 0-100 strictly based on the actual numbers — not potential.\nOUTPUT (valid JSON): {"financialIntelligence":{"title":"Financial Health Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"savingsBehaviour":{"title":"Savings Rate & Emergency Fund Status","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"moneyManagement":{"title":"Income vs Expense Control","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"riskProfile":{"title":"Insurance & Risk Protection Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"investmentBehaviour":{"title":"Investment Discipline Assessment","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
+    `User financial telemetry:\n${profileStr}`,
     AGENT_MODELS.finance,
   );
 
+  // AGENT 3: Professional Capital & Market Value Evaluator
   const a3 = invokeAgent(
-    `You are Agent 3 — Corporate HR Director & Executive Leadership Coach.\n${CORE_RULES}\nEvaluate the candidate as a Senior Corporate HR Director. Assess leadership potential, decision-making style, professional capital, career suitability, and promotion readiness. Identify exact skill gaps blocking salary growth and promotion, providing a structured career upgrade blueprint.\nOUTPUT (valid JSON): {"leadershipPotential":{"title":"Executive Leadership Potential Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"decisionMakingStyle":{"title":"Strategic Decision-Making Framework","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"learningStyle":{"title":"Learning Agility & Skill Acquisition Rate","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"careerSuitability":{"title":"Corporate Career Suitability & Market Value","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"professionalGrowth":{"title":"Promotion Readiness & Career Acceleration Blueprint","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
-    `User telemetry:\n${profileStr}`,
+    `You are Agent 3 — Corporate HR Director & Professional Capital Evaluator.\n${CORE_RULES}\nEvaluate professional capital using ONLY the skills data: technical skills (list and proficiency), certifications (list them), projects (count and quality), academic degree and GPA, AI readiness self-score, employment history, and promotion potential. If no certifications exist, say so and prescribe exactly which ones to get. Score employability 0-100 based on actual listed skills vs. market demand.\nOUTPUT (valid JSON): {"leadershipPotential":{"title":"Leadership & Promotion Readiness","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"learningStyle":{"title":"Technical Skill Depth & AI Readiness","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"careerSuitability":{"title":"Market Value & Employability Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"professionalGrowth":{"title":"Skill Gap Analysis & Career Acceleration Blueprint","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"decisionMakingStyle":{"title":"Strategic Career Decision Framework","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
+    `User skills/career telemetry:\n${profileStr}`,
     AGENT_MODELS.career,
   );
 
+  // AGENT 4: Health & Vitality Auditor — burnout risk and lifestyle performance
   const a4 = invokeAgent(
-    `You are Agent 4 — Master Performance Teacher & Behavioral Execution Coach.\n${CORE_RULES}\nEvaluate daily habit patterns, execution consistency, time discipline, and goal alignment. Act as a Master Teacher creating actionable, step-by-step upgrade plans.\nOUTPUT (valid JSON): {"behaviourPatterns":{"title":"Behavioral Execution & Discipline Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"dailyHabitsAnalysis":{"title":"Routine & Time Optimization Analysis","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"goalAlignment":{"title":"Strategic Goal Alignment & Execution Gaps","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"recommendations":{"title":"High-Priority Corrective Action Protocols","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"dailyActionPlan":{"title":"24-Hour High-Performance Daily Routine","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"weeklyActionPlan":{"title":"7-Day Target Mastery Plan","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"monthlyGrowthPlan":{"title":"30-Day Skill & Capability Upgrade Milestone","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"longTermDevelopmentPlan":{"title":"12-Month Executive Mastery Roadmap","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
-    `User telemetry:\n${profileStr}`,
+    `You are Agent 4 — Lifestyle Performance & Health Capital Auditor.\n${CORE_RULES}\nEvaluate health capital using ONLY the health data: BMI (height/weight), sleep hours per night, sleep quality, weekly workout frequency, stress level (1-10 scale), diet quality, mindfulness practice (yes/no), tobacco/alcohol usage. If BMI is outside healthy range, name it. If stress level > 7, flag burnout risk explicitly. Score health capital 0-100 based on actual metrics, not aspirations.\nOUTPUT (valid JSON): {"behaviourPatterns":{"title":"Daily Health Discipline Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"dailyHabitsAnalysis":{"title":"Sleep, Recovery & Workout Adherence","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"goalAlignment":{"title":"Stress Management & Burnout Risk Assessment","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"recommendations":{"title":"Health Upgrade Protocol (Immediate Actions)","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"dailyActionPlan":{"title":"Optimized Daily Health Routine","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"weeklyActionPlan":{"title":"7-Day Fitness & Recovery Protocol","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"monthlyGrowthPlan":{"title":"30-Day Health Capital Upgrade","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"longTermDevelopmentPlan":{"title":"12-Month Longevity & Peak Performance Roadmap","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
+    `User health telemetry:\n${profileStr}`,
     AGENT_MODELS.habits,
   );
 
@@ -677,10 +859,52 @@ async function runMultiAgentPipeline(
 
   [r1, r2, r3, r4].forEach(r => { if (r.status === "fulfilled" && r.value) modelsUsed.push(`${r.value.provider}/${r.value.modelUsed}`); });
 
-  console.log("[Multi-Agent] ▶ Launching Master Synthesizer...");
+  // AGENT 5 / MASTER MENTOR SYNTHESIZER: Grounded, realistic, zero sugarcoating
+  console.log("[Multi-Agent] ▶ Launching Master Mentor Synthesizer...");
   const masterRes = await invokeAgent(
-    `You are Agent 5 — Master Executive Synthesizer & HR Evaluation Chair.\n${CORE_RULES}\nSynthesize a polished, executive-ready Executive Summary formatted as an array of 3-4 structured paragraph strings:\n- Paragraph 1: Executive Profile & Strategic Leadership Positioning.\n- Paragraph 2: Core Analytical & Financial Execution Strength.\n- Paragraph 3: Behavioral Resilience & Key Optimization Levers.\n- Paragraph 4: 90-Day High-Impact Action Plan.\n\nAssign 11 objective scores (0-100) strictly based on user telemetry figures and assessment evidence.\nAvailable domains: ${availableDomains.join(", ")}\nOUTPUT (valid JSON): {"executiveSummary":["Paragraph 1...", "Paragraph 2...", "Paragraph 3...", "Paragraph 4..."],"overallSummary":["Paragraph 1...", "Paragraph 2..."],"scores":{"humanValues":{"score":82,"explanation":"..."},"financialIntelligence":{"score":75,"explanation":"..."},"leadership":{"score":80,"explanation":"..."},"communication":{"score":82,"explanation":"..."},"selfAwareness":{"score":80,"explanation":"..."},"decisionMaking":{"score":78,"explanation":"..."},"growthMindset":{"score":85,"explanation":"..."},"consistency":{"score":80,"explanation":"..."},"learningAbility":{"score":84,"explanation":"..."},"professionalReadiness":{"score":80,"explanation":"..."},"overall":{"score":80,"explanation":"..."}}}`,
-    `USER TELEMETRY:\n${profileStr}\n\nENGINE SCORES:\n${JSON.stringify(computedScores)}`,
+    `You are Agent 6 — Master Human Capital Mentor & Realistic Performance Synthesizer.\n${CORE_RULES}\n
+YOUR ROLE: You are a trusted senior mentor who gives honest, data-grounded feedback. You synthesize all 5 domain evaluations and produce a Master Report. Your output will be used to guide this person's life decisions — therefore dishonesty, inflation, or sugarcoating is a form of harm.
+
+SCORING CALIBRATION RULES (MANDATORY):
+- Score 85-100: ONLY if user has concrete evidence of excellence (e.g., high savings rate >30%, multiple certifications, optimal BMI & sleep, strong assessment results)
+- Score 70-84: Solid performer with minor gaps
+- Score 55-69: Average with notable gaps that must be named
+- Score 40-54: Below standard — must clearly identify the reason
+- Score 0-39: Significant deficiency — prescribe exact corrective action
+
+SYNTHESIS REQUIREMENTS:
+1. Executive Summary: 4 paragraphs — (1) Who this person truly is based on data, (2) Their actual financial & professional capital position, (3) Their real health & behavioral patterns, (4) The single most important thing they must change NOW.
+2. Assign 11 objective scores strictly based on telemetry evidence.
+3. Top 3 Blind Spots: Critical vulnerabilities that could derail their goals if unaddressed.
+4. Mentor Action Plan: 7-day immediate fixes, 30-day milestones, 90-day transformation targets.
+5. Key Metrics to Track: Specific numbers the user should monitor monthly.
+
+Available domains: ${availableDomains.join(", ")}
+OUTPUT (valid JSON): {
+  "executiveSummary": ["Paragraph 1 — Who you are (data-driven profile assessment)...", "Paragraph 2 — Your financial & professional capital position...", "Paragraph 3 — Your health & behavioral patterns...", "Paragraph 4 — The ONE thing you must change NOW..."],
+  "overallSummary": ["One-line verdict...", "Strategic positioning statement..."],
+  "scores": {
+    "humanValues": {"score": 75, "explanation": "Cite specific assessment data..."},
+    "financialIntelligence": {"score": 60, "explanation": "Cite actual savings rate, income, emergency fund..."},
+    "leadership": {"score": 72, "explanation": "Cite actual leadership assessment score..."},
+    "communication": {"score": 78, "explanation": "Cite communication assessment data..."},
+    "selfAwareness": {"score": 74, "explanation": "Cite self-awareness assessment data..."},
+    "decisionMaking": {"score": 70, "explanation": "Cite decision making data..."},
+    "growthMindset": {"score": 76, "explanation": "Cite growth mindset assessment..."},
+    "consistency": {"score": 68, "explanation": "Cite health/workout/sleep consistency data..."},
+    "learningAbility": {"score": 73, "explanation": "Cite certifications, skills, learning data..."},
+    "professionalReadiness": {"score": 71, "explanation": "Cite technical skills, experience, employability..."},
+    "overall": {"score": 72, "explanation": "Weighted composite of all domain scores..."}
+  },
+  "blindSpots": ["Critical blind spot 1 with specific data reference...", "Critical blind spot 2...", "Critical blind spot 3..."],
+  "mentorActionPlan": {
+    "sevenDayFixes": ["Immediate action 1...", "Immediate action 2...", "Immediate action 3..."],
+    "thirtyDayMilestones": ["30-day milestone 1...", "30-day milestone 2..."],
+    "ninetyDayTargets": ["90-day target 1...", "90-day target 2..."]
+  },
+  "keyMetricsToTrack": ["Metric 1: e.g., Monthly savings rate % (target: X%)", "Metric 2: ...", "Metric 3: ...", "Metric 4: ...", "Metric 5: ..."]
+}`,
+    `USER TELEMETRY:\n${profileStr}\n\nDOMAIN ENGINE SCORES:\n${JSON.stringify(computedScores)}\n\nDOMAIN AGENT OUTPUTS:\nAgent 1 (Profile): ${JSON.stringify(o1)}\nAgent 2 (Financial): ${JSON.stringify(o2)}\nAgent 3 (Skills/Career): ${JSON.stringify(o3)}\nAgent 4 (Health): ${JSON.stringify(o4)}`,
     AGENT_MODELS.master,
   );
 
@@ -689,10 +913,13 @@ async function runMultiAgentPipeline(
 
   return {
     report: {
-      executiveSummary: masterOut.executiveSummary || `Executive multi-agent evaluation for ${cleanProfile.identity?.fullName || "User"}.`,
+      executiveSummary: masterOut.executiveSummary || [`Multi-agent evaluation for user.`],
       ...o1, ...o2, ...o3, ...o4,
-      overallSummary: masterOut.overallSummary || `Analysis across ${availableDomains.join(", ")}.`,
+      overallSummary: masterOut.overallSummary || [`Analysis across ${availableDomains.join(", ")}.`],
       scores: masterOut.scores || {},
+      blindSpots: masterOut.blindSpots || [],
+      mentorActionPlan: masterOut.mentorActionPlan || {},
+      keyMetricsToTrack: masterOut.keyMetricsToTrack || [],
     },
     modelsUsed: [...new Set(modelsUsed)],
   };
@@ -732,8 +959,8 @@ function checkModuleCompleteness(rawData: Awaited<ReturnType<typeof fetchAllUser
   ];
 
   const completedCount = status.filter(s => s.done).length;
-  // If user has saved telemetry data or completed core modules, allow AI Report generation
-  const isFullyComplete = completedCount >= 3 || (completedCount > 0 && !!profile);
+  // Require ALL 5 modules to be fully saved before generating report
+  const isFullyComplete = completedCount >= 5;
 
   return { isFullyComplete, status, completedCount, totalCount: status.length };
 }
@@ -743,7 +970,22 @@ function checkModuleCompleteness(rawData: Awaited<ReturnType<typeof fetchAllUser
 // ====================================================================
 
 async function fetchReportFromSupabase(supabase: ReturnType<typeof createClient>, userId: string): Promise<any | null> {
-  // 1. Try ai_evaluations (CONFIRMED TO EXIST in active database schema)
+  // 1. Try ai_reports FIRST (Master Mentor table)
+  try {
+    const { data } = await supabase
+      .from("ai_reports")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data && data.report_json) {
+      console.log(`[AI Report Engine] ✅ Retrieved report from public.ai_reports`);
+      return data;
+    }
+  } catch {}
+
+  // 2. Try ai_evaluations
   try {
     const { data } = await supabase
       .from("ai_evaluations")
@@ -764,7 +1006,21 @@ async function fetchReportFromSupabase(supabase: ReturnType<typeof createClient>
     }
   } catch {}
 
-  // 2. Try memory (key = 'ai_report')
+  // 3. Try module_data (key = 'ai_report')
+  try {
+    const { data } = await supabase
+      .from("module_data")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("module_key", "ai_report")
+      .maybeSingle();
+    if (data?.data?.report_json) {
+      console.log(`[AI Report Engine] ✅ Retrieved report from public.module_data`);
+      return data.data;
+    }
+  } catch {}
+
+  // 4. Try memory (key = 'ai_report')
   try {
     const { data } = await supabase
       .from("memory")
@@ -784,50 +1040,6 @@ async function fetchReportFromSupabase(supabase: ReturnType<typeof createClient>
     }
   } catch {}
 
-  // 3. Try ai_reports
-  try {
-    const { data } = await supabase
-      .from("ai_reports")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (data && data.report_json) {
-      console.log(`[AI Report Engine] ✅ Retrieved report from public.ai_reports`);
-      return data;
-    }
-  } catch {}
-
-  // 4. Try module_data
-  try {
-    const { data } = await supabase
-      .from("module_data")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("module_key", "ai_report")
-      .maybeSingle();
-    if (data?.data?.report_json) {
-      console.log(`[AI Report Engine] ✅ Retrieved report from public.module_data`);
-      return data.data;
-    }
-  } catch {}
-
-  // 5. Try ai_analysis_reports
-  try {
-    const { data } = await supabase
-      .from("ai_analysis_reports")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (data && data.report_json) {
-      console.log(`[AI Report Engine] ✅ Retrieved report from public.ai_analysis_reports`);
-      return data;
-    }
-  } catch {}
-
   return null;
 }
 
@@ -835,7 +1047,62 @@ async function saveReportToSupabase(supabase: ReturnType<typeof createClient>, u
   let saved = false;
   const nowIso = new Date().toISOString();
 
-  // Target 1: ai_evaluations (CONFIRMED TO EXIST in live schema)
+  // Target 1: ai_reports (Primary Master Mentor table)
+  try {
+    const aiReportsPayload = {
+      user_id: userId,
+      report_version: record.report_version || "v5.0",
+      status: record.status || "COMPLETED",
+      executive_summary: Array.isArray(record.executive_summary) ? record.executive_summary : [record.executive_summary].filter(Boolean),
+      overall_summary: typeof record.overall_summary === "string" ? record.overall_summary : JSON.stringify(record.overall_summary || ""),
+      scores_json: record.scores_json || record.report_json?.scores || {},
+      report_json: record.report_json || record,
+      mentor_action_plan: record.report_json?.mentorActionPlan || record.mentor_action_plan || {},
+      risk_vectors: record.report_json?.blindSpots || record.risk_vectors || {},
+      top_strengths: record.report_json?.coreStrengths?.highlights || [],
+      top_weaknesses: record.report_json?.areasOfImprovement?.highlights || [],
+      overall_score: Number(record.overall_score) || 0,
+      confidence_score: Number(record.confidence_score) || 94,
+      data_hash: record.data_hash || "",
+      models_used: record.models_used || [],
+      ai_model: record.ai_model || "Multi-Agent Pipeline",
+      generated_at: nowIso,
+      updated_at: nowIso,
+    };
+
+    let savedAiReport = false;
+    try {
+      const { data, error } = await supabase
+        .from("ai_reports")
+        .upsert([aiReportsPayload], { onConflict: "user_id" })
+        .select()
+        .single();
+      if (!error && data) {
+        saved = true;
+        savedAiReport = true;
+        console.log(`[AI Report Engine] ✅ Saved to public.ai_reports: ${data.id}`);
+      }
+    } catch {}
+
+    if (!savedAiReport) {
+      try {
+        await supabase.from("ai_reports").delete().eq("user_id", userId);
+        const { data, error } = await supabase
+          .from("ai_reports")
+          .insert([aiReportsPayload])
+          .select()
+          .single();
+        if (!error && data) {
+          saved = true;
+          console.log(`[AI Report Engine] ✅ Saved to public.ai_reports: ${data.id}`);
+        }
+      } catch {}
+    }
+  } catch (e: any) {
+    console.warn(`[AI Report Engine] ai_reports exception:`, e.message);
+  }
+
+  // Target 2: ai_evaluations (Compatibility)
   try {
     const evalPayload = {
       user_id: userId,
@@ -848,7 +1115,6 @@ async function saveReportToSupabase(supabase: ReturnType<typeof createClient>, u
       created_at: nowIso,
     };
 
-    // Clean old evaluation for single report rule
     await supabase.from("ai_evaluations").delete().eq("user_id", userId);
 
     const { data, error } = await supabase
@@ -860,14 +1126,26 @@ async function saveReportToSupabase(supabase: ReturnType<typeof createClient>, u
     if (!error && data) {
       saved = true;
       console.log(`[AI Report Engine] ✅ Saved to public.ai_evaluations: ${data.id}`);
-    } else if (error) {
-      console.warn(`[AI Report Engine] ai_evaluations write notice:`, error.message);
     }
-  } catch (e: any) {
-    console.warn(`[AI Report Engine] ai_evaluations exception:`, e.message);
-  }
+  } catch {}
 
-  // Target 2: memory table (key = 'ai_report')
+  // Target 3: module_data (key = 'ai_report')
+  try {
+    const { data, error } = await supabase
+      .from("module_data")
+      .upsert(
+        [{ user_id: userId, module_key: "ai_report", data: record, is_completed: true, score: record.overall_score || 0 }],
+        { onConflict: "user_id,module_key" }
+      )
+      .select()
+      .single();
+    if (!error && data) {
+      saved = true;
+      console.log(`[AI Report Engine] ✅ Saved to public.module_data: ${data.id}`);
+    }
+  } catch {}
+
+  // Target 4: memory table (key = 'ai_report')
   try {
     const { data, error } = await supabase
       .from("memory")
@@ -887,39 +1165,6 @@ async function saveReportToSupabase(supabase: ReturnType<typeof createClient>, u
     if (!error && data) {
       saved = true;
       console.log(`[AI Report Engine] ✅ Saved to public.memory (ai_report): ${data.id}`);
-    } else if (error) {
-      console.warn(`[AI Report Engine] memory upsert notice:`, error.message);
-    }
-  } catch (e: any) {
-    console.warn(`[AI Report Engine] memory exception:`, e.message);
-  }
-
-  // Target 3: ai_reports (if table exists)
-  try {
-    const { data, error } = await supabase
-      .from("ai_reports")
-      .upsert([record], { onConflict: "user_id" })
-      .select()
-      .single();
-    if (!error && data) {
-      saved = true;
-      console.log(`[AI Report Engine] ✅ Saved to public.ai_reports: ${data.id}`);
-    }
-  } catch {}
-
-  // Target 4: module_data (if table exists)
-  try {
-    const { data, error } = await supabase
-      .from("module_data")
-      .upsert(
-        [{ user_id: userId, module_key: "ai_report", data: record, is_completed: true, score: record.overall_score || 0 }],
-        { onConflict: "user_id,module_key" }
-      )
-      .select()
-      .single();
-    if (!error && data) {
-      saved = true;
-      console.log(`[AI Report Engine] ✅ Saved to public.module_data: ${data.id}`);
     }
   } catch {}
 
@@ -936,10 +1181,6 @@ export async function GET(request: Request) {
     const accessToken = authHeader?.replace("Bearer ", "");
     if (!accessToken) return NextResponse.json({ success: false, error: "Unauthorized", report: null }, { status: 401 });
 
-    // Verified-first identity. getUser() validates the JWT signature server-side,
-    // so a forged/unsigned token cannot inject a fake userId into cache keys or
-    // logs. Local decode is only a fallback if the network call fails; RLS still
-    // backstops every query with the caller's token.
     let userId: string | null = null;
     const supabase = createAuthenticatedClient(accessToken);
     try {
@@ -967,25 +1208,16 @@ export async function GET(request: Request) {
     const rawData = await fetchAllUserData(supabase, userId);
     const completeness = checkModuleCompleteness(rawData);
 
-    if (!completeness.isFullyComplete) {
-      return NextResponse.json({
-        success: false,
-        error: "Please complete all assessment modules to unlock your AI Analysis Report.",
-        errorCode: "MODULES_INCOMPLETE",
-        completeness,
-        report: null,
-      }, { status: 200 });
-    }
-
     return NextResponse.json({
       success: true,
       report: null,
       status: "PENDING",
       cached: false,
+      completeness,
     });
   } catch (err: any) {
     console.error("[AI Report Engine] Unhandled error:", err);
-    return NextResponse.json({ success: false, error: "Failed to generate AI report", report: null }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Failed to fetch AI report", report: null }, { status: 500 });
   }
 }
 
@@ -1000,9 +1232,6 @@ export async function POST(request: Request) {
     const accessToken = authHeader?.replace("Bearer ", "");
     if (!accessToken) return NextResponse.json({ success: false, error: "Unauthorized", errorCode: "AUTH_MISSING" }, { status: 401 });
 
-    // Verified-first identity (see GET handler). Signature-checked getUser()
-    // before local decode so a forged token can't drive the rate-limit bucket,
-    // cache key, or LLM cost attribution.
     let userId: string | null = null;
     const supabase = createAuthenticatedClient(accessToken);
     try {
@@ -1013,11 +1242,7 @@ export async function POST(request: Request) {
 
     if (!userId) return NextResponse.json({ success: false, error: "Invalid session", errorCode: "AUTH_INVALID" }, { status: 401 });
 
-    // Rate limit expensive multi-LLM generation per user. A single POST fans
-    // out to ~5 LLM calls across up to 4 providers, so cap tightly. This is a
-    // per-instance throttle (see checkRateLimit note) — pair with a shared
-    // store for hard cross-instance quotas.
-    const rl = checkRateLimit(`ai-analysis:${userId}`, 5, 60_000);
+    const rl = checkRateLimit(`ai-analysis:${userId}`, 10, 60_000);
     if (!rl.allowed) {
       return NextResponse.json(
         { success: false, error: "Rate limit exceeded. Please wait before generating another report.", errorCode: "RATE_LIMITED" },
@@ -1032,30 +1257,18 @@ export async function POST(request: Request) {
 
     const rawData = await fetchAllUserData(supabase, userId);
     const completeness = checkModuleCompleteness(rawData);
-
-    // MANDATORY PRODUCTION RULE: All modules must be completed before generating report
-    if (!completeness.isFullyComplete) {
-      return NextResponse.json({
-        success: false,
-        error: "Please complete all assessment modules to unlock your AI Analysis Report.",
-        errorCode: "MODULES_INCOMPLETE",
-        completeness,
-      }, { status: 200 });
-    }
-
     const { cleanProfile, computedScores, availableDomains } = buildComprehensiveProfile(rawData);
     console.log(`[Multi-Agent AI] Domains: ${availableDomains.join(", ")} | Profile: ${JSON.stringify(cleanProfile).length} chars`);
 
     const dataHash = await sha256Hash(JSON.stringify(cleanProfile));
 
     // SMART CACHE RULE:
-    // 1. Once generated, stored report in Supabase is reused for all visits/reloads (0 AI calls).
-    // 2. Fresh generation occurs ONLY when user updates profile, skills, or module data (data_hash mismatch) OR clicks Regenerate.
+    // When NOT forcing regenerate, return stored report from Supabase if available
     if (!forceRegenerate) {
       const cachedReport = await fetchReportFromSupabase(supabase, userId);
       if (cachedReport && cachedReport.report_json) {
         if (!cachedReport.data_hash || cachedReport.data_hash === dataHash) {
-          console.log("[Multi-Agent AI] ✅ Production Cache Hit — Telemetry unchanged, serving stored report from Supabase (0 AI calls)");
+          console.log("[Multi-Agent AI] ✅ Production Cache Hit — serving stored report from Supabase");
           return NextResponse.json({
             success: true,
             report: cachedReport,
@@ -1063,26 +1276,31 @@ export async function POST(request: Request) {
             cached: true,
           });
         }
-        console.log("[Multi-Agent AI] ⚡ User updated profile/skills telemetry — Re-evaluating fresh AI report...");
       }
     }
 
     console.log("[Multi-Agent AI] ▶ Multi-Provider Orchestration (Executing fresh AI evaluation)...");
     const { report, modelsUsed } = await runMultiAgentPipeline(cleanProfile, computedScores, availableDomains);
 
-    // Ensure all 11 scores populated
+    // Ensure all 11 scores are populated from AI output.
+    // Only use computedScores as fallback if they are REAL (non-null).
+    // Never inject fake default values — if AI didn't score it and no data exists, let it be 0.
     if (!report.scores) report.scores = {};
     for (const key of Object.keys(computedScores)) {
       const ex = report.scores[key];
-      const base = computedScores[key] || 78;
+      const base = computedScores[key]; // null if no real data exists
       if (!ex || typeof ex.score !== "number" || ex.score <= 0) {
-        report.scores[key] = { score: base, explanation: `Computed from platform telemetry for ${key}.` };
+        // Only fall back to computedScore if it is a real value from actual data
+        if (base !== null && base !== undefined) {
+          report.scores[key] = { score: base, explanation: `Score derived from platform telemetry data for ${key}.` };
+        }
+        // If base is null, leave the score as whatever the AI assigned (or 0)
       } else {
         report.scores[key].score = Math.min(100, Math.max(0, Math.round(ex.score)));
       }
     }
 
-    const overallScore = report.scores.overall?.score || computedScores.overall || 78;
+    const overallScore = report.scores.overall?.score || (computedScores.overall ?? 0);
     const modelStr = "Multi-Agent AI Intelligence Engine";
     const nowIso = new Date().toISOString();
 

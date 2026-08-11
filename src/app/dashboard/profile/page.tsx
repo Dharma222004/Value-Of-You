@@ -135,6 +135,7 @@ export default function ProfilePage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [imgError, setImgError] = useState(false);
 
   // Populate form when profile & master_profile load
   useEffect(() => {
@@ -236,8 +237,8 @@ export default function ProfilePage() {
     }
   };
 
-  const completedModules = progress.completedCount;
-  const overallScore = progress.overallScore;
+  const completedModules = Math.min(5, Math.max(0, progress.completedCount));
+  const overallScore = Math.min(100, Math.max(0, Math.round(progress.overallScore)));
   const scoreTier = getScoreTier(overallScore);
 
   if (profileLoading) {
@@ -282,19 +283,15 @@ export default function ProfilePage() {
             className="glass-card p-6 rounded-3xl border border-white/[0.08] flex flex-col items-center gap-4 text-center bg-slate-900/80 shadow-xl relative overflow-hidden">
             
             <div className="relative group">
-              {avatarUrl ? (
+              {avatarUrl && (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://") || avatarUrl.startsWith("/")) && !imgError ? (
                 <img
                   src={avatarUrl}
                   alt={fullName || "User Avatar"}
+                  onError={() => setImgError(true)}
                   className="w-28 h-28 rounded-2xl object-cover border-2 border-indigo-500/40 shadow-2xl transition-transform group-hover:scale-105"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = "none";
-                  }}
                 />
-              ) : null}
-
-              {(!avatarUrl || (typeof window !== "undefined" && document.querySelector("img[alt='User Avatar']")?.style.display === "none")) && (
-                <div className="w-28 h-28 rounded-2xl flex items-center justify-center text-4xl font-black text-white border-2 border-indigo-500/40 shadow-2xl"
+              ) : (
+                <div className="w-28 h-28 rounded-2xl flex items-center justify-center text-4xl font-black text-white border-2 border-indigo-500/40 shadow-2xl select-none"
                   style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }}>
                   {(fullName || profile?.email || "U").charAt(0).toUpperCase()}
                 </div>

@@ -123,35 +123,36 @@ export function buildFromModuleProgress(
   const assessmentsCompleted = aRow?.status === "completed";
   const assessmentsInProgress = aRow?.status === "in_progress";
 
-  // Unlocking sequence
-  const financialUnlocked = profileCompleted || profileInProgress;
-  const skillsUnlocked = financialUnlocked && (financialCompleted || financialInProgress);
-  const healthUnlocked = skillsUnlocked && (skillsCompleted || skillsInProgress);
-  const assessmentsUnlocked = healthUnlocked && (healthCompleted || healthInProgress);
-  const aiEngineUnlocked = assessmentsUnlocked && (assessmentsCompleted || assessmentsInProgress || hasAiEval);
+  // STRICT sequential gating: each module must be COMPLETED to unlock the next.
+  // In-progress does NOT unlock downstream modules.
+  const financialUnlocked = profileCompleted;
+  const skillsUnlocked = profileCompleted && financialCompleted;
+  const healthUnlocked = profileCompleted && financialCompleted && skillsCompleted;
+  const assessmentsUnlocked = profileCompleted && financialCompleted && skillsCompleted && healthCompleted;
+  // AI Report requires ALL 5 modules fully completed
+  const aiEngineUnlocked = profileCompleted && financialCompleted && skillsCompleted && healthCompleted && assessmentsCompleted;
   const executiveReportUnlocked = aiEngineUnlocked;
 
-  // Use dashboard_summary if available, otherwise compute
-  let completedCount: number;
+  // Calculate completed count strictly from the 5 core modules (max 5)
+  const completed = [profileCompleted, financialCompleted, skillsCompleted, healthCompleted, assessmentsCompleted];
+  const completedCount = Math.min(5, Math.max(0, completed.filter(Boolean).length));
+
+  // Determine overallScore rounded to clean integer (0-100)
   let overallScore: number;
-
-  if (dashboardSummary) {
-    completedCount = dashboardSummary.completed_modules;
-    overallScore = dashboardSummary.overall_score || dashboardSummary.human_capital_score || 0;
+  if (dashboardSummary && Number(dashboardSummary.overall_score || dashboardSummary.human_capital_score) > 0) {
+    overallScore = Math.round(Number(dashboardSummary.overall_score || dashboardSummary.human_capital_score || 0));
   } else {
-    const completed = [profileCompleted, financialCompleted, skillsCompleted, healthCompleted, assessmentsCompleted];
-    completedCount = completed.filter(Boolean).length;
-
     const scores = progressRows
-      .filter((r) => r.status === "completed" && r.score > 0)
-      .map((r) => r.score);
+      .filter((r) => r.status === "completed" && Number(r.score) > 0)
+      .map((r) => Number(r.score));
     overallScore = scores.length > 0
       ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
       : completedCount > 0 ? 65 : 0;
   }
+  overallScore = Math.min(100, Math.max(0, Math.round(Number(overallScore) || 0)));
 
   const totalModules = 5;
-  const overallPercentage = Math.round((completedCount / totalModules) * 100);
+  const overallPercentage = Math.min(100, Math.round((completedCount / totalModules) * 100));
   const aiReportReady = dashboardSummary?.ai_ready ?? (completedCount >= 5 || hasAiEval);
   const executiveReportReady = dashboardSummary?.executive_ready ?? (completedCount >= 5 || hasAiEval);
 
@@ -168,27 +169,27 @@ export function buildFromModuleProgress(
       master_profile: {
         key: "master_profile", ...MODULE_LABELS.master_profile,
         completed: profileCompleted, inProgress: profileInProgress,
-        unlocked: true, score: pRow?.score || null,
+        unlocked: true, score: pRow?.score ? Math.round(Number(pRow.score)) : null,
       },
       financial: {
         key: "financial", ...MODULE_LABELS.financial,
         completed: financialCompleted, inProgress: financialInProgress,
-        unlocked: financialUnlocked, score: fRow?.score || null,
+        unlocked: financialUnlocked, score: fRow?.score ? Math.round(Number(fRow.score)) : null,
       },
       skills: {
         key: "skills", ...MODULE_LABELS.skills,
         completed: skillsCompleted, inProgress: skillsInProgress,
-        unlocked: skillsUnlocked, score: sRow?.score || null,
+        unlocked: skillsUnlocked, score: sRow?.score ? Math.round(Number(sRow.score)) : null,
       },
       health: {
         key: "health", ...MODULE_LABELS.health,
         completed: healthCompleted, inProgress: healthInProgress,
-        unlocked: healthUnlocked, score: hRow?.score || null,
+        unlocked: healthUnlocked, score: hRow?.score ? Math.round(Number(hRow.score)) : null,
       },
       assessments: {
         key: "assessments", ...MODULE_LABELS.assessments,
         completed: assessmentsCompleted, inProgress: assessmentsInProgress,
-        unlocked: assessmentsUnlocked, score: aRow?.score || null,
+        unlocked: assessmentsUnlocked, score: aRow?.score ? Math.round(Number(aRow.score)) : null,
       },
     },
 
@@ -279,31 +280,33 @@ export function buildGlobalProgressPayload(
   const assessmentsCompleted = aEval.isCompleted;
   const assessmentsInProgress = aEval.isInProgress;
 
-  const financialUnlocked = profileCompleted || profileInProgress;
-  const skillsUnlocked = financialUnlocked && (financialCompleted || financialInProgress);
-  const healthUnlocked = skillsUnlocked && (skillsCompleted || skillsInProgress);
-  const assessmentsUnlocked = healthUnlocked && (healthCompleted || healthInProgress);
-  const aiEngineUnlocked = assessmentsUnlocked && (assessmentsCompleted || assessmentsInProgress || hasAiEval);
+  // STRICT sequential gating: each module must be COMPLETED to unlock the next.
+  const financialUnlocked = profileCompleted;
+  const skillsUnlocked = profileCompleted && financialCompleted;
+  const healthUnlocked = profileCompleted && financialCompleted && skillsCompleted;
+  const assessmentsUnlocked = profileCompleted && financialCompleted && skillsCompleted && healthCompleted;
+  const aiEngineUnlocked = profileCompleted && financialCompleted && skillsCompleted && healthCompleted && assessmentsCompleted;
   const executiveReportUnlocked = aiEngineUnlocked;
 
   const completedList = [profileCompleted, financialCompleted, skillsCompleted, healthCompleted, assessmentsCompleted];
-  const completedCount = completedList.filter(Boolean).length;
+  const completedCount = Math.min(5, Math.max(0, completedList.filter(Boolean).length));
   const totalModules = 5;
-  const overallPercentage = Math.round((completedCount / totalModules) * 100);
+  const overallPercentage = Math.min(100, Math.round((completedCount / totalModules) * 100));
 
   const scores: number[] = [];
-  if (profileCompleted && pEval.score > 0) scores.push(pEval.score);
-  if (financialCompleted && fEval.score > 0) scores.push(fEval.score);
-  if (skillsCompleted && sEval.score > 0) scores.push(sEval.score);
-  if (healthCompleted && hEval.score > 0) scores.push(hEval.score);
-  if (assessmentsCompleted && aEval.score > 0) scores.push(aEval.score);
+  if (profileCompleted && pEval.score > 0) scores.push(Math.round(pEval.score));
+  if (financialCompleted && fEval.score > 0) scores.push(Math.round(fEval.score));
+  if (skillsCompleted && sEval.score > 0) scores.push(Math.round(sEval.score));
+  if (healthCompleted && hEval.score > 0) scores.push(Math.round(hEval.score));
+  if (assessmentsCompleted && aEval.score > 0) scores.push(Math.round(aEval.score));
 
-  let overallScore = profileScoreFromDb || 0;
+  let overallScore = Math.round(Number(profileScoreFromDb) || 0);
   if (scores.length > 0) {
     overallScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-  } else if (completedCount > 0) {
+  } else if (completedCount > 0 && overallScore === 0) {
     overallScore = 65;
   }
+  overallScore = Math.min(100, Math.max(0, Math.round(Number(overallScore) || 0)));
 
   const aiReportReady = completedCount >= 5 || hasAiEval;
   const executiveReportReady = completedCount >= 5 || hasAiEval;
@@ -324,27 +327,27 @@ export function buildGlobalProgressPayload(
       master_profile: {
         key: "master_profile", ...MODULE_LABELS.master_profile,
         completed: profileCompleted, inProgress: profileInProgress,
-        unlocked: true, score: pEval.score || null,
+        unlocked: true, score: pEval.score ? Math.round(Number(pEval.score)) : null,
       },
       financial: {
         key: "financial", ...MODULE_LABELS.financial,
         completed: financialCompleted, inProgress: financialInProgress,
-        unlocked: financialUnlocked, score: fEval.score || null,
+        unlocked: financialUnlocked, score: fEval.score ? Math.round(Number(fEval.score)) : null,
       },
       skills: {
         key: "skills", ...MODULE_LABELS.skills,
         completed: skillsCompleted, inProgress: skillsInProgress,
-        unlocked: skillsUnlocked, score: sEval.score || null,
+        unlocked: skillsUnlocked, score: sEval.score ? Math.round(Number(sEval.score)) : null,
       },
       health: {
         key: "health", ...MODULE_LABELS.health,
         completed: healthCompleted, inProgress: healthInProgress,
-        unlocked: healthUnlocked, score: hEval.score || null,
+        unlocked: healthUnlocked, score: hEval.score ? Math.round(Number(hEval.score)) : null,
       },
       assessments: {
         key: "assessments", ...MODULE_LABELS.assessments,
         completed: assessmentsCompleted, inProgress: assessmentsInProgress,
-        unlocked: assessmentsUnlocked, score: aEval.score || null,
+        unlocked: assessmentsUnlocked, score: aEval.score ? Math.round(Number(aEval.score)) : null,
       },
     },
 

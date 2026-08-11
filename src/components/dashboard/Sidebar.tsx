@@ -52,6 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
       href: "/dashboard",
       isUnlocked: true,
       status: "completed" as const,
+      unlockRequirement: null,
     },
     {
       label: "Profile",
@@ -63,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
         : progressState.profileInProgress
         ? ("in-progress" as const)
         : ("not-started" as const),
+      unlockRequirement: null,
     },
     {
       label: "Financial Health",
@@ -76,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
         : progressState.financialInProgress
         ? ("in-progress" as const)
         : ("not-started" as const),
+      unlockRequirement: "Complete Profile first",
     },
     {
       label: "Skills Capital",
@@ -89,6 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
         : progressState.skillsInProgress
         ? ("in-progress" as const)
         : ("not-started" as const),
+      unlockRequirement: "Complete Financial Health first",
     },
     {
       label: "Health & Lifestyle",
@@ -102,6 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
         : progressState.healthInProgress
         ? ("in-progress" as const)
         : ("not-started" as const),
+      unlockRequirement: "Complete Skills Capital first",
     },
     {
       label: "Human Assessments",
@@ -115,6 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
         : progressState.assessmentsInProgress
         ? ("in-progress" as const)
         : ("not-started" as const),
+      unlockRequirement: "Complete Health & Lifestyle first",
     },
     {
       label: "AI Analysis Report",
@@ -126,6 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
         : progressState.aiEvaluationCompleted
         ? ("completed" as const)
         : ("not-started" as const),
+      unlockRequirement: "Complete all 5 modules first",
     },
   ];
 
@@ -200,10 +207,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
             const isLocked = !item.isUnlocked;
 
             return (
-              <Link
+            <Link
                 key={item.label}
                 href={item.isUnlocked ? item.href : "#"}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? item.label : (isLocked && item.unlockRequirement ? item.unlockRequirement : undefined)}
                 onClick={(e) => {
                   if (isLocked) {
                     e.preventDefault();

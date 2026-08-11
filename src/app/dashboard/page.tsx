@@ -102,11 +102,12 @@ function parseSummaryText(raw: any): { mainText: string; executiveText: string; 
 /**
  * Score Ring component for Human Value Score KPI Card
  */
-function ScoreRing({ score, size = 90 }: { score: number; size?: number }) {
+function ScoreRing({ score, size = 92 }: { score: number; size?: number }) {
+  const cleanScore = Math.min(100, Math.max(0, Math.round(Number(score) || 0)));
   const r = (size / 2) - 8;
   const circ = 2 * Math.PI * r;
-  const offset = circ - (score / 100) * circ;
-  const color = score >= 80 ? "#f59e0b" : score >= 65 ? "#10b981" : score >= 45 ? "#6366f1" : "#94a3b8";
+  const offset = circ - (cleanScore / 100) * circ;
+  const color = cleanScore >= 80 ? "#f59e0b" : cleanScore >= 65 ? "#10b981" : cleanScore >= 45 ? "#6366f1" : "#94a3b8";
 
   return (
     <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
@@ -120,8 +121,8 @@ function ScoreRing({ score, size = 90 }: { score: number; size?: number }) {
           style={{ transition: "stroke-dashoffset 1s cubic-bezier(.34,1.56,.64,1), stroke 0.4s ease" }}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-black text-white leading-none font-mono tracking-tight">{score}</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <span className="text-3xl font-black text-white leading-none font-mono tracking-tight">{cleanScore}</span>
         <span className="text-[11px] text-slate-400 font-semibold mt-0.5">/ 100</span>
       </div>
     </div>
@@ -133,6 +134,7 @@ function ScoreRing({ score, size = 90 }: { score: number; size?: number }) {
  */
 function ExecutiveModuleCard({ mod, index }: { mod: ModuleStatus; index: number }) {
   const IconComponent = mod.icon;
+  const cleanScore = mod.score !== null ? Math.min(100, Math.max(0, Math.round(Number(mod.score) || 0))) : null;
 
   return (
     <motion.div custom={index} variants={fadeUpVariants} className="h-full">
@@ -171,7 +173,7 @@ function ExecutiveModuleCard({ mod, index }: { mod: ModuleStatus; index: number 
             </h3>
             <p className="text-[13px] text-slate-400 font-medium">
               {mod.completed
-                ? (mod.score !== null ? `Evaluation Score: ${mod.score}/100` : "Evaluation Finished")
+                ? (cleanScore !== null ? `Evaluation Score: ${cleanScore}/100` : "Evaluation Finished")
                 : "Module Ready to Start"}
             </p>
           </div>
@@ -181,7 +183,7 @@ function ExecutiveModuleCard({ mod, index }: { mod: ModuleStatus; index: number 
             <div className="flex items-center gap-1.5">
               <span className="text-slate-400">Score:</span>
               <span className="font-bold text-white font-mono">
-                {mod.completed && mod.score !== null ? `${mod.score}/100` : "—"}
+                {mod.completed && cleanScore !== null ? `${cleanScore}/100` : "—"}
               </span>
             </div>
 
@@ -205,6 +207,7 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardDataPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -240,14 +243,26 @@ export default function DashboardPage() {
   // ── Derived Data from Central Progress Engine ──────────
   const profile = dashboardData?.profile;
   const displayName = profile?.full_name || dashboardData?.user?.email?.split("@")[0] || "Executive User";
-  const avatarUrl = profile?.avatar_url;
+  const rawAvatar = profile?.avatar_url;
+  const isHttpAvatar = Boolean(rawAvatar && (rawAvatar.startsWith("http://") || rawAvatar.startsWith("https://") || rawAvatar.startsWith("/")));
   const email = profile?.email || dashboardData?.user?.email || "";
   const latestAiEval = dashboardData?.latestAiEvaluation || (progress.aiReportReady ? { id: "ready" } : null);
 
-  const totalModules = progress.totalModules;
-  const completedCount = progress.completedCount;
-  const progressPct = progress.overallPercentage;
-  const overallScore = progress.overallScore;
+  const totalModules = 5;
+  const completedCount = Math.min(totalModules, Math.max(0, progress.completedCount));
+  const progressPct = Math.min(100, Math.max(0, Math.round(progress.overallPercentage)));
+  const overallScore = Math.min(100, Math.max(0, Math.round(progress.overallScore)));
+
+  const initials = displayName
+    ? displayName
+        .trim()
+        .split(/\s+/)
+        .map((n) => n[0])
+        .filter(Boolean)
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "HC";
 
   // Exact Full Names requested (NO Truncation):
   const modules: ModuleStatus[] = [
@@ -321,18 +336,19 @@ export default function DashboardPage() {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           {/* Left Side: Avatar -> User Name -> Role -> Email */}
           <div className="flex items-center gap-5">
-            {avatarUrl ? (
+            {isHttpAvatar && !imgError ? (
               <img
-                src={avatarUrl}
+                src={rawAvatar}
                 alt={displayName}
+                onError={() => setImgError(true)}
                 className="w-20 h-20 rounded-2xl object-cover border-2 border-white/15 shadow-xl flex-shrink-0"
               />
             ) : (
               <div
-                className="w-20 h-20 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl font-black text-white border-2 border-white/15 shadow-xl"
+                className="w-20 h-20 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl font-black text-white border-2 border-white/15 shadow-xl select-none"
                 style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }}
               >
-                {displayName.charAt(0).toUpperCase()}
+                {initials}
               </div>
             )}
 
@@ -401,18 +417,18 @@ export default function DashboardPage() {
           variants={fadeUpVariants}
           className="h-full glass-card p-6 rounded-2xl border border-white/10 flex items-center gap-5 hover:-translate-y-1 transition-all duration-300"
         >
-          <ScoreRing score={overallScore > 0 ? overallScore : 0} size={92} />
-          <div className="space-y-1 min-w-0">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono block">
+          <ScoreRing score={overallScore} size={92} />
+          <div className="space-y-1.5 min-w-0 flex-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono block truncate">
               Human Value Score
             </span>
             {overallScore > 0 ? (
               <>
-                <p className="text-2xl font-bold text-white tracking-tight">
+                <p className="text-2xl font-bold text-white tracking-tight truncate">
                   {overallScore >= 80 ? "Elite Tier" : overallScore >= 65 ? "Advanced" : overallScore >= 45 ? "Intermediate" : "Developing"}
                 </p>
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold">
-                  <TrendingUp className="w-3 h-3" /> Real-time Calculated
+                  <TrendingUp className="w-3 h-3 shrink-0" /> Real-time Calculated
                 </span>
               </>
             ) : (
@@ -445,7 +461,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${(completedCount / totalModules) * 100}%` }} />
+            <div className="bg-emerald-400 h-full rounded-full transition-all duration-500" style={{ width: `${(completedCount / totalModules) * 100}%` }} />
           </div>
         </motion.div>
 

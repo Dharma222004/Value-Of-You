@@ -13,6 +13,7 @@ interface UserProfileCardProps {
 export const UserProfileCard: React.FC<UserProfileCardProps> = ({ profile, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({
     show: false,
     message: "",
@@ -41,6 +42,8 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ profile, onUpd
   };
 
   const displayName = profile.full_name || profile.email.split("@")[0];
+  const isHttpAvatar = Boolean(profile.avatar_url && (profile.avatar_url.startsWith("http://") || profile.avatar_url.startsWith("https://") || profile.avatar_url.startsWith("/")));
+  const initials = displayName ? displayName.trim().split(/\s+/).map((n: string) => n[0]).filter(Boolean).join("").toUpperCase().slice(0, 2) : "U";
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
@@ -58,15 +61,16 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ profile, onUpd
         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
           {/* Profile Picture */}
           <div className="relative group">
-            {profile.avatar_url ? (
+            {isHttpAvatar && !imgError ? (
               <img
-                src={profile.avatar_url}
+                src={profile.avatar_url!}
                 alt={displayName}
+                onError={() => setImgError(true)}
                 className="w-28 h-28 rounded-full object-cover border-4 border-indigo-500/30 shadow-xl group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
-              <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl border-4 border-indigo-500/30">
-                {displayName ? displayName.charAt(0).toUpperCase() : "U"}
+              <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl border-4 border-indigo-500/30 select-none">
+                {initials}
               </div>
             )}
             <div className="absolute bottom-1 right-1 bg-emerald-500 border-2 border-slate-900 w-5 h-5 rounded-full" title="Active Account" />

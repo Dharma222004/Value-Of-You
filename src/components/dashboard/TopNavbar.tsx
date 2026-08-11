@@ -23,6 +23,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
 
   const [themeMode, setThemeMode] = useState<"dark" | "light">("dark");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -42,12 +43,15 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
 
   const displayName = profile?.full_name || authUser?.name || authUser?.email?.split("@")[0] || "User";
   const displayEmail = profile?.email || authUser?.email || "";
-  const avatarUrl = profile?.avatar_url || authUser?.image || null;
+  const rawAvatar = profile?.avatar_url || authUser?.image || null;
+  const isHttpAvatar = Boolean(rawAvatar && (rawAvatar.startsWith("http://") || rawAvatar.startsWith("https://") || rawAvatar.startsWith("/")));
 
   const initials = displayName
     ? displayName
-        .split(" ")
+        .trim()
+        .split(/\s+/)
         .map((n) => n[0])
+        .filter(Boolean)
         .join("")
         .toUpperCase()
         .slice(0, 2)
@@ -119,10 +123,15 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-800 transition-all border border-slate-700 bg-slate-900"
           >
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-lg object-cover border border-indigo-400/40" />
+            {isHttpAvatar && !imgError ? (
+              <img
+                src={rawAvatar!}
+                alt={displayName}
+                onError={() => setImgError(true)}
+                className="w-8 h-8 rounded-lg object-cover border border-indigo-400/40"
+              />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs shadow">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs shadow select-none">
                 {initials}
               </div>
             )}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { ModuleGateGuard } from "@/components/dashboard/ModuleGateGuard";
 import {
   Brain, Star, Target, TrendingUp, Sparkles, BarChart3, Activity,
   Printer, Download, CheckCircle2, Loader2, Zap, Shield, BookOpen,
@@ -493,7 +494,7 @@ function DimensionAccordionCard({ dim, score, content, highlights, defaultOpen =
 // MAIN EXECUTIVE DASHBOARD PAGE
 // ═══════════════════════════════════════════════════════════════
 
-export default function AIAnalysisReportPage() {
+function AIAnalysisReportContent() {
   const { user } = useAuth();
   const { report, reports, isGenerating, isLoading, stages, activeStageId, error, wasCached, generateReport, clearError } = useAIAnalysis();
   const [viewMode, setViewMode] = useState<"dashboard" | "institutional_pdf">("dashboard");
@@ -558,6 +559,144 @@ export default function AIAnalysisReportPage() {
         <div className="skeleton h-80 rounded-3xl" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton h-32 rounded-2xl" />)}
+        </div>
+      </div>
+    );
+  }
+
+  // ── First-time Entry: No saved report yet — Ask user to generate ──
+  if (!report) {
+    return (
+      <div className="w-full bg-[#070b19] min-h-screen text-slate-100 font-sans pb-24">
+        {/* Generation Loading Overlay */}
+        <AnimatePresence>
+          {isGenerating && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-[#050816]/95 backdrop-blur-2xl">
+              <div className="w-full max-w-md mx-4 text-center space-y-6">
+                <div className="relative inline-block">
+                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-emerald-500/20 border border-indigo-500/30 flex items-center justify-center shadow-2xl">
+                    <Brain className="w-10 h-10 text-indigo-400 animate-pulse" />
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white">Multi-Agent AI Executive Analysis</h2>
+                  <p className="text-xs text-slate-400 mt-1">Multi-Agent AI System evaluating telemetry</p>
+                </div>
+                <div className="space-y-2 text-left bg-slate-900/80 p-4 rounded-2xl border border-white/[0.08]">
+                  {stages.map((s) => (
+                    <div key={s.id} className={`flex items-center gap-3 p-2.5 rounded-xl text-xs font-semibold ${
+                      s.status === "active" ? "bg-indigo-500/15 border border-indigo-500/30 text-indigo-300" :
+                      s.status === "completed" ? "text-emerald-400 bg-emerald-500/10" : "text-slate-600 opacity-40"
+                    }`}>
+                      {s.status === "active" ? <Loader2 className="w-4 h-4 animate-spin text-indigo-400" /> :
+                       s.status === "completed" ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <CircleDot className="w-3.5 h-3.5" />}
+                      <span>{s.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="max-w-[1080px] mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+          {/* Top Header Card */}
+          <div className="glass-card p-8 sm:p-10 rounded-3xl border border-white/[0.08] relative overflow-hidden bg-slate-900/60 backdrop-blur-xl text-center space-y-6">
+            <div className="absolute -top-24 -left-24 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-purple-500/15 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 space-y-4 max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-spin" style={{ animationDuration: "6s" }} />
+                <span>All 5 Assessment Modules Completed</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                Generate Your AI Executive Intelligence Report
+              </h1>
+
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Welcome <strong className="text-white">{userName}</strong>. Your telemetry across all 5 assessment dimensions is complete and verified.
+                Launch the Multi-Agent AI engine to synthesize your human capital score, cognitive profile, leadership trajectory, and strategic roadmap.
+              </p>
+
+              {error && (
+                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-4 text-xs text-rose-300 text-left">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                  <button onClick={clearError} className="p-1 hover:text-white rounded-lg hover:bg-white/10">
+                    <XCircle className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <div className="pt-2">
+                <button
+                  onClick={() => generateReport(false)}
+                  disabled={isGenerating}
+                  className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 hover:from-indigo-500 hover:via-purple-500 hover:to-emerald-500 text-white text-sm font-black shadow-2xl shadow-indigo-600/30 hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 cursor-pointer"
+                >
+                  {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Brain className="w-5 h-5" />}
+                  <span>{isGenerating ? "Synthesizing Telemetry..." : "Generate AI Executive Report"}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Module Verification Grid */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
+              Ready Telemetry Modules (5 of 5 Complete)
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { title: "Master Profile & Demographics", desc: "Identity, goals & professional domain", icon: User, color: "#3b82f6" },
+                { title: "Financial Health Capital", desc: "Cash flow, wealth index & emergency reserves", icon: DollarSign, color: "#10b981" },
+                { title: "Skills & Technical Depth", desc: "Core competencies & market competitiveness", icon: BookOpen, color: "#a855f7" },
+                { title: "Health & Vitality Metrics", desc: "Sleep, physical stamina & recovery", icon: Activity, color: "#06b6d4" },
+                { title: "Human Values & Ethics", desc: "Moral integrity & decision-making framework", icon: Heart, color: "#ec4899" },
+                { title: "Multi-Agent Synthesizer", desc: "Deep cross-domain executive AI evaluation", icon: Brain, color: "#f59e0b" },
+              ].map((m, i) => {
+                const IconComponent = m.icon;
+                return (
+                  <div key={i} className="p-4 rounded-2xl bg-slate-900/60 border border-white/[0.06] flex items-start gap-3.5">
+                    <div className="p-2.5 rounded-xl shrink-0" style={{ background: `${m.color}15`, color: m.color, border: `1px solid ${m.color}30` }}>
+                      <IconComponent className="w-4 h-4" />
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-white truncate">{m.title}</span>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-snug">{m.desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* What you will receive info */}
+          <div className="p-6 rounded-2xl bg-indigo-950/20 border border-indigo-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                <Award className="w-5 h-5 text-indigo-400" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">Permanent Report Archival</h4>
+                <p className="text-[11px] text-slate-400">Once generated, your report is automatically saved and immediately retrievable anytime.</p>
+              </div>
+            </div>
+            <Link href="/dashboard" className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 shrink-0">
+              <span>Return to Dashboard</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -679,6 +818,19 @@ export default function AIAnalysisReportPage() {
             </div>
           </div>
         </header>
+
+        {/* Error Alert Banner */}
+        {error && (
+          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-4 text-xs text-rose-300 no-print">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button onClick={clearError} className="p-1 hover:text-white rounded-lg hover:bg-white/10">
+              <XCircle className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* View Mode Toggle Tabs */}
         {reportData && (
@@ -1273,5 +1425,18 @@ export default function AIAnalysisReportPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AIAnalysisReportPage() {
+  return (
+    <ModuleGateGuard
+      moduleKey="report"
+      requiredModule="assessments"
+      requiredLabel="Human Assessment"
+      requiredRoute="/dashboard/assessments"
+    >
+      <AIAnalysisReportContent />
+    </ModuleGateGuard>
   );
 }
