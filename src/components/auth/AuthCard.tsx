@@ -7,7 +7,7 @@ import { ArrowLeft, ShieldCheck, Brain } from "lucide-react";
 
 interface AuthCardProps {
   title: string;
-  subtitle: string;
+  subtitle: ReactNode;
   children: ReactNode;
 }
 
