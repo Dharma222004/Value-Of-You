@@ -507,7 +507,7 @@ function AIAnalysisReportContent() {
 
   const scores = reportData?.scores || null;
   const overallScore = scores?.overall?.score || report?.overall_score || 84;
-  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Executive";
+  const userName = user?.name || user?.email?.split("@")[0] || "Executive";
 
   // Dimension Scores map
   const scoresMap = useMemo(() => {
