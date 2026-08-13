@@ -15,6 +15,7 @@ import { useModuleProgress } from "@/hooks/useModuleProgress";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { AiEvaluation } from "@/types/database";
 
 // ──────────────────────────────────────────────────────────
 // Types
@@ -246,7 +247,7 @@ export default function DashboardPage() {
   const rawAvatar = profile?.avatar_url;
   const isHttpAvatar = Boolean(rawAvatar && (rawAvatar.startsWith("http://") || rawAvatar.startsWith("https://") || rawAvatar.startsWith("/")));
   const email = profile?.email || dashboardData?.user?.email || "";
-  const latestAiEval = dashboardData?.latestAiEvaluation || (progress.aiReportReady ? { id: "ready" } : null);
+  const latestAiEval: AiEvaluation | null = dashboardData?.latestAiEvaluation || null;
 
   const totalModules = 5;
   const completedCount = Math.min(totalModules, Math.max(0, progress.completedCount));
@@ -540,7 +541,7 @@ export default function DashboardPage() {
       {/* ── 4. AI EXECUTIVE INTELLIGENCE REPORT PANEL ── */}
       <AnimatePresence>
         {latestAiEval && (() => {
-          const parsed = parseSummaryText("summary" in latestAiEval ? latestAiEval.summary : null);
+          const parsed = parseSummaryText(latestAiEval.summary);
           return (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
