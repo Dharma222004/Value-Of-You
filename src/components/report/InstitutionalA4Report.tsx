@@ -216,7 +216,7 @@ export const InstitutionalA4Report: React.FC<InstitutionalA4ReportProps> = ({
     scoresObj[c.key] = (reportData?.scores as any)?.[c.key]?.score || 72;
   });
 
-  const overallScore = reportData?.scores?.overall?.score || reportData?.overall_score || 78;
+  const overallScore = reportData?.scores?.overall?.score || 78;
   const overallTier = getScoreTier(overallScore);
 
   // Sorted competencies

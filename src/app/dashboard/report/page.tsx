@@ -860,7 +860,7 @@ function AIAnalysisReportContent() {
         {/* Print Only View Mode */}
         <div className="hidden print:block">
           <InstitutionalA4Report
-            reportData={reportData || {}}
+            reportData={reportData}
             userName={userName}
             userEmail={user?.email || ""}
             candidateId={report?.id ? `HV-${report.id.slice(0, 8).toUpperCase()}` : "HV-2026-EXECUTIVE"}
@@ -875,7 +875,7 @@ function AIAnalysisReportContent() {
               <button onClick={handlePrint} className="font-bold underline hover:text-white">Print to A4 PDF</button>
             </div>
             <InstitutionalA4Report
-              reportData={reportData || {}}
+              reportData={reportData}
               userName={userName}
               userEmail={user?.email || ""}
               candidateId={report?.id ? `HV-${report.id.slice(0, 8).toUpperCase()}` : "HV-2026-EXECUTIVE"}

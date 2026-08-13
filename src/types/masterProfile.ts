@@ -16,7 +16,7 @@ export type GenderOption = "Male" | "Female" | "Non-Binary" | "Prefer Not to Say
 export type CollegeTypeOption = "Government" | "Private" | "Autonomous";
 export type ModeOfStudyOption = "Full Time" | "Part Time" | "Distance";
 export type EmploymentTypeOption = "Full Time" | "Part Time" | "Contract" | "Remote" | "Hybrid" | "On Site";
-export type RelocationOption = "Yes" | "No" | "Maybe";
+export type RelocationOption = "Yes" | "No" | "Maybe" | (string & {});
 export type AvailabilityOption =
   | "Student"
   | "Working"
@@ -25,7 +25,8 @@ export type AvailabilityOption =
   | "Looking for Placement"
   | "Looking for Co-Founder"
   | "Looking for Investors"
-  | "Not Looking";
+  | "Not Looking"
+  | (string & {});
 
 // STEP 2: Personal Profile & Contact Information
 export interface PersonalProfileData {
@@ -127,13 +128,14 @@ export type CareerInterestCategory =
   | "Law"
   | "Government"
   | "Agriculture"
-  | "Other";
+  | "Other"
+  | (string & {});
 
 // STEP 5: Career Preferences
 export interface CareerPreferencesData {
   preferredIndustry: string;
-  preferredCompanyType: "Startup" | "MNC" | "Government" | "Research" | "NGO";
-  preferredWorkStyle: "Remote" | "Hybrid" | "On Site";
+  preferredCompanyType: "Startup" | "MNC" | "Government" | "Research" | "NGO" | "Other" | (string & {});
+  preferredWorkStyle: "Remote" | "Hybrid" | "On Site" | "Other" | (string & {});
   preferredCountry: string;
   relocationPreference: RelocationOption;
   openToInternationalOpportunities: boolean;
@@ -151,7 +153,9 @@ export type CareerMotivationOption =
   | "Work Life Balance"
   | "Job Security"
   | "Social Impact"
-  | "Recognition";
+  | "Recognition"
+  | "Other"
+  | (string & {});
 
 // STEP 8: Three-Horizon Goals
 export interface ThreeHorizonGoalsData {
@@ -183,4 +187,6 @@ export interface MasterProfileState {
   currentAvailability: AvailabilityOption;
   goals: ThreeHorizonGoalsData;
   aiSummary: AIProfileSummaryData;
+  isCompleted?: boolean;
+  submittedAt?: string;
 }

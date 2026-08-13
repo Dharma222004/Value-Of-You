@@ -285,7 +285,7 @@ export default function ProfilePage() {
             <div className="relative group">
               {avatarUrl && (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://") || avatarUrl.startsWith("/")) && !imgError ? (
                 <img
-                  src={avatarUrl}
+                  src={avatarUrl ?? undefined}
                   alt={fullName || "User Avatar"}
                   onError={() => setImgError(true)}
                   className="w-28 h-28 rounded-2xl object-cover border-2 border-indigo-500/40 shadow-2xl transition-transform group-hover:scale-105"

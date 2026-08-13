@@ -199,6 +199,8 @@ export interface FinancialModuleState {
   goals: FinancialGoalItem[];
   riskProfile: RiskProfileAssessment;
   literacy: FinancialLiteracySelfAssessment;
+  isCompleted?: boolean;
+  submittedAt?: string;
 }
 
 export interface AdvancedFinancialMetrics {

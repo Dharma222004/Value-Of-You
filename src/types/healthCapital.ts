@@ -130,6 +130,8 @@ export interface HealthCapitalState {
   medicalProfile: MedicalProfile;
   productivityRecovery: ProductivityRecovery;
   healthGoals: HealthGoalsData;
+  isCompleted?: boolean;
+  submittedAt?: string;
 }
 
 export interface HealthCapitalMetrics {

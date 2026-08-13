@@ -8,6 +8,8 @@ import { calculateFinancialHealthMetrics, formatINR } from "@/lib/financialEngin
 import { calculateProfessionalCapitalScore } from "@/lib/professionalCapitalEngine";
 import { loadAllModuleRecords, getCurrentUserId, ModuleKey } from "@/services/moduleDataService";
 import { ModuleData } from "@/types/database";
+import { FinancialModuleState } from "@/types/financial";
+import { ProfessionalCapitalState } from "@/types/professionalCapital";
 
 export interface ModuleTelemetryStatus {
   id: number;
@@ -203,7 +205,7 @@ export async function getDashboardTelemetry(): Promise<DashboardTelemetry> {
   if (parsedFin) {
     try {
       if (parsedFin.incomeProfile) {
-        const fMetrics = calculateFinancialHealthMetrics(parsedFin);
+        const fMetrics = calculateFinancialHealthMetrics(parsedFin as unknown as FinancialModuleState);
         m2Score = fMetrics.financialHealthScore;
         const hasInputs = parsedFin.isCompleted || parsedFin.incomeProfile.monthlyActiveIncome > 0 || fMetrics.netWorth !== 0 || (parsedFin.investments && parsedFin.investments.length > 0);
         if (hasInputs) {
@@ -244,7 +246,7 @@ export async function getDashboardTelemetry(): Promise<DashboardTelemetry> {
   if (parsedSkills) {
     try {
       if (parsedSkills.academic) {
-        const pMetrics = calculateProfessionalCapitalScore(parsedSkills);
+        const pMetrics = calculateProfessionalCapitalScore(parsedSkills as unknown as ProfessionalCapitalState);
         m3Score = pMetrics.professionalCapitalScore;
         const hasInputs = parsedSkills.isCompleted || parsedSkills.academic.degree || (parsedSkills.technicalSkills && parsedSkills.technicalSkills.length > 0) || (parsedSkills.projects && parsedSkills.projects.length > 0);
         if (hasInputs) {

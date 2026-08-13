@@ -565,12 +565,12 @@ export function CurrentStatusWizard() {
           setValidationError("University / Institution Name is required (Enter 'N/A' if not applicable).");
           return false;
         }
-      } else if (state.primaryRole === "Working Professional") {
-        if (!state.employeeData.jobTitle.trim()) {
+      } else if (state.primaryRole === "Employee") {
+        if (!state.employeeData.designation?.trim()) {
           setValidationError("Job Title is required (Enter 'N/A' if not applicable).");
           return false;
         }
-        if (!state.employeeData.companyName.trim()) {
+        if (!state.employeeData.company?.trim()) {
           setValidationError("Company Name is required (Enter 'N/A' if not applicable).");
           return false;
         }

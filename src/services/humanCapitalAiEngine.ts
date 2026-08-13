@@ -11,6 +11,10 @@ import { calculateProfessionalCapitalScore } from "@/lib/professionalCapitalEngi
 import { calculateHealthCapitalScore } from "@/lib/healthCapitalEngine";
 import { calculateAssessmentMetrics } from "@/lib/assessmentEngine";
 import { loadAllModuleData, getCurrentUserId, ModuleKey } from "@/services/moduleDataService";
+import { FinancialModuleState } from "@/types/financial";
+import { ProfessionalCapitalState } from "@/types/professionalCapital";
+import { HealthCapitalState } from "@/types/healthCapital";
+import { AssessmentState } from "@/types/assessmentEngine";
 
 // ================= LAYER 1: RULE ENGINE (300+ METRICS AGGREGATOR) =================
 
@@ -291,7 +295,7 @@ export async function collectLayer1Metrics(): Promise<Layer1Metrics> {
     try {
       if (parsedFin.incomeProfile) {
         hasAnyData = true;
-        const fMetrics = calculateFinancialHealthMetrics(parsedFin);
+        const fMetrics = calculateFinancialHealthMetrics(parsedFin as unknown as FinancialModuleState);
         // Detect insurance from insuranceProtection array (actual saved structure)
         const insuranceArr: any[] = Array.isArray(parsedFin.insuranceProtection) ? parsedFin.insuranceProtection : [];
         const hasHealthIns = insuranceArr.some((ins: any) =>
@@ -329,7 +333,7 @@ export async function collectLayer1Metrics(): Promise<Layer1Metrics> {
     try {
       if (parsedSkills.academic) {
         hasAnyData = true;
-        const pMetrics = calculateProfessionalCapitalScore(parsedSkills);
+        const pMetrics = calculateProfessionalCapitalScore(parsedSkills as unknown as ProfessionalCapitalState);
         defaultMetrics.professional = {
           isCompleted: true,
           professionalCapitalScore: pMetrics.professionalCapitalScore,
@@ -354,7 +358,7 @@ export async function collectLayer1Metrics(): Promise<Layer1Metrics> {
     try {
       if (parsedHealth.bodyMetrics) {
         hasAnyData = true;
-        const hMetrics = calculateHealthCapitalScore(parsedHealth);
+        const hMetrics = calculateHealthCapitalScore(parsedHealth as unknown as HealthCapitalState);
         // stressLevel is the actual field name (not perceivedStressLevel1To10)
         const stressLevel = parsedHealth.mentalWellbeing?.stressLevel
           ?? parsedHealth.mentalWellbeing?.perceivedStressLevel1To10
@@ -395,7 +399,7 @@ export async function collectLayer1Metrics(): Promise<Layer1Metrics> {
     try {
       if (parsedAssess.answers) {
         hasAnyData = true;
-        const aMetrics = calculateAssessmentMetrics(parsedAssess);
+        const aMetrics = calculateAssessmentMetrics(parsedAssess as unknown as AssessmentState);
         const answeredCount = Object.keys(parsedAssess.answers).length;
         const allCompleted =
           Boolean(parsedAssess.isCompleted) ||

@@ -171,7 +171,16 @@ export const HealthModule: React.FC = () => {
                 Longevity, Biometrics & Lifestyle Stored
               </h3>
               <p className="text-xs text-[var(--subtext)] leading-relaxed">
-                BMI: <strong className="text-amber-400 font-mono">{metrics.bmi ? metrics.bmi.toFixed(1) : "N/A"}</strong> • Sleep Score: <strong className="text-sky-400 font-mono">{metrics.sleepScore}/100</strong>
+                {(() => {
+                  const hM = (data.bodyMetrics?.heightCm || 0) / 100;
+                  const calculatedBmi = hM > 0 && data.bodyMetrics?.weightKg ? data.bodyMetrics.weightKg / (hM * hM) : null;
+                  const sleepScore = metrics.scores?.sleep ?? 0;
+                  return (
+                    <>
+                      BMI: <strong className="text-amber-400 font-mono">{calculatedBmi ? calculatedBmi.toFixed(1) : "N/A"}</strong> • Sleep Score: <strong className="text-sky-400 font-mono">{sleepScore}/100</strong>
+                    </>
+                  );
+                })()}
               </p>
             </div>
           </div>

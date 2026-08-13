@@ -344,16 +344,16 @@ export const FinancialModule: React.FC = () => {
       // Also save structured financial profile
       await saveFinancialProfile(userId, {
         income: metrics?.totalMonthlyIncome || 0,
-        expenses: updatedState.expenseProfile?.monthlyEssentialExpenses || 0,
+        expenses: metrics?.totalMonthlyExpenses || 0,
         savings: metrics?.totalSavingsBalance || 0,
-        investments: metrics?.totalInvestments || 0,
-        liabilities: metrics?.totalLiabilities || 0,
+        investments: metrics?.totalPortfolioValue || 0,
+        liabilities: metrics?.totalLiabilitiesAmount || 0,
         net_worth: metrics?.netWorth || 0,
         savings_rate: metrics?.savingsRate || 0,
         debt_to_income_ratio: metrics?.debtToIncomeRatio || 0,
-        emergency_fund_months: metrics?.emergencyFundMonths || 0,
-        has_health_insurance: Boolean(updatedState.riskInsurance?.hasHealthInsurance),
-        has_life_insurance: Boolean(updatedState.riskInsurance?.hasLifeInsurance),
+        emergency_fund_months: metrics?.emergencyCoverageMonths || 0,
+        has_health_insurance: updatedState.insuranceProtection?.some(i => i.category === "Health Insurance") ?? false,
+        has_life_insurance: updatedState.insuranceProtection?.some(i => i.category === "Life Insurance") ?? false,
         financial_score: finScore,
       });
       await saveLearningProgress(userId, "financial", 100);
@@ -1545,11 +1545,11 @@ export const FinancialModule: React.FC = () => {
                   </div>
                   <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 space-y-1">
                     <span className="text-xs font-medium text-slate-300 block">Expense Ratio</span>
-                    <div className="text-base sm:text-lg font-extrabold font-mono text-sky-300">{metrics.expenseToIncomeRatio}% of Income</div>
+                    <div className="text-base sm:text-lg font-extrabold font-mono text-sky-300">{metrics.expenseRatio}% of Income</div>
                   </div>
                   <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
                     <span className="text-xs font-medium text-slate-300 block">Monthly Net Cash Flow</span>
-                    <div className="text-base sm:text-lg font-extrabold font-mono text-emerald-300">{formatINR(metrics.monthlyNetCashFlow)}</div>
+                    <div className="text-base sm:text-lg font-extrabold font-mono text-emerald-300">{formatINR(metrics.totalMonthlyCashFlow)}</div>
                   </div>
                 </div>
               </div>

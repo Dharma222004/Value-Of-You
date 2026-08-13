@@ -75,10 +75,10 @@ export interface SavedAiReportPayload {
 
   // Time-Horizon Recommendations & Suggestions
   recommendations: {
-    immediate: { title: string; category: "Career" | "Finance" | "Health" | "Learning"; description: string }[];
-    thirtyDays: { title: string; category: "Career" | "Finance" | "Health" | "Learning"; description: string }[];
-    ninetyDays: { title: string; category: "Career" | "Finance" | "Health" | "Learning"; description: string }[];
-    oneYear: { title: string; category: "Career" | "Finance" | "Health" | "Learning"; description: string }[];
+    immediate: { title: string; category: "Career" | "Finance" | "Health" | "Learning" | "Skills" | (string & {}); description: string }[];
+    thirtyDays: { title: string; category: "Career" | "Finance" | "Health" | "Learning" | "Skills" | (string & {}); description: string }[];
+    ninetyDays: { title: string; category: "Career" | "Finance" | "Health" | "Learning" | "Skills" | (string & {}); description: string }[];
+    oneYear: { title: string; category: "Career" | "Finance" | "Health" | "Learning" | "Skills" | (string & {}); description: string }[];
   };
 
   categorySuggestions: {

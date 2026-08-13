@@ -487,7 +487,7 @@ export const AssessmentsModule: React.FC = () => {
             <div className="text-left">
               <div className="text-[10px] font-mono text-[var(--subtext)] uppercase">Psychometric Score</div>
               <div className="text-lg font-bold font-mono text-white">
-                {metrics.overallScore} / 100
+                {metrics.assessmentScore} / 100
               </div>
             </div>
           </div>
