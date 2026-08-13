@@ -338,7 +338,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-5">
             {isHttpAvatar && !imgError ? (
               <img
-                src={rawAvatar}
+                src={rawAvatar ?? undefined}
                 alt={displayName}
                 onError={() => setImgError(true)}
                 className="w-20 h-20 rounded-2xl object-cover border-2 border-white/15 shadow-xl flex-shrink-0"
@@ -540,7 +540,7 @@ export default function DashboardPage() {
       {/* ── 4. AI EXECUTIVE INTELLIGENCE REPORT PANEL ── */}
       <AnimatePresence>
         {latestAiEval && (() => {
-          const parsed = parseSummaryText(latestAiEval.summary);
+          const parsed = parseSummaryText("summary" in latestAiEval ? latestAiEval.summary : null);
           return (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
