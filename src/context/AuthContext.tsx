@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User, AuthSession, UserProfile } from "@/types/auth";
+import { User, AuthSession } from "@/types/auth";
 import { supabase } from "@/lib/supabase";
 import { syncSupabaseProfile } from "@/services/supabaseProfileService";
 
@@ -19,6 +19,21 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/**
+ * Maps the raw provider string from Supabase app_metadata to the
+ * typed union declared in User. Falls back to 'google' for unknown
+ * providers (e.g. OAuth providers added later in the Supabase dashboard).
+ */
+const KNOWN_PROVIDERS = ["credentials", "google", "github", "microsoft", "apple"] as const;
+type KnownProvider = (typeof KNOWN_PROVIDERS)[number];
+
+function parseProvider(raw: string | undefined): KnownProvider {
+  if (raw && (KNOWN_PROVIDERS as readonly string[]).includes(raw)) {
+    return raw as KnownProvider;
+  }
+  return "google";
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -59,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             sbSession.user.email?.split("@")[0] ||
             "User",
           image: sbSession.user.user_metadata?.avatar_url || sbSession.user.user_metadata?.picture,
-          provider: (sbSession.user.app_metadata?.provider as any) || "google",
+          provider: parseProvider(sbSession.user.app_metadata?.provider),
           emailVerified: true,
           createdAt: sbSession.user.created_at || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -113,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             sbSession.user.email?.split("@")[0] ||
             "User",
           image: sbSession.user.user_metadata?.avatar_url || sbSession.user.user_metadata?.picture,
-          provider: (sbSession.user.app_metadata?.provider as any) || "google",
+          provider: parseProvider(sbSession.user.app_metadata?.provider),
           emailVerified: true,
           createdAt: sbSession.user.created_at || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -199,9 +214,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setLoading(false);
       return { success: false, error: "Failed to authenticate session" };
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLoading(false);
-      return { success: false, error: err.message || "Authentication failed." };
+      const message = err instanceof Error ? err.message : "Authentication failed.";
+      return { success: false, error: message };
     }
   };
 
@@ -255,10 +271,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setLoading(false);
-      return { success: false, error: "Signup completed. Please check your email to confirm." };
-    } catch (err: any) {
+      return { success: false, error: "Signup failed: no user was returned. Please try again or contact support." };
+    } catch (err: unknown) {
       setLoading(false);
-      return { success: false, error: err.message || "Signup failed." };
+      const message = err instanceof Error ? err.message : "Signup failed.";
+      return { success: false, error: message };
     }
   };
 
@@ -293,9 +310,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       return { success: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[completeUserProfile Error]:", err);
-      return { success: false, error: err.message };
+      const message = err instanceof Error ? err.message : "Failed to update profile.";
+      return { success: false, error: message };
     }
   };
 
@@ -331,8 +349,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await supabase.auth.signOut();
-    } catch (e) {
-      // Ignore
+    } catch (err: unknown) {
+      // signOut errors are non-fatal — the local session is cleared regardless.
+      console.error("[Supabase signOut Error]:", err);
     }
     if (typeof document !== "undefined") {
       setAuthCookie(null);

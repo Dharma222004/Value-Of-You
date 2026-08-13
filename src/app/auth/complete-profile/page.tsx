@@ -51,6 +51,7 @@ function CompleteProfileForm() {
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const nameParam = searchParams?.get("name");
@@ -62,20 +63,29 @@ function CompleteProfileForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
-      await completeUserProfile({
-        name: displayName,
+      const result = await completeUserProfile({
+        displayName,
         status,
         country,
         timezone,
       });
 
+      if (!result.success) {
+        setError(result.error || "Failed to save profile. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       setSuccess(true);
+      setLoading(false);
       setTimeout(() => {
         router.push("/dashboard");
       }, 1000);
-    } catch {
+    } catch (err: any) {
+      setError(err?.message || "An unexpected error occurred.");
       setLoading(false);
     }
   };
@@ -94,6 +104,11 @@ function CompleteProfileForm() {
   return (
     <AuthCard title="Complete Your Profile" subtitle="Help us personalize your Human Values intelligence dashboard">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs flex items-center gap-2">
+            <span>{error}</span>
+          </div>
+        )}
         <div className="space-y-1 text-left">
           <label className="text-xs font-semibold text-[var(--foreground)]">Display Name</label>
           <div className="relative">

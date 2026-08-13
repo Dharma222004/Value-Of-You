@@ -39,8 +39,8 @@ export default function ForgotPasswordPage() {
       }
 
       setSent(true);
-    } catch (err: any) {
-      setError(err.message || "Failed to send recovery email.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to send recovery email.");
     } finally {
       setLoading(false);
     }

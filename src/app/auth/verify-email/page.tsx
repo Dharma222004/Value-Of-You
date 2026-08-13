@@ -92,7 +92,6 @@ function VerifyEmailForm() {
 
         if (verifyErr) {
           setError(verifyErr.message || "Invalid or expired verification code.");
-          setLoading(false);
           return;
         }
       }
@@ -101,8 +100,10 @@ function VerifyEmailForm() {
       setTimeout(() => {
         router.push("/auth/complete-profile");
       }, 1200);
-    } catch (err: any) {
-      setError(err.message || "Failed to verify email code.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to verify email code.";
+      setError(message);
+    } finally {
       setLoading(false);
     }
   };

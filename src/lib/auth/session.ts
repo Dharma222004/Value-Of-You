@@ -1,8 +1,19 @@
 /**
- * @deprecated — This file is DEPRECATED.
- * Session management is now handled by Supabase Auth via AuthContext.
- * This legacy localStorage-based session system is no longer used.
- * DO NOT import this file in new code.
+ * ⛔ DEPRECATED — DO NOT IMPORT THIS FILE ⛔
+ *
+ * This file is a DEAD CODE artifact from the pre-Supabase authentication
+ * implementation that used a custom localStorage/sessionStorage session store.
+ *
+ * ALL session management is now handled exclusively by:
+ *   → Supabase Auth SDK (persistSession, autoRefreshToken)
+ *   → AuthProvider / AuthContext  (src/context/AuthContext.tsx)
+ *   → Edge Middleware cookie (sb-auth-token)
+ *
+ * Importing this file in new code will produce conflicting auth state and
+ * WILL break the authentication system.
+ *
+ * This file is kept only for historical reference. It should be deleted once
+ * the team confirms no external scripts reference it.
  */
 import { User, AuthSession, UserProfile } from "@/types/auth";
 

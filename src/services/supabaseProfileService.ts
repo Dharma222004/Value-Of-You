@@ -4,8 +4,8 @@ import { Profile } from "@/types/database";
 
 export type SupabaseProfile = Profile;
 
-// Production-Safe Debug Logger (easy to remove later)
-function dbLog(operation: string, details: Record<string, any>) {
+// Production-Safe Debug Logger
+function dbLog(operation: string, details: Record<string, unknown>) {
   const status = details.error ? "❌ FAILED" : "✅ SUCCESS";
   console.log(`[DB_DEBUG] ${operation} | table: profiles | status: ${status}`, details);
 }
@@ -13,17 +13,24 @@ function dbLog(operation: string, details: Record<string, any>) {
 /**
  * Automatically synchronizes an authenticated Supabase user into the `profiles` table.
  * Uses an upsert strategy (ON CONFLICT (id) DO UPDATE).
+ *
+ * Only id, email, full_name, avatar_url, provider, and updated_at are written.
+ * human_value_score and assessment_completed are intentionally omitted so
+ * existing DB values are preserved on subsequent logins.
  */
 export async function syncSupabaseProfile(user: User): Promise<Profile | null> {
   if (!user || !user.id || !user.email) return null;
 
   const now = new Date().toISOString();
   const fullName =
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
+    (user.user_metadata?.full_name as string | undefined) ||
+    (user.user_metadata?.name as string | undefined) ||
     user.email.split("@")[0].replace(".", " ");
-  const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
-  const provider = (user.app_metadata?.provider as string) || "google";
+  const avatarUrl =
+    (user.user_metadata?.avatar_url as string | undefined) ||
+    (user.user_metadata?.picture as string | undefined) ||
+    null;
+  const provider: string = (user.app_metadata?.provider as string | undefined) ?? "email";
 
   try {
     const profilePayload = {
@@ -42,7 +49,13 @@ export async function syncSupabaseProfile(user: User): Promise<Profile | null> {
       .single();
 
     if (error) {
-      dbLog("syncSupabaseProfile", { error, userId: user.id, errorMessage: error.message, errorCode: error.code, errorHint: error.hint });
+      dbLog("syncSupabaseProfile", {
+        error: error.message,
+        userId: user.id,
+        errorCode: error.code,
+        errorHint: error.hint ?? null,
+      });
+      // Return a local fallback so the UI is not blocked by a DB failure.
       return {
         id: user.id,
         email: user.email,
@@ -57,10 +70,11 @@ export async function syncSupabaseProfile(user: User): Promise<Profile | null> {
       };
     }
 
-    dbLog("syncSupabaseProfile", { userId: user.id, resultId: (data as any)?.id, error: null });
+    dbLog("syncSupabaseProfile", { userId: user.id, resultId: (data as Profile).id, error: null });
     return data as Profile;
-  } catch (err: any) {
-    dbLog("syncSupabaseProfile", { error: err, userId: user.id });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    dbLog("syncSupabaseProfile", { error: message, userId: user.id });
     return null;
   }
 }

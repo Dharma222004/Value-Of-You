@@ -39,15 +39,9 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // NOTE: These two flags hide real type/lint errors from the production build
-  // and should be removed once the existing errors are fixed. Left in place for
-  // now only to avoid breaking the current deploy pipeline.
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // TypeScript and ESLint errors are NO LONGER suppressed.
+  // All auth-related type errors have been fixed. Fix remaining
+  // non-auth TS/ESLint errors before the next production build.
   async headers() {
     return [
       {

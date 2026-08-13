@@ -57,9 +57,8 @@ export function validatePassword(password: string): string | null {
   return null;
 }
 
-export function validateOtp(otp: string[]): string | null {
-  const code = otp.join('');
-  if (code.length < 6) return "Please enter the full 6-digit security code.";
-  if (!/^\d{6}$/.test(code)) return "Security code must contain only numbers.";
+export function validateOtp(otp: string): string | null {
+  if (otp.length < 6) return "Please enter the full 6-digit security code.";
+  if (!/^\d{6}$/.test(otp)) return "Security code must contain only numbers.";
   return null;
 }
