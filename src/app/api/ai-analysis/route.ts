@@ -469,17 +469,18 @@ async function fetchAllUserData(supabase: ReturnType<typeof createClient>, userI
   ]);
 
   const profile = profileRes.status === "fulfilled" ? profileRes.value.data : null;
-  const moduleData = moduleRes.status === "fulfilled" ? moduleRes.value.data || [] : [];
+  const moduleData: Array<{ module_key: string; data: Record<string, unknown> | null; is_completed: boolean }> =
+    moduleRes.status === "fulfilled" ? (moduleRes.value.data ?? []) : [];
   const assessments = assessRes.status === "fulfilled" ? assessRes.value.data || [] : [];
   const humanValuesTests = hvRes.status === "fulfilled" ? hvRes.value.data || [] : [];
 
   // DEBUG: log what was actually fetched from Supabase
   console.log(`[AI Data Pipeline] User: ${userId}`);
   console.log(`[AI Data Pipeline] Profile: ${profile ? JSON.stringify(Object.keys(profile)) : 'NULL'}`);
-  console.log(`[AI Data Pipeline] Module rows: ${moduleData.length} — keys: [${moduleData.map((m: any) => m.module_key).join(', ')}]`);
-  moduleData.forEach((m: any) => {
+  console.log(`[AI Data Pipeline] Module rows: ${moduleData.length} — keys: [${moduleData.map((m) => m.module_key).join(', ')}]`);
+  moduleData.forEach((m) => {
     const dataKeys = m.data ? Object.keys(m.data) : [];
-    const totalFields = JSON.stringify(m.data || {}).length;
+    const totalFields = JSON.stringify(m.data ?? {}).length;
     console.log(`[AI Data Pipeline]   ${m.module_key}: ${dataKeys.length} top-level keys, ${totalFields} chars — is_completed: ${m.is_completed}`);
   });
   console.log(`[AI Data Pipeline] Assessments: ${assessments.length}, HV Tests: ${humanValuesTests.length}`);
