@@ -460,7 +460,7 @@ async function invokeAgent(
 // STEP 2: EXHAUSTIVE DATA AGGREGATION
 // ====================================================================
 
-async function fetchAllUserData(supabase: ReturnType<typeof createClient>, userId: string) {
+async function fetchAllUserData(supabase: ReturnType<typeof createAuthenticatedClient>, userId: string) {
   const [profileRes, moduleRes, assessRes, hvRes] = await Promise.allSettled([
     supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
     supabase.from("module_data").select("*").eq("user_id", userId),
@@ -973,7 +973,7 @@ function checkModuleCompleteness(rawData: Awaited<ReturnType<typeof fetchAllUser
 // MULTI-TIER SUPABASE REPORT PERSISTENCE ENGINE
 // ====================================================================
 
-async function fetchReportFromSupabase(supabase: ReturnType<typeof createClient>, userId: string): Promise<any | null> {
+async function fetchReportFromSupabase(supabase: ReturnType<typeof createAuthenticatedClient>, userId: string): Promise<any | null> {
   // 1. Try ai_reports FIRST (Master Mentor table)
   try {
     const { data }: any = await (supabase as any)
@@ -1047,7 +1047,7 @@ async function fetchReportFromSupabase(supabase: ReturnType<typeof createClient>
   return null;
 }
 
-async function saveReportToSupabase(supabase: ReturnType<typeof createClient>, userId: string, record: any): Promise<boolean> {
+async function saveReportToSupabase(supabase: ReturnType<typeof createAuthenticatedClient>, userId: string, record: any): Promise<boolean> {
   let saved = false;
   const nowIso = new Date().toISOString();
 
