@@ -468,11 +468,14 @@ async function fetchAllUserData(supabase: ReturnType<typeof createClient>, userI
     supabase.from("human_values_tests").select("*").eq("user_id", userId).order("completed_at", { ascending: false }).limit(5),
   ]);
 
-  const profile = profileRes.status === "fulfilled" ? profileRes.value.data : null;
-  const moduleData: Array<{ module_key: string; data: Record<string, unknown> | null; is_completed: boolean }> =
-    moduleRes.status === "fulfilled" ? (moduleRes.value.data ?? []) : [];
-  const assessments = assessRes.status === "fulfilled" ? assessRes.value.data || [] : [];
-  const humanValuesTests = hvRes.status === "fulfilled" ? hvRes.value.data || [] : [];
+  const profile: Record<string, any> | null =
+    profileRes.status === "fulfilled" ? (profileRes.value.data as any) : null;
+  const moduleData: Array<{ module_key: string; data: Record<string, any> | null; is_completed: boolean }> =
+    moduleRes.status === "fulfilled" ? (moduleRes.value.data as any ?? []) : [];
+  const assessments: any[] =
+    assessRes.status === "fulfilled" ? (assessRes.value.data as any || []) : [];
+  const humanValuesTests: any[] =
+    hvRes.status === "fulfilled" ? (hvRes.value.data as any || []) : [];
 
   // DEBUG: log what was actually fetched from Supabase
   console.log(`[AI Data Pipeline] User: ${userId}`);
