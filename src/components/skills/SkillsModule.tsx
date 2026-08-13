@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import {
   ProfessionalCapitalState,
+  DigitalCompetencyItem,
   SkillLevelOption,
   LanguageProficiencyOption,
   WorkStyleOption,
@@ -1052,12 +1053,12 @@ export const SkillsModule: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => {
-                          const newTool = {
+                          const newTool: DigitalCompetencyItem = {
                             id: `custom_tool_${Date.now()}`,
                             name: "Custom Software Tool",
                             category: "Productivity",
                             selected: true,
-                            proficiency: "Advanced" as const,
+                            proficiency: "Advanced",
                           };
                           setData({ ...data, digitalCompetencies: [...data.digitalCompetencies, newTool] });
                         }}
@@ -1071,7 +1072,7 @@ export const SkillsModule: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* Ensure default list includes expanded toolset if not present */}
                     {(() => {
-                      const expandedDefaults = [
+                      const expandedDefaults: { id: string; name: string; category: DigitalCompetencyItem["category"] }[] = [
                         { id: "d1", name: "Microsoft Excel & Data Analysis", category: "Productivity" },
                         { id: "d2", name: "Figma & UI Prototyping", category: "Design" },
                         { id: "d3", name: "Git & GitHub Workflow", category: "Code & Version" },
@@ -1081,17 +1082,17 @@ export const SkillsModule: React.FC = () => {
                         { id: "d6", name: "Notion Workspaces & Docs", category: "Productivity" },
                         { id: "d7", name: "Docker & Containerization", category: "Cloud & Containers" },
                         { id: "d8", name: "Jira & Agile Work Tracking", category: "Management" },
-                        { id: "d9", name: "Postman & API Testing", category: "Developer Tools" },
+                        { id: "d9", name: "Postman & API Testing", category: "Code & Version" },
                         { id: "d10", name: "Slack & Modern Collaboration", category: "Productivity" },
-                        { id: "d11", name: "Tableau & PowerBI Visualizations", category: "Data & Analytics" },
+                        { id: "d11", name: "Tableau & PowerBI Visualizations", category: "Productivity" },
                       ];
 
                       // Merge defaults into state list if missing
                       const existingIds = new Set(data.digitalCompetencies.map((t) => t.id));
-                      const missingDefaults = expandedDefaults.filter((d) => !existingIds.has(d.id)).map((d) => ({
+                      const missingDefaults: DigitalCompetencyItem[] = expandedDefaults.filter((d) => !existingIds.has(d.id)).map((d) => ({
                         ...d,
                         selected: false,
-                        proficiency: "Intermediate" as const,
+                        proficiency: "Intermediate",
                       }));
 
                       const displayList = [...data.digitalCompetencies, ...missingDefaults];
@@ -1139,10 +1140,10 @@ export const SkillsModule: React.FC = () => {
                                     updated[idx].selected = !updated[idx].selected;
                                     setData({ ...data, digitalCompetencies: updated });
                                   } else {
-                                    const newItem = {
+                                    const newItem: DigitalCompetencyItem = {
                                       ...tool,
                                       selected: true,
-                                      proficiency: "Intermediate" as const,
+                                      proficiency: "Intermediate",
                                     };
                                     setData({ ...data, digitalCompetencies: [...data.digitalCompetencies, newItem] });
                                   }
@@ -1168,7 +1169,7 @@ export const SkillsModule: React.FC = () => {
                               <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
                                 <span className="text-slate-300 font-medium shrink-0">Proficiency:</span>
                                 <div className="flex items-center gap-1 flex-wrap">
-                                  {(["Beginner", "Intermediate", "Advanced", "Master"] as const).map((lvl) => (
+                                  {(["Beginner", "Intermediate", "Advanced", "Expert"] as const).map((lvl) => (
                                     <button
                                       key={lvl}
                                       type="button"
@@ -2149,13 +2150,13 @@ export const SkillsModule: React.FC = () => {
                           <input
                             type="number"
                             min={0}
-                            value={data.workExperience.freelancer.completedProjectsCount || ""}
+                            value={data.workExperience.freelancer.projectsCompleted || ""}
                             onChange={(e) =>
                               setData({
                                 ...data,
                                 workExperience: {
                                   ...data.workExperience,
-                                  freelancer: { ...data.workExperience.freelancer, completedProjectsCount: Number(e.target.value) },
+                                  freelancer: { ...data.workExperience.freelancer, projectsCompleted: Number(e.target.value) },
                                 },
                               })
                             }
