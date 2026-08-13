@@ -976,8 +976,8 @@ function checkModuleCompleteness(rawData: Awaited<ReturnType<typeof fetchAllUser
 async function fetchReportFromSupabase(supabase: ReturnType<typeof createClient>, userId: string): Promise<any | null> {
   // 1. Try ai_reports FIRST (Master Mentor table)
   try {
-    const { data } = await supabase
-      .from("ai_reports")
+    const { data }: any = await supabase
+      .from("ai_reports" as any)
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -991,8 +991,8 @@ async function fetchReportFromSupabase(supabase: ReturnType<typeof createClient>
 
   // 2. Try ai_evaluations
   try {
-    const { data } = await supabase
-      .from("ai_evaluations")
+    const { data }: any = await supabase
+      .from("ai_evaluations" as any)
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -1012,7 +1012,7 @@ async function fetchReportFromSupabase(supabase: ReturnType<typeof createClient>
 
   // 3. Try module_data (key = 'ai_report')
   try {
-    const { data } = await supabase
+    const { data }: any = await supabase
       .from("module_data")
       .select("*")
       .eq("user_id", userId)
@@ -1026,7 +1026,7 @@ async function fetchReportFromSupabase(supabase: ReturnType<typeof createClient>
 
   // 4. Try memory (key = 'ai_report')
   try {
-    const { data } = await supabase
+    const { data }: any = await supabase
       .from("memory")
       .select("*")
       .eq("user_id", userId)
@@ -1076,8 +1076,8 @@ async function saveReportToSupabase(supabase: ReturnType<typeof createClient>, u
 
     let savedAiReport = false;
     try {
-      const { data, error } = await supabase
-        .from("ai_reports")
+      const { data, error }: any = await supabase
+        .from("ai_reports" as any)
         .upsert([aiReportsPayload], { onConflict: "user_id" })
         .select()
         .single();
@@ -1090,9 +1090,9 @@ async function saveReportToSupabase(supabase: ReturnType<typeof createClient>, u
 
     if (!savedAiReport) {
       try {
-        await supabase.from("ai_reports").delete().eq("user_id", userId);
-        const { data, error } = await supabase
-          .from("ai_reports")
+        await (supabase.from("ai_reports" as any) as any).delete().eq("user_id", userId);
+        const { data, error }: any = await supabase
+          .from("ai_reports" as any)
           .insert([aiReportsPayload])
           .select()
           .single();
@@ -1119,10 +1119,10 @@ async function saveReportToSupabase(supabase: ReturnType<typeof createClient>, u
       created_at: nowIso,
     };
 
-    await supabase.from("ai_evaluations").delete().eq("user_id", userId);
+    await (supabase.from("ai_evaluations" as any) as any).delete().eq("user_id", userId);
 
-    const { data, error } = await supabase
-      .from("ai_evaluations")
+    const { data, error }: any = await supabase
+      .from("ai_evaluations" as any)
       .insert([evalPayload])
       .select()
       .single();
@@ -1135,7 +1135,7 @@ async function saveReportToSupabase(supabase: ReturnType<typeof createClient>, u
 
   // Target 3: module_data (key = 'ai_report')
   try {
-    const { data, error } = await supabase
+    const { data, error }: any = await supabase
       .from("module_data")
       .upsert(
         [{ user_id: userId, module_key: "ai_report", data: record, is_completed: true, score: record.overall_score || 0 }],
@@ -1151,7 +1151,7 @@ async function saveReportToSupabase(supabase: ReturnType<typeof createClient>, u
 
   // Target 4: memory table (key = 'ai_report')
   try {
-    const { data, error } = await supabase
+    const { data, error }: any = await supabase
       .from("memory")
       .upsert(
         {
