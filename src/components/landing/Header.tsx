@@ -71,13 +71,13 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
               Login
             </Link>
 
-            <button
-              onClick={onStartAssessment}
+            <Link
+              href="/auth/signup"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#3b82f6] hover:bg-[#2563eb] active:scale-[0.98] transition-all shadow-md shadow-[#3b82f6]/20"
             >
-              <span>Calculate Capital</span>
+              <span>Sign Up</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -118,15 +118,13 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
             >
               Login
             </Link>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                if (onStartAssessment) onStartAssessment();
-              }}
-              className="flex-1 py-2.5 rounded-xl bg-[#3b82f6] text-center text-sm font-semibold text-white shadow-md"
+            <Link
+              href="/auth/signup"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex-1 py-2.5 rounded-xl bg-[#3b82f6] text-center text-sm font-semibold text-white shadow-md block"
             >
-              Calculate Capital
-            </button>
+              Sign Up
+            </Link>
           </div>
         </div>
       )}

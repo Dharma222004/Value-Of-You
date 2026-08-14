@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import AuthCard from "@/components/auth/AuthCard";
 import { supabase } from "@/lib/supabase";
+import { getAppUrl } from "@/lib/auth/config";
 import { validateEmail } from "@/lib/auth/validation";
 import { Mail, Loader2, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,8 +27,8 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${getAppUrl()}/auth/reset-password`,
       });
 
       if (resetError) {
@@ -61,24 +60,28 @@ export default function ForgotPasswordPage() {
           )}
 
           <div className="space-y-1 text-left">
-            <label className="text-xs font-semibold text-[var(--foreground)]">Account Email Address</label>
+            <label htmlFor="forgot_email" className="text-xs font-semibold text-[var(--foreground)]">
+              Account Email Address
+            </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-[var(--subtext)] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
+                id="forgot_email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="alex@example.com"
                 autoComplete="email"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] focus:border-indigo-500 focus:outline-none transition-colors"
               />
             </div>
           </div>
 
           <button
+            id="forgot_submit_btn"
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-blue-600 dark:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs shadow-md hover:opacity-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="btn-primary w-full justify-center py-2.5 text-sm"
           >
             {loading ? (
               <>
@@ -109,7 +112,9 @@ export default function ForgotPasswordPage() {
           <div className="space-y-1">
             <h2 className="text-lg font-bold text-[var(--foreground)]">Recovery Email Sent</h2>
             <p className="text-xs text-[var(--subtext)] leading-relaxed">
-              We sent a password reset link to <strong className="text-[var(--foreground)]">{email}</strong>. Check your inbox to update your password.
+              We sent a password reset link to{" "}
+              <strong className="text-[var(--foreground)]">{email}</strong>. Check your inbox
+              to update your password.
             </p>
           </div>
 
@@ -118,8 +123,15 @@ export default function ForgotPasswordPage() {
               onClick={() => setSent(false)}
               className="text-xs text-[var(--subtext)] hover:text-[var(--foreground)] hover:underline transition-colors"
             >
-              Didn't receive email? Try again
+              Didn&apos;t receive email? Try again
             </button>
+            <Link
+              href="/auth/login"
+              className="inline-flex items-center justify-center gap-1.5 text-xs text-[var(--subtext)] hover:text-[var(--foreground)] transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back to Login
+            </Link>
           </div>
         </div>
       )}

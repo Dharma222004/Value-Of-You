@@ -17,14 +17,21 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetDone, setResetDone] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
 
   // Supabase sends the user here with a recovery token in the URL hash.
-  // The Supabase JS client auto-detects it and establishes a session.
+  // The Supabase JS client auto-detects it and emits PASSWORD_RECOVERY,
+  // establishing a temporary session the user can use to update their password.
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
-        // Session is now set; user can update their password
+        setSessionReady(true);
       }
+    });
+
+    // Also check if there's already an active session (page reload case)
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setSessionReady(true);
     });
 
     return () => {
@@ -50,14 +57,18 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      const { error: updateError } = await supabase.auth.updateUser({
-        password,
-      });
+      const { error: updateError } = await supabase.auth.updateUser({ password });
 
       if (updateError) {
         setError(updateError.message);
         setLoading(false);
         return;
+      }
+
+      // Sign out after password reset so user logs in fresh
+      await supabase.auth.signOut();
+      if (typeof document !== "undefined") {
+        document.cookie = "sb-auth-token=; path=/; max-age=0; SameSite=Lax;";
       }
 
       setResetDone(true);
@@ -111,9 +122,10 @@ export default function ResetPasswordPage() {
           </div>
 
           <button
+            id="reset_submit_btn"
             type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-blue-600 dark:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs shadow-md hover:opacity-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            disabled={loading || !sessionReady}
+            className="btn-primary w-full justify-center py-2.5 text-sm"
           >
             {loading ? (
               <>
@@ -124,6 +136,12 @@ export default function ResetPasswordPage() {
               <span>Update Password</span>
             )}
           </button>
+
+          {!sessionReady && (
+            <p className="text-center text-[11px] text-amber-400">
+              Waiting for recovery session... Make sure you clicked the link from your email.
+            </p>
+          )}
         </form>
       ) : (
         <div className="text-center space-y-4 py-4 animate-in fade-in zoom-in-95 duration-300">
@@ -140,7 +158,7 @@ export default function ResetPasswordPage() {
 
           <Link
             href="/auth/login"
-            className="w-full py-3 rounded-xl bg-blue-600 dark:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs shadow-md text-center inline-block hover:opacity-95 transition-all"
+            className="btn-primary w-full justify-center py-2.5 text-sm inline-flex"
           >
             Proceed to Login
           </Link>

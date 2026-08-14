@@ -1,224 +1,159 @@
 "use client";
 
-import { useState, useRef, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import AuthCard from "@/components/auth/AuthCard";
-import { validateOtp } from "@/lib/auth/validation";
 import { supabase } from "@/lib/supabase";
-import { Loader2, ShieldCheck, AlertCircle, RefreshCw } from "lucide-react";
+import { getAppUrl } from "@/lib/auth/config";
+import { Mail, RefreshCw, Loader2, CheckCircle2 } from "lucide-react";
 
-function VerifyEmailForm() {
-  const router = useRouter();
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const emailParam = searchParams?.get("email") || "";
 
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [verified, setVerified] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
 
-  const [resendTimer, setResendTimer] = useState(60);
-  const [canResend, setCanResend] = useState(false);
-
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (resendTimer > 0) {
-      interval = setInterval(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-    } else {
-      setCanResend(true);
-    }
-    return () => clearInterval(interval);
-  }, [resendTimer]);
-
-  const handleChange = (index: number, value: string) => {
-    const cleanValue = value.replace(/[^0-9]/g, "");
-    if (!cleanValue && value !== "") return;
-
-    const char = cleanValue.length > 0 ? cleanValue[cleanValue.length - 1] : "";
-    const newOtp = [...otp];
-    newOtp[index] = char;
-    setOtp(newOtp);
-
-    if (char && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, 6);
-    if (!pastedData) return;
-
-    const newOtp = [...otp];
-    for (let i = 0; i < 6; i++) {
-      newOtp[i] = pastedData[i] || "";
-    }
-    setOtp(newOtp);
-    inputRefs.current[Math.min(pastedData.length, 5)]?.focus();
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    const fullOtp = otp.join("");
-    const validationError = validateOtp(fullOtp);
-
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    setLoading(true);
+  const handleResend = async () => {
+    if (!emailParam || resending || cooldown > 0) return;
+    setResending(true);
+    setResendError(null);
 
     try {
-      if (emailParam) {
-        const { error: verifyErr } = await supabase.auth.verifyOtp({
-          email: emailParam,
-          token: fullOtp,
-          type: "email",
-        });
-
-        if (verifyErr) {
-          setError(verifyErr.message || "Invalid or expired verification code.");
-          return;
-        }
-      }
-
-      setVerified(true);
-      setTimeout(() => {
-        router.push("/auth/complete-profile");
-      }, 1200);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to verify email code.";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendCode = async () => {
-    if (!canResend || !emailParam) return;
-    setCanResend(false);
-    setResendTimer(60);
-    setError(null);
-
-    try {
-      await supabase.auth.resend({
+      const { error } = await supabase.auth.resend({
         type: "signup",
         email: emailParam,
+        options: {
+          emailRedirectTo: `${getAppUrl()}/auth/callback`,
+        },
       });
-    } catch {
-      // Ignored
+
+      if (error) {
+        setResendError(error.message);
+      } else {
+        setResent(true);
+        // 60-second cooldown
+        let secs = 60;
+        setCooldown(secs);
+        const id = setInterval(() => {
+          secs -= 1;
+          setCooldown(secs);
+          if (secs <= 0) clearInterval(id);
+        }, 1000);
+      }
+    } catch (err: unknown) {
+      setResendError(err instanceof Error ? err.message : "Failed to resend email.");
+    } finally {
+      setResending(false);
     }
   };
-
-  if (verified) {
-    return (
-      <AuthCard title="Email Verified!" subtitle="Redirecting to profile setup...">
-        <div className="py-8 flex flex-col items-center justify-center space-y-3">
-          <ShieldCheck className="w-12 h-12 text-emerald-500 animate-bounce" />
-          <p className="text-xs font-medium text-[var(--subtext)]">Your email identity has been confirmed.</p>
-        </div>
-      </AuthCard>
-    );
-  }
 
   return (
     <AuthCard
-      title="Verify Your Email"
-      subtitle={
-        emailParam ? (
-          <>
-            We sent a 6-digit code to <span className="font-semibold text-[var(--foreground)]">{emailParam}</span>
-          </>
-        ) : (
-          "Enter the 6-digit verification code sent to your email"
-        )
-      }
+      title="Check your email"
+      subtitle="We've sent a verification link to confirm your account"
     >
-      <form onSubmit={handleVerify} className="space-y-5">
-        {error && (
-          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-2 text-xs text-red-500">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{error}</span>
+      <div className="space-y-5">
+        {/* Email display */}
+        <div className="flex flex-col items-center gap-3 py-4">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.1) 100%)", border: "1px solid rgba(99,102,241,0.25)" }}
+          >
+            <Mail className="w-7 h-7 text-indigo-400" />
+          </div>
+
+          {emailParam && (
+            <p className="text-xs text-center text-[var(--subtext)] leading-relaxed">
+              We sent a verification link to{" "}
+              <span className="font-semibold text-[var(--foreground)]">{emailParam}</span>
+            </p>
+          )}
+
+          <p className="text-[11px] text-center text-slate-500 leading-relaxed max-w-xs">
+            Click the link in the email to verify your account and access your dashboard.
+            The link expires in 24 hours.
+          </p>
+        </div>
+
+        {/* Resent confirmation */}
+        {resent && (
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Verification email resent successfully.</span>
           </div>
         )}
 
-        <div className="flex justify-between items-center gap-1.5 sm:gap-2" onPaste={handlePaste}>
-          {otp.map((digit, idx) => (
-            <input
-              key={idx}
-              ref={(el) => {
-                inputRefs.current[idx] = el;
-              }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleChange(idx, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(idx, e)}
-              className="w-10 h-12 sm:w-12 sm:h-14 text-center text-base sm:text-lg font-bold rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:border-blue-500 dark:focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-cyan-400/20 transition-all"
-            />
-          ))}
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading || otp.join("").length < 6}
-          className="w-full py-3 rounded-xl bg-blue-600 dark:bg-cyan-400 text-white dark:text-slate-950 font-bold text-xs shadow-md hover:opacity-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Verifying Code...</span>
-            </>
-          ) : (
-            <span>Verify & Continue</span>
-          )}
-        </button>
-
-        <div className="pt-2 text-center text-xs text-[var(--subtext)] space-y-2">
-          <p>
-            Didn&apos;t receive the code?{" "}
-            {canResend ? (
-              <button
-                type="button"
-                onClick={handleResendCode}
-                className="font-bold text-blue-600 dark:text-cyan-400 hover:underline inline-flex items-center gap-1"
-              >
-                <RefreshCw className="w-3 h-3" /> Resend Code
-              </button>
-            ) : (
-              <span className="text-[var(--subtext)] font-mono">Resend in {resendTimer}s</span>
-            )}
-          </p>
-          <div>
-            <Link href="/auth/login" className="text-[11px] hover:underline text-[var(--subtext)]">
-              Back to Login
-            </Link>
+        {/* Resend error */}
+        {resendError && (
+          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+            {resendError}
           </div>
+        )}
+
+        {/* Resend button */}
+        {emailParam && (
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resending || cooldown > 0}
+            className="w-full py-2.5 rounded-xl border border-[var(--border)] text-xs font-medium text-[var(--foreground)] hover:border-indigo-500/50 hover:text-indigo-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {resending ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending...</>
+            ) : cooldown > 0 ? (
+              `Resend available in ${cooldown}s`
+            ) : (
+              <><RefreshCw className="w-3.5 h-3.5" /> Resend verification email</>
+            )}
+          </button>
+        )}
+
+        {/* Divider */}
+        <div className="relative flex items-center gap-3">
+          <div className="flex-1 h-px bg-white/6" />
+          <span className="text-[11px] text-slate-500">or</span>
+          <div className="flex-1 h-px bg-white/6" />
         </div>
-      </form>
+
+        {/* Back to login */}
+        <p className="text-center text-xs text-slate-500">
+          Already verified?{" "}
+          <Link
+            href="/auth/login"
+            className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+          >
+            Sign in
+          </Link>
+        </p>
+
+        <p className="text-center text-[11px] text-slate-600">
+          Wrong email?{" "}
+          <Link
+            href="/auth/signup"
+            className="text-slate-500 hover:text-slate-300 transition-colors underline"
+          >
+            Start over
+          </Link>
+        </p>
+      </div>
     </AuthCard>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Loading email verification...</div>}>
-      <VerifyEmailForm />
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <VerifyEmailContent />
     </Suspense>
   );
 }

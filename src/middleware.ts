@@ -46,10 +46,17 @@ function getAccessToken(request: NextRequest): string | null {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // ── Canonical short-URL aliases ──────────────────────────────────────────
+  if (pathname === "/login") {
+    return NextResponse.rewrite(new URL("/auth/login", request.url));
+  }
+  if (pathname === "/signup") {
+    return NextResponse.rewrite(new URL("/auth/signup", request.url));
+  }
+
+  // ── Authentication check ─────────────────────────────────────────────────
   const token = getAccessToken(request);
   const payload = token ? decodeJwtPayload(token) : null;
-
-  // Treat as authenticated only if we have a JWT that has not expired.
   const nowSec = Math.floor(Date.now() / 1000);
   const isAuthenticated = Boolean(payload && (!payload.exp || payload.exp > nowSec));
 
@@ -59,14 +66,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   };
 
+  // ── Protected routes ─────────────────────────────────────────────────────
+  // /dashboard covers: main dashboard, assessments (Human Value),
+  // analytics (Human Capital), and profile
   if (pathname.startsWith("/dashboard")) {
     if (!isAuthenticated) return redirectToLogin();
   }
 
   if (pathname.startsWith("/admin")) {
     if (!isAuthenticated) return redirectToLogin();
-    // Role hint only — authoritative admin check is enforced in the
-    // /api/admin/* route handlers via a validated token + role lookup.
+    // Role hint only — authoritative admin check is enforced in /api/admin/* route handlers
     const roleHint = payload?.app_metadata?.role || payload?.role;
     if (roleHint && roleHint !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
@@ -77,5 +86,10 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: [
+    "/login",
+    "/signup",
+    "/dashboard/:path*",
+    "/admin/:path*",
+  ],
 };

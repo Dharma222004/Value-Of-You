@@ -49,6 +49,29 @@
   /* Glassmorphism Effect */
   --glass-bg: rgba(9, 13, 26, 0.80);
   --glass-blur: 24px;
+
+  /* ── Auth Component Tokens ───────────────────────────────────────────
+     These are consumed by auth pages, AuthCard, PasswordInput, and
+     all .input-field / .btn-primary / .section-label CSS classes below.
+  ─────────────────────────────────────────────────────────────────── */
+
+  /* Page background — used as bg-[var(--bg-base)] */
+  --bg-base: #05070f;
+
+  /* Input background surface */
+  --background: #0c1120;
+
+  /* Primary text color for inputs and labels */
+  --foreground: #f1f5f9;
+
+  /* Input borders */
+  --border: rgba(255, 255, 255, 0.10);
+
+  /* Muted / secondary / placeholder text */
+  --subtext: #64748b;
+
+  /* Tailwind hsl() bridge — consumed by tailwind.config.ts hsl() calls */
+  --radius: 0.75rem;
 }
 
 * {
@@ -479,4 +502,166 @@ input[type="range"]::-moz-range-thumb {
 .wizard-label-required::after {
   content: ' *';
   color: #f43f5e;
+}
+
+/* ====================================================================
+   AUTH UTILITY CLASSES
+   Used by: AuthCard, signup/page.tsx, login/page.tsx, PasswordInput
+   ====================================================================
+
+   ROOT CAUSE FIX: These classes were referenced throughout auth pages
+   (input-field, section-label, btn-primary, divider, bg-grid-pattern)
+   but were never defined — causing browser-default white input
+   backgrounds and invisible/clipped typed text.
+   ==================================================================== */
+
+/* ── Auth Input Fields ────────────────────────────────────────────── */
+.input-field {
+  display: block;
+  width: 100%;
+
+  /* Explicit sides so the icon-aware left padding is never collapsed by Tailwind pl-* specificity.
+     All auth inputs have a leading icon (16px) at left-3 / left-3.5 (12–14px).
+     40px left padding guarantees icon + gap + text never overlap. */
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-right: 40px;   /* clears eye-toggle / clear buttons on the right */
+  padding-left: 40px;    /* clears leading icons (mail, lock, user) on the left */
+
+
+  border-radius: 12px;
+
+  /* Dark surface — typed text is always visible */
+  background-color: #0c1120;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #f1f5f9;
+
+  font-size: 13px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.input-field::placeholder {
+  /* Placeholder: dimmer than real text but still readable */
+  color: #475569;
+  font-weight: 400;
+}
+
+.input-field:focus {
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
+}
+
+.input-field:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Override browser autofill blue/yellow background on dark inputs */
+.input-field:-webkit-autofill,
+.input-field:-webkit-autofill:hover,
+.input-field:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 100px #0c1120 inset !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+  caret-color: #f1f5f9;
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  transition: background-color 9999s ease 0s;
+}
+
+/* ── Auth Form Labels ─────────────────────────────────────────────── */
+.section-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* ── Primary Button ───────────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.01em;
+  color: #ffffff;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  box-shadow: 0 4px 16px -4px rgba(99, 102, 241, 0.5);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -6px rgba(99, 102, 241, 0.55);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px -2px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
+}
+
+/* ── Subtle Divider Line ──────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+}
+
+/* ── Page Grid Pattern Background ────────────────────────────────── */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Auth Glass Card (used by callback page) ──────────────────────── */
+.glass-card {
+  background: rgba(12, 17, 32, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+/* ── Animated fade-in utility ─────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

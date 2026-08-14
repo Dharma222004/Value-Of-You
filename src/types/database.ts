@@ -6,6 +6,7 @@ export interface Profile {
   provider: string;
   human_value_score: number;
   assessment_completed: boolean;
+  values_completed: boolean;
   theme: string;
   created_at: string;
   updated_at: string;

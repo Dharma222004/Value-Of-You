@@ -76,7 +76,7 @@ export default function AuthCard({ title, subtitle, children }: AuthCardProps) {
       {/* Security badge */}
       <div className="mt-6 flex items-center gap-1.5 text-[11px] text-slate-500 relative z-10">
         <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-        <span>Secured by Supabase Auth with Row-Level Security</span>
+        <span>End to End Encryption.</span>
       </div>
     </div>
   );

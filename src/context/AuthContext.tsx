@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, AuthSession } from "@/types/auth";
 import { supabase } from "@/lib/supabase";
+import { getAppUrl } from "@/lib/auth/config";
 import { syncSupabaseProfile } from "@/services/supabaseProfileService";
 
 interface AuthContextType {
@@ -20,11 +21,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/**
- * Maps the raw provider string from Supabase app_metadata to the
- * typed union declared in User. Falls back to 'google' for unknown
- * providers (e.g. OAuth providers added later in the Supabase dashboard).
- */
 const KNOWN_PROVIDERS = ["credentials", "google", "github", "microsoft", "apple"] as const;
 type KnownProvider = (typeof KNOWN_PROVIDERS)[number];
 
@@ -35,77 +31,72 @@ function parseProvider(raw: string | undefined): KnownProvider {
   return "google";
 }
 
+// Writes or clears the sb-auth-token cookie used by Next.js middleware.
+// Cannot be HttpOnly because both Supabase JS SDK and middleware read it.
+function setAuthCookie(token?: string | null, rememberMe = true) {
+  if (typeof document === "undefined") return;
+  if (token) {
+    const secure = typeof window !== "undefined" && window.location.protocol === "https:";
+    const maxAge = rememberMe ? 2592000 : 86400; // 30 days or 1 day
+    document.cookie = `sb-auth-token=${token}; path=/; max-age=${maxAge}; SameSite=Lax;${secure ? " Secure;" : ""}`;
+  } else {
+    document.cookie = "sb-auth-token=; path=/; max-age=0; SameSite=Lax;";
+  }
+}
+
+function mapSupabaseUser(sbUser: any, sbSession: any): { user: User; authSession: AuthSession } {
+  const userPayload: User = {
+    id: sbUser.id,
+    email: sbUser.email || "",
+    name:
+      sbUser.user_metadata?.full_name ||
+      sbUser.user_metadata?.name ||
+      sbUser.email?.split("@")[0] ||
+      "User",
+    image: sbUser.user_metadata?.avatar_url || sbUser.user_metadata?.picture,
+    provider: parseProvider(sbUser.app_metadata?.provider),
+    emailVerified: Boolean(sbUser.email_confirmed_at),
+    createdAt: sbUser.created_at || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const authSession: AuthSession = {
+    user: userPayload,
+    token: sbSession.access_token,
+    expiresAt: new Date(
+      (sbSession.expires_at || Math.floor(Date.now() / 1000) + 3600) * 1000
+    ).toISOString(),
+    rememberMe: true,
+  };
+
+  return { user: userPayload, authSession };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Sync the Supabase access token into the middleware cookie.
-  // NOTE: this cookie cannot be HttpOnly — Supabase's JS client and the Next.js
-  // middleware both read it from the browser. Adding `Secure` (on HTTPS) and
-  // `SameSite=Lax` limits exfiltration over plain HTTP and cross-site sends.
-  const setAuthCookie = (token?: string | null) => {
-    if (typeof document === "undefined") return;
-    if (token) {
-      const secure = typeof window !== "undefined" && window.location.protocol === "https:";
-      document.cookie = `sb-auth-token=${token}; path=/; max-age=2592000; SameSite=Lax;${secure ? " Secure;" : ""}`;
-    } else {
-      document.cookie = "sb-auth-token=; path=/; max-age=0; SameSite=Lax;";
-    }
-  };
-
   const fetchSession = async () => {
     try {
       const { data, error } = await supabase.auth.getSession();
-      if (error) {
+      if (error || !data.session?.user) {
         setSession(null);
         setUser(null);
+        setAuthCookie(null);
         return;
       }
 
       const sbSession = data.session;
-      if (sbSession && sbSession.user) {
-        const userPayload: User = {
-          id: sbSession.user.id,
-          email: sbSession.user.email || "",
-          name:
-            sbSession.user.user_metadata?.full_name ||
-            sbSession.user.user_metadata?.name ||
-            sbSession.user.email?.split("@")[0] ||
-            "User",
-          image: sbSession.user.user_metadata?.avatar_url || sbSession.user.user_metadata?.picture,
-          provider: parseProvider(sbSession.user.app_metadata?.provider),
-          emailVerified: true,
-          createdAt: sbSession.user.created_at || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+      const { user: userPayload, authSession } = mapSupabaseUser(sbSession.user, sbSession);
 
-        const authSession: AuthSession = {
-          user: userPayload,
-          token: sbSession.access_token,
-          expiresAt: new Date((sbSession.expires_at || Date.now() / 1000 + 3600) * 1000).toISOString(),
-          rememberMe: true,
-        };
+      setSession(authSession);
+      setUser(userPayload);
+      setAuthCookie(sbSession.access_token);
 
-        setSession(authSession);
-        setUser(userPayload);
-
-        // Set auth cookie for Next.js middleware
-        if (sbSession.access_token) {
-          setAuthCookie(sbSession.access_token);
-        }
-
-        // Sync profile to database
-        await syncSupabaseProfile(sbSession.user);
-      } else {
-        setSession(null);
-        setUser(null);
-        if (typeof document !== "undefined") {
-          setAuthCookie(null);
-        }
-      }
+      await syncSupabaseProfile(sbSession.user);
     } catch (err) {
-      console.error("[Supabase Auth Fetch Error]:", err);
+      console.error("[AuthContext fetchSession]:", err);
     } finally {
       setLoading(false);
     }
@@ -116,47 +107,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     fetchSession();
 
-    // Subscribe to Supabase auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, sbSession) => {
-      if (sbSession && sbSession.user && isMounted) {
-        const userPayload: User = {
-          id: sbSession.user.id,
-          email: sbSession.user.email || "",
-          name:
-            sbSession.user.user_metadata?.full_name ||
-            sbSession.user.user_metadata?.name ||
-            sbSession.user.email?.split("@")[0] ||
-            "User",
-          image: sbSession.user.user_metadata?.avatar_url || sbSession.user.user_metadata?.picture,
-          provider: parseProvider(sbSession.user.app_metadata?.provider),
-          emailVerified: true,
-          createdAt: sbSession.user.created_at || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+      if (!isMounted) return;
 
-        const newAuthSession: AuthSession = {
-          user: userPayload,
-          token: sbSession.access_token,
-          expiresAt: new Date((sbSession.expires_at || Date.now() / 1000 + 3600) * 1000).toISOString(),
-          rememberMe: true,
-        };
-
-        setSession(newAuthSession);
+      if (sbSession?.user) {
+        const { user: userPayload, authSession } = mapSupabaseUser(sbSession.user, sbSession);
+        setSession(authSession);
         setUser(userPayload);
-
-        // Set auth cookie for Next.js middleware
-        if (sbSession.access_token) {
-          setAuthCookie(sbSession.access_token);
-        }
-
-        // Synchronize to profiles table
+        setAuthCookie(sbSession.access_token);
         await syncSupabaseProfile(sbSession.user);
-      } else if (event === "SIGNED_OUT" && isMounted) {
+      } else if (event === "SIGNED_OUT") {
         setSession(null);
         setUser(null);
-        if (typeof document !== "undefined") {
-          setAuthCookie(null);
-        }
+        setAuthCookie(null);
       }
     });
 
@@ -167,15 +130,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Supabase Email & Password Login
+   * Email & Password Login
    */
   const loginWithCredentials = async (email: string, pass: string, rememberMe: boolean) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: pass,
-      });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
 
       if (error) {
         setLoading(false);
@@ -183,30 +143,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.session && data.user) {
-        const userPayload: User = {
-          id: data.user.id,
-          email: data.user.email || "",
-          name:
-            data.user.user_metadata?.full_name ||
-            data.user.user_metadata?.name ||
-            data.user.email?.split("@")[0] ||
-            "User",
-          image: data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture,
-          provider: "credentials",
-          emailVerified: true,
-          createdAt: data.user.created_at || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        const authSession: AuthSession = {
-          user: userPayload,
-          token: data.session.access_token,
-          expiresAt: new Date((data.session.expires_at || Date.now() / 1000 + 3600) * 1000).toISOString(),
-          rememberMe,
-        };
-
+        const { user: userPayload, authSession } = mapSupabaseUser(data.user, data.session);
+        authSession.rememberMe = rememberMe;
         setSession(authSession);
         setUser(userPayload);
+        setAuthCookie(data.session.access_token, rememberMe);
         await syncSupabaseProfile(data.user);
         setLoading(false);
         return { success: true, user: userPayload };
@@ -216,13 +157,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: "Failed to authenticate session" };
     } catch (err: unknown) {
       setLoading(false);
-      const message = err instanceof Error ? err.message : "Authentication failed.";
-      return { success: false, error: message };
+      return { success: false, error: err instanceof Error ? err.message : "Authentication failed." };
     }
   };
 
   /**
-   * Supabase Email & Password Signup
+   * Email & Password Signup — does NOT create a session.
+   * Session is established only after OTP verification.
    */
   const signupWithCredentials = async (name: string, email: string, pass: string) => {
     setLoading(true);
@@ -230,11 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password: pass,
-        options: {
-          data: {
-            full_name: name,
-          },
-        },
+        options: { data: { full_name: name } },
       });
 
       if (error) {
@@ -252,35 +189,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           createdAt: data.user.created_at || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-
-        await syncSupabaseProfile(data.user);
-
-        if (data.session) {
-          const authSession: AuthSession = {
-            user: userPayload,
-            token: data.session.access_token,
-            expiresAt: new Date((data.session.expires_at || Date.now() / 1000 + 3600) * 1000).toISOString(),
-            rememberMe: true,
-          };
-          setSession(authSession);
-          setUser(userPayload);
-        }
-
         setLoading(false);
         return { success: true, user: userPayload };
       }
 
       setLoading(false);
-      return { success: false, error: "Signup failed: no user was returned. Please try again or contact support." };
+      return { success: false, error: "Signup failed: no user returned." };
     } catch (err: unknown) {
       setLoading(false);
-      const message = err instanceof Error ? err.message : "Signup failed.";
-      return { success: false, error: message };
+      return { success: false, error: err instanceof Error ? err.message : "Signup failed." };
     }
   };
 
   /**
-   * Complete User Profile & Update Supabase Profiles Table
+   * Update user profile fields in the profiles table.
    */
   const completeUserProfile = async (data: {
     displayName?: string;
@@ -294,46 +216,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const activeUser = sessionData.session?.user;
       if (activeUser) {
         const fullName = data.displayName || user?.name || activeUser.email?.split("@")[0];
-        const { error } = await supabase
-          .from("profiles")
-          .upsert({
-            id: activeUser.id,
-            full_name: fullName,
-            email: activeUser.email,
-            updated_at: new Date().toISOString(),
-          });
-
+        const { error } = await supabase.from("profiles").upsert({
+          id: activeUser.id,
+          full_name: fullName,
+          email: activeUser.email,
+          updated_at: new Date().toISOString(),
+        });
         if (error) throw error;
-
-        if (user) {
-          setUser({ ...user, name: fullName || user.name });
-        }
+        if (user) setUser({ ...user, name: fullName || user.name });
       }
       return { success: true };
     } catch (err: unknown) {
       console.error("[completeUserProfile Error]:", err);
-      const message = err instanceof Error ? err.message : "Failed to update profile.";
-      return { success: false, error: message };
+      return { success: false, error: err instanceof Error ? err.message : "Failed to update profile." };
     }
   };
 
   /**
-   * Google OAuth Login via Supabase SDK ONLY
+   * Google OAuth — uses dynamic origin (no localhost fallback)
    */
   const loginWithGoogle = async (): Promise<void> => {
-    const redirectUrl =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/auth/callback`
-        : "http://localhost:3000/auth/callback";
+    const redirectUrl = `${getAppUrl()}/auth/callback`;
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: redirectUrl,
-        queryParams: {
-          access_type: "offline",
-          prompt: "select_account",
-        },
+        queryParams: { access_type: "offline", prompt: "select_account" },
       },
     });
 
@@ -344,18 +253,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /**
-   * Sign out via Supabase SDK ONLY
+   * Secure Logout — clears session, cookie, and redirects to /login
    */
   const logout = async () => {
     try {
       await supabase.auth.signOut();
     } catch (err: unknown) {
-      // signOut errors are non-fatal — the local session is cleared regardless.
       console.error("[Supabase signOut Error]:", err);
     }
-    if (typeof document !== "undefined") {
-      setAuthCookie(null);
-    }
+    setAuthCookie(null);
     setSession(null);
     setUser(null);
     if (typeof window !== "undefined") {

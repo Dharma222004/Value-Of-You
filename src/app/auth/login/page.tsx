@@ -8,12 +8,13 @@ import SocialButtons from "@/components/auth/SocialButtons";
 import PasswordInput from "@/components/auth/PasswordInput";
 import { useAuth } from "@/context/AuthContext";
 import { validateEmail } from "@/lib/auth/validation";
+import { supabase } from "@/lib/supabase";
 import { Mail, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { loginWithCredentials, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,35 +23,110 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // When error = "Email not verified", we surface a resend link
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+
   useEffect(() => {
     const oauthError = searchParams?.get("error");
     if (oauthError) setError(decodeURIComponent(oauthError));
   }, [searchParams]);
 
+  // Redirect already-authenticated users
   useEffect(() => {
-    if (isAuthenticated) router.push("/dashboard");
-  }, [isAuthenticated, router]);
+    if (isAuthenticated) {
+      const redirect = searchParams?.get("redirect") || "/dashboard";
+      router.push(redirect);
+    }
+  }, [isAuthenticated, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    setUnverifiedEmail(null);
 
+    // ── Validate inputs ──────────────────────────────────────────────────
     const emailErr = validateEmail(email);
-    if (emailErr) { setError(emailErr); return; }
-    if (!password) { setError("Please enter your password."); return; }
+    if (emailErr) {
+      setError("Invalid email");
+      return;
+    }
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
 
     setLoading(true);
-    const result = await loginWithCredentials(email, password, rememberMe);
 
-    if (result.success) {
-      setSuccess("Authenticated! Redirecting to dashboard...");
-      setTimeout(() => router.push("/dashboard"), 800);
-    } else {
-      const msg = result.error === "Invalid login credentials"
-        ? "Invalid credentials. If you created your account with Google, please click 'Continue with Google' below."
-        : result.error || "Invalid credentials. Please try again.";
-      setError(msg);
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (signInError) {
+        setLoading(false);
+        const msg = signInError.message.toLowerCase();
+
+        // ── Email not confirmed ───────────────────────────────────────────
+        if (msg.includes("email not confirmed") || msg.includes("email_not_confirmed")) {
+          setUnverifiedEmail(email.trim());
+          setError("Please verify your email before logging in.");
+          return;
+        }
+
+        // ── Invalid credentials — distinguish "no user" vs "wrong password" ─
+        if (
+          msg.includes("invalid login credentials") ||
+          msg.includes("invalid credentials") ||
+          msg.includes("wrong password")
+        ) {
+          // Check if a profile exists for this email to refine the message
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("email", email.trim().toLowerCase())
+            .maybeSingle();
+
+          if (!profile) {
+            setError("No account found with this email address.");
+          } else {
+            setError("Incorrect password. Please try again.");
+          }
+          return;
+        }
+
+        if (msg.includes("user not found") || msg.includes("no user found")) {
+          setError("No account found with this email address.");
+          return;
+        }
+
+        // ── Network / generic errors ──────────────────────────────────────
+        setError(signInError.message);
+        return;
+      }
+
+      // ── Success ──────────────────────────────────────────────────────────
+      if (data.session && data.user) {
+        // Set auth cookie for Next.js middleware
+        if (typeof document !== "undefined") {
+          const secure = window.location.protocol === "https:";
+          document.cookie = `sb-auth-token=${data.session.access_token}; path=/; max-age=${
+            rememberMe ? 2592000 : 86400
+          }; SameSite=Lax;${secure ? " Secure;" : ""}`;
+        }
+
+        setSuccess("Authenticated! Redirecting to dashboard…");
+        const redirect = searchParams?.get("redirect") || "/dashboard";
+        setTimeout(() => router.push(redirect), 800);
+      } else {
+        setError("Failed to authenticate. Please try again.");
+        setLoading(false);
+      }
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Authentication failed. Please try again.";
+      setError(message);
       setLoading(false);
     }
   };
@@ -65,13 +141,24 @@ function LoginForm() {
         {error && (
           <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-start gap-2 animate-fade-in">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
+            <div className="flex flex-col gap-1.5">
+              <span>{error}</span>
+              {/* Deep-link to re-verify when email is unconfirmed */}
+              {unverifiedEmail && (
+                <Link
+                  href={`/auth/verify-email?email=${encodeURIComponent(unverifiedEmail)}`}
+                  className="text-indigo-400 hover:text-indigo-300 underline font-medium text-[11px]"
+                >
+                  Resend verification email →
+                </Link>
+              )}
+            </div>
           </div>
         )}
 
         {/* Success */}
         {success && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2 animate-fade-in">
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
             <span>{success}</span>
           </div>
@@ -79,9 +166,7 @@ function LoginForm() {
 
         {/* Email */}
         <div className="space-y-1.5">
-          <label htmlFor="login_email" className="section-label block">
-            Email address
-          </label>
+          <label htmlFor="login_email" className="section-label block">Email address</label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
             <input
@@ -126,11 +211,13 @@ function LoginForm() {
               onChange={(e) => setRememberMe(e.target.checked)}
               className="sr-only"
             />
-            <div className={`w-4 h-4 rounded border transition-all ${
-              rememberMe
-                ? "bg-indigo-500 border-indigo-500"
-                : "border-slate-600 bg-transparent group-hover:border-slate-400"
-            } flex items-center justify-center`}>
+            <div
+              className={`w-4 h-4 rounded border transition-all ${
+                rememberMe
+                  ? "bg-indigo-500 border-indigo-500"
+                  : "border-slate-600 bg-transparent group-hover:border-slate-400"
+              } flex items-center justify-center`}
+            >
               {rememberMe && (
                 <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -149,7 +236,7 @@ function LoginForm() {
           className="btn-primary w-full justify-center py-2.5 text-sm"
         >
           {loading ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
+            <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</>
           ) : (
             "Sign In"
           )}
@@ -162,10 +249,8 @@ function LoginForm() {
           <div className="flex-1 divider" />
         </div>
 
-        {/* Social SSO */}
         <SocialButtons onError={(err) => setError(err)} />
 
-        {/* Sign Up Link */}
         <p className="text-center text-xs text-slate-500 pt-2 border-t border-white/6">
           Don&apos;t have an account?{" "}
           <Link href="/auth/signup" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
@@ -179,11 +264,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );

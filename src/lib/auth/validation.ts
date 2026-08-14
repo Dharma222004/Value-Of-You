@@ -1,14 +1,10 @@
-import { PasswordStrength } from '@/types/auth';
+import { PasswordStrength } from "@/types/auth";
 
 export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export function validateEmail(email: string): string | null {
-  if (!email || !email.trim()) {
-    return "Email address is required.";
-  }
-  if (!EMAIL_REGEX.test(email.trim())) {
-    return "Please enter a valid email address (e.g., alex@company.com).";
-  }
+  if (!email || !email.trim()) return "Invalid email";
+  if (!EMAIL_REGEX.test(email.trim())) return "Invalid email";
   return null;
 }
 
@@ -29,27 +25,27 @@ export function evaluatePasswordStrength(password: string): PasswordStrength {
   if (checks.hasSpecial) count++;
 
   if (!password) {
-    return { score: 0, label: 'Weak', color: 'bg-slate-700', checks };
+    return { score: 0, label: "Weak", color: "bg-slate-700", checks };
   }
 
   switch (count) {
     case 1:
     case 2:
-      return { score: 25, label: 'Weak', color: 'bg-red-500', checks };
+      return { score: 25, label: "Weak", color: "bg-red-500", checks };
     case 3:
-      return { score: 50, label: 'Fair', color: 'bg-amber-500', checks };
+      return { score: 50, label: "Fair", color: "bg-amber-500", checks };
     case 4:
-      return { score: 75, label: 'Strong', color: 'bg-emerald-500', checks };
+      return { score: 75, label: "Strong", color: "bg-emerald-500", checks };
     case 5:
-      return { score: 100, label: 'Apex Tier', color: 'bg-cyan-400', checks };
+      return { score: 100, label: "Apex Tier", color: "bg-cyan-400", checks };
     default:
-      return { score: 0, label: 'Weak', color: 'bg-slate-700', checks };
+      return { score: 0, label: "Weak", color: "bg-slate-700", checks };
   }
 }
 
 export function validatePassword(password: string): string | null {
   if (!password) return "Password is required.";
-  if (password.length < 8) return "Password must be at least 8 characters long.";
+  if (password.length < 8) return "Password must contain at least 8 characters.";
   if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter.";
   if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter.";
   if (!/[0-9]/.test(password)) return "Password must contain at least one number.";
@@ -58,7 +54,7 @@ export function validatePassword(password: string): string | null {
 }
 
 export function validateOtp(otp: string): string | null {
-  if (otp.length < 6) return "Please enter the full 6-digit security code.";
-  if (!/^\d{6}$/.test(otp)) return "Security code must contain only numbers.";
+  if (!otp || otp.length !== 6) return "Enter your 6-digit verification code.";
+  if (!/^\d{6}$/.test(otp)) return "Verification code must contain only numbers.";
   return null;
 }
