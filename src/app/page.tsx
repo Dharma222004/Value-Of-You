@@ -24,7 +24,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#05070f] text-[#FFFFFF] relative overflow-hidden bg-institutional-grid">
+    <main className="min-h-screen bg-[#0a0f1d] text-[#FFFFFF] relative overflow-hidden bg-institutional-grid">
       <Header onStartAssessment={scrollToWizard} />
       <Hero onStartAssessment={scrollToWizard} />
       <WhyHumanCapital />

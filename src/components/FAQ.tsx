@@ -46,85 +46,104 @@ export default function FAQ() {
   );
 
   return (
-    <section id="faq" className="py-24 relative overflow-hidden bg-[#05070f]">
+    <section id="faq" className="py-24 relative overflow-hidden bg-[#0a0f1d]">
       
       {/* Background Accent */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-[#3b82f6]/04 blur-[140px] pointer-events-none rounded-full" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[320px] bg-[#3b82f6]/18 blur-[75px] pointer-events-none rounded-full" />
 
       <div className="grid-container max-w-[720px] relative z-10">
         
         {/* Section Header */}
-        <div className="text-center space-y-3 mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3b82f6]/10 border border-[#3b82f6]/20 text-[#3b82f6] text-xs font-mono font-semibold uppercase tracking-wider">
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "0px 0px -60px 0px" }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center space-y-3 mb-10"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/35 text-[#60a5fa] text-xs font-mono font-semibold uppercase tracking-wider shadow-[0_0_12px_rgba(59,130,246,0.2)]">
             <HelpCircle className="w-3.5 h-3.5" />
             <span>FREQUENTLY ASKED QUESTIONS</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
             Frequently Asked Questions
           </h2>
-          <p className="text-sm text-[#94a3b8] max-w-md mx-auto">
+          <p className="text-sm text-[#e2e8f0] max-w-md mx-auto">
             Everything you need to know about the platform and scoring engine.
           </p>
 
           {/* Search Bar */}
           <div className="pt-2 max-w-sm mx-auto relative">
-            <Search className="w-4 h-4 text-[#94a3b8] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#cbd5e1] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search questions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#090d1a] border border-white/[0.08] focus:border-[#3b82f6] rounded-xl text-xs text-white placeholder-[#94a3b8] outline-none transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#111a33] border border-white/[0.18] focus:border-[#3b82f6] rounded-xl text-xs text-white placeholder-[#cbd5e1] outline-none transition-colors shadow-inner"
             />
           </div>
-        </div>
+        </motion.div>
 
         {/* Compact Accordion Items */}
-        <div className="space-y-2.5">
+        <motion.div
+          className="space-y-2.5"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "0px 0px -60px 0px" }}
+          variants={{ show: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } } }}
+        >
           {filteredFaqs.length > 0 ? (
             filteredFaqs.map((faq, idx) => {
               const isOpen = openIndex === idx;
               return (
-                <div
+                <motion.div
                   key={faq.q}
-                  className="bg-[#090d1a] border border-white/[0.08] hover:border-white/[0.15] rounded-xl overflow-hidden transition-colors"
+                  variants={{
+                    hidden: { opacity: 0, y: 16 },
+                    show:   { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+                  }}
+                  className="bg-[#111a33] border border-white/[0.16] hover:border-white/[0.3] rounded-xl overflow-hidden transition-colors shadow-md"
                 >
                   <button
                     onClick={() => toggle(idx)}
                     className="w-full py-4 px-5 text-left flex items-center justify-between gap-4 focus:outline-none group"
                   >
-                    <span className="font-semibold text-sm text-white group-hover:text-[#3b82f6] transition-colors">
+                    <span className="font-semibold text-sm text-white group-hover:text-[#60a5fa] transition-colors">
                       {faq.q}
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#94a3b8] shrink-0 transition-transform duration-200 ${
-                        isOpen ? "rotate-180 text-[#3b82f6]" : ""
-                      }`}
-                    />
+                    <motion.span
+                      animate={{ rotate: isOpen ? 180 : 0 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <ChevronDown className={`w-4 h-4 ${isOpen ? "text-[#60a5fa]" : "text-[#cbd5e1]"} shrink-0`} />
+                    </motion.span>
                   </button>
 
                   <AnimatePresence>
                     {isOpen && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="px-5 pb-4 text-xs sm:text-sm text-[#94a3b8] leading-relaxed border-t border-white/[0.06] pt-3"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden"
                       >
-                        {faq.a}
+                        <div className="px-5 pb-4 pt-1 text-xs text-[#e2e8f0] leading-relaxed border-t border-white/[0.08]">
+                          {faq.a}
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+                </motion.div>
               );
             })
           ) : (
-            <div className="text-center py-6 text-xs font-mono text-[#94a3b8]">
-              No questions found matching &quot;{searchQuery}&quot;.
+            <div className="text-center py-8 text-xs text-[#cbd5e1] font-mono">
+              No matching questions found.
             </div>
           )}
-        </div>
+        </motion.div>
 
       </div>
     </section>

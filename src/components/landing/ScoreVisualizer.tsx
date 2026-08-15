@@ -70,50 +70,50 @@ export const ScoreVisualizer: React.FC = () => {
   const radarPolygonPoints = `${ptSkills} ${ptFinance} ${ptBehavior} ${ptCareer} ${ptHealth}`;
 
   return (
-    <section id="visualizer" className="py-24 sm:py-32 relative bg-[#070a16] text-white">
+    <section id="visualizer" className="py-24 sm:py-32 relative bg-[#0a0f1d] text-white">
       
       {/* Ambient Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-[#3b82f6]/05 blur-[160px] pointer-events-none rounded-full" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-[#3b82f6]/20 blur-[75px] pointer-events-none rounded-full" />
 
       <div className="grid-container relative z-10 space-y-10">
 
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#3b82f6]/10 border border-[#3b82f6]/20 text-[#60a5fa] text-xs font-mono font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/40 text-[#60a5fa] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.25)]">
             <Cpu className="w-3.5 h-3.5 text-[#06b6d4]" />
             <span>HUMAN VALUE SIMULATOR</span>
           </div>
-          <h2 className="section-headline">
+          <h2 className="section-headline text-white">
             Explore Your{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] via-[#06b6d4] to-[#10b981]">
               Human Value Score
             </span>
           </h2>
-          <p className="body-text mx-auto text-[#94a3b8]">
+          <p className="body-text mx-auto text-[#e2e8f0]">
             Adjust the sliders below to see how changes across dimensions influence your overall score in real time.
           </p>
         </div>
 
         {/* Showcase Glass Terminal Container */}
-        <div className="card-surface p-6 sm:p-8 space-y-8 border border-white/[0.08]">
+        <div className="card-surface p-6 sm:p-8 space-y-8 bg-[#111a33] border border-white/[0.18]">
 
           {/* Header Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.12] pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-[#3b82f6]/10 border border-[#3b82f6]/20 text-[#3b82f6]">
+              <div className="p-2 rounded-xl bg-[#3b82f6]/20 border border-[#3b82f6]/40 text-[#3b82f6]">
                 <Sliders className="w-4 h-4" />
               </div>
               <div>
                 <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wide">
                   INTERACTIVE SCORING ENGINE
                 </h3>
-                <p className="text-xs text-[#94a3b8]">Real-time parameter simulation</p>
+                <p className="text-xs text-[#cbd5e1]">Real-time parameter simulation</p>
               </div>
             </div>
 
             <button
               onClick={resetScores}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#090d1a] hover:bg-[#111827] border border-white/[0.08] text-xs font-mono text-[#94a3b8] hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#182447] hover:bg-[#202e5a] border border-white/[0.14] text-xs font-mono text-[#cbd5e1] hover:text-white transition-colors shadow-sm"
             >
               <RefreshCw className="w-3 h-3" />
               <span>Reset</span>
@@ -127,12 +127,12 @@ export const ScoreVisualizer: React.FC = () => {
             <div className="lg:col-span-7 space-y-4">
 
               {/* Slider 1: Education & Career Growth */}
-              <div className="space-y-2 bg-[#090d1a] p-4 rounded-xl border border-white/[0.07] hover:border-[#3b82f6]/30 transition-colors">
+              <div className="space-y-2 bg-[#182447] p-4 rounded-xl border border-white/[0.12] hover:border-[#3b82f6]/50 transition-colors shadow-inner">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-white">
                     Education & Career Growth
                   </span>
-                  <span className="text-xs font-mono font-bold text-[#60a5fa] bg-[#3b82f6]/10 px-2 py-0.5 rounded border border-[#3b82f6]/20">
+                  <span className="text-xs font-mono font-bold text-[#60a5fa] bg-[#3b82f6]/20 px-2 py-0.5 rounded border border-[#3b82f6]/35">
                     {scores.career} / 100
                   </span>
                 </div>
@@ -142,21 +142,21 @@ export const ScoreVisualizer: React.FC = () => {
                   max="100"
                   value={scores.career}
                   onChange={(e) => handleSlider("career", parseInt(e.target.value))}
-                  className="w-full cursor-pointer accent-[#3b82f6] h-1.5 bg-[#050814] rounded-lg"
+                  className="w-full cursor-pointer accent-[#3b82f6] h-1.5 bg-[#0a0f1d] rounded-lg"
                 />
-                <div className="flex justify-between text-[10px] font-mono text-[#64748b]">
+                <div className="flex justify-between text-[10px] font-mono text-[#cbd5e1]">
                   <span>Limited opportunities ◀</span>
                   <span>▶ High career trajectory</span>
                 </div>
               </div>
 
               {/* Slider 2: Financial Well-Being */}
-              <div className="space-y-2 bg-[#090d1a] p-4 rounded-xl border border-white/[0.07] hover:border-[#10b981]/30 transition-colors">
+              <div className="space-y-2 bg-[#182447] p-4 rounded-xl border border-white/[0.12] hover:border-[#10b981]/50 transition-colors shadow-inner">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-white">
                     Financial Well-Being
                   </span>
-                  <span className="text-xs font-mono font-bold text-[#34d399] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20">
+                  <span className="text-xs font-mono font-bold text-[#34d399] bg-[#10b981]/20 px-2 py-0.5 rounded border border-[#10b981]/35">
                     {scores.finance} / 100
                   </span>
                 </div>
@@ -166,21 +166,21 @@ export const ScoreVisualizer: React.FC = () => {
                   max="100"
                   value={scores.finance}
                   onChange={(e) => handleSlider("finance", parseInt(e.target.value))}
-                  className="w-full cursor-pointer accent-[#10b981] h-1.5 bg-[#050814] rounded-lg"
+                  className="w-full cursor-pointer accent-[#10b981] h-1.5 bg-[#0a0f1d] rounded-lg"
                 />
-                <div className="flex justify-between text-[10px] font-mono text-[#64748b]">
+                <div className="flex justify-between text-[10px] font-mono text-[#cbd5e1]">
                   <span>Financial stress ◀</span>
                   <span>▶ Financial independence</span>
                 </div>
               </div>
 
               {/* Slider 3: Skills & Employability */}
-              <div className="space-y-2 bg-[#090d1a] p-4 rounded-xl border border-white/[0.07] hover:border-[#06b6d4]/30 transition-colors">
+              <div className="space-y-2 bg-[#182447] p-4 rounded-xl border border-white/[0.12] hover:border-[#06b6d4]/50 transition-colors shadow-inner">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-white">
                     Skills & Employability
                   </span>
-                  <span className="text-xs font-mono font-bold text-[#22d3ee] bg-[#06b6d4]/10 px-2 py-0.5 rounded border border-[#06b6d4]/20">
+                  <span className="text-xs font-mono font-bold text-[#22d3ee] bg-[#06b6d4]/20 px-2 py-0.5 rounded border border-[#06b6d4]/35">
                     {scores.skills} / 100
                   </span>
                 </div>
@@ -190,21 +190,21 @@ export const ScoreVisualizer: React.FC = () => {
                   max="100"
                   value={scores.skills}
                   onChange={(e) => handleSlider("skills", parseInt(e.target.value))}
-                  className="w-full cursor-pointer accent-[#06b6d4] h-1.5 bg-[#050814] rounded-lg"
+                  className="w-full cursor-pointer accent-[#06b6d4] h-1.5 bg-[#0a0f1d] rounded-lg"
                 />
-                <div className="flex justify-between text-[10px] font-mono text-[#64748b]">
+                <div className="flex justify-between text-[10px] font-mono text-[#cbd5e1]">
                   <span>Basic skills ◀</span>
                   <span>▶ Industry-ready expertise</span>
                 </div>
               </div>
 
               {/* Slider 4: Health & Wellness */}
-              <div className="space-y-2 bg-[#090d1a] p-4 rounded-xl border border-white/[0.07] hover:border-[#f59e0b]/30 transition-colors">
+              <div className="space-y-2 bg-[#182447] p-4 rounded-xl border border-white/[0.12] hover:border-[#f59e0b]/50 transition-colors shadow-inner">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-white">
                     Health & Wellness
                   </span>
-                  <span className="text-xs font-mono font-bold text-[#fbbf24] bg-[#f59e0b]/10 px-2 py-0.5 rounded border border-[#f59e0b]/20">
+                  <span className="text-xs font-mono font-bold text-[#fbbf24] bg-[#f59e0b]/20 px-2 py-0.5 rounded border border-[#f59e0b]/35">
                     {scores.health} / 100
                   </span>
                 </div>
@@ -214,21 +214,21 @@ export const ScoreVisualizer: React.FC = () => {
                   max="100"
                   value={scores.health}
                   onChange={(e) => handleSlider("health", parseInt(e.target.value))}
-                  className="w-full cursor-pointer accent-[#f59e0b] h-1.5 bg-[#050814] rounded-lg"
+                  className="w-full cursor-pointer accent-[#f59e0b] h-1.5 bg-[#0a0f1d] rounded-lg"
                 />
-                <div className="flex justify-between text-[10px] font-mono text-[#64748b]">
+                <div className="flex justify-between text-[10px] font-mono text-[#cbd5e1]">
                   <span>Low stamina ◀</span>
                   <span>▶ Peak wellness</span>
                 </div>
               </div>
 
               {/* Slider 5: Behavioral Intelligence */}
-              <div className="space-y-2 bg-[#090d1a] p-4 rounded-xl border border-white/[0.07] hover:border-purple-400/30 transition-colors">
+              <div className="space-y-2 bg-[#182447] p-4 rounded-xl border border-white/[0.12] hover:border-purple-400/50 transition-colors shadow-inner">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-white">
                     Behavioral Intelligence
                   </span>
-                  <span className="text-xs font-mono font-bold text-[#a78bfa] bg-purple-400/10 px-2 py-0.5 rounded border border-purple-400/20">
+                  <span className="text-xs font-mono font-bold text-[#a78bfa] bg-purple-400/20 px-2 py-0.5 rounded border border-purple-400/35">
                     {scores.behavior} / 100
                   </span>
                 </div>
@@ -238,9 +238,9 @@ export const ScoreVisualizer: React.FC = () => {
                   max="100"
                   value={scores.behavior}
                   onChange={(e) => handleSlider("behavior", parseInt(e.target.value))}
-                  className="w-full cursor-pointer accent-purple-400 h-1.5 bg-[#050814] rounded-lg"
+                  className="w-full cursor-pointer accent-purple-400 h-1.5 bg-[#0a0f1d] rounded-lg"
                 />
-                <div className="flex justify-between text-[10px] font-mono text-[#64748b]">
+                <div className="flex justify-between text-[10px] font-mono text-[#cbd5e1]">
                   <span>Developing habits ◀</span>
                   <span>▶ High decision intelligence</span>
                 </div>
@@ -249,19 +249,19 @@ export const ScoreVisualizer: React.FC = () => {
             </div>
 
             {/* Streamlined Live Score Card Right */}
-            <div className="lg:col-span-5 bg-[#090d1a] p-6 rounded-2xl border border-[#3b82f6]/30 space-y-5 shadow-2xl shadow-[#3b82f6]/10">
+            <div className="lg:col-span-5 bg-[#182447] p-6 sm:p-7 rounded-2xl border border-[#3b82f6]/50 space-y-5 shadow-2xl shadow-[#3b82f6]/20">
               
               {/* Header: Score + Stage Badge */}
-              <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+              <div className="flex items-center justify-between border-b border-white/[0.12] pb-4">
                 <div>
-                  <span className="text-[10px] font-mono text-[#94a3b8] uppercase tracking-wider block font-bold">
+                  <span className="text-[10px] font-mono text-[#cbd5e1] uppercase tracking-wider block font-bold">
                     HUMAN VALUE SCORE
                   </span>
                   <div className="flex items-baseline gap-1 font-mono">
                     <span className="text-5xl font-black text-white tracking-tight">
                       {totalScore}
                     </span>
-                    <span className="text-sm font-semibold text-[#64748b]">/100</span>
+                    <span className="text-sm font-semibold text-[#cbd5e1]">/100</span>
                   </div>
                 </div>
 

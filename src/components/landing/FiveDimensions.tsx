@@ -112,43 +112,62 @@ export const FiveDimensions: React.FC = () => {
   const ActiveIcon = active.icon;
 
   return (
-    <section id="dimensions" className="py-32 relative bg-[#090d1a]">
-      
-      {/* Radial Background Accent */}
-      <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-[#3b82f6]/04 blur-[140px] pointer-events-none rounded-full" />
+    <section id="dimensions" className="py-24 sm:py-32 relative bg-[#0a0f1d] text-white">
+
+      {/* Ambient background glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-radial from-[#3b82f6]/20 via-[#06b6d4]/10 to-transparent blur-[75px] pointer-events-none rounded-full" />
 
       <div className="grid-container relative z-10">
 
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#06b6d4]/10 border border-[#06b6d4]/20 text-[#06b6d4] text-xs font-mono font-semibold uppercase tracking-wider">
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "0px 0px -60px 0px" }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center max-w-3xl mx-auto space-y-4 mb-16"
+        >
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#06b6d4]/15 border border-[#06b6d4]/35 text-[#06b6d4] text-xs font-mono font-semibold uppercase tracking-wider shadow-[0_0_12px_rgba(6,182,212,0.2)]">
             <Layers className="w-3.5 h-3.5" />
             <span>HUMAN VALUE FRAMEWORK</span>
           </div>
-          <h2 className="section-headline">
+          <h2 className="section-headline text-white">
             The 5 Core Dimensions of <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] via-[#06b6d4] to-[#10b981]">
               Human Value
             </span>
           </h2>
-          <p className="body-text mx-auto">
+          <p className="body-text mx-auto text-[#e2e8f0]">
             A multidimensional framework that evaluates education, financial well-being, skills, health, and behavioral intelligence to create a comprehensive Human Value Score.
           </p>
-        </div>
+        </motion.div>
 
         {/* Interactive Cards Nav Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "0px 0px -60px 0px" }}
+          variants={{ show: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } } }}
+        >
           {dimensions.map((dim, idx) => {
             const DimIcon = dim.icon;
             const isActive = activeTab === idx;
             return (
-              <button
+              <motion.button
                 key={dim.id}
                 onClick={() => setActiveTab(idx)}
+                variants={{
+                  hidden: { opacity: 0, y: 24 },
+                  show:   { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } },
+                }}
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.25 }}
                 className={`p-5 rounded-2xl text-left border transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${
                   isActive
-                    ? "bg-[#0f1526] border-[#3b82f6] shadow-lg shadow-[#3b82f6]/10"
-                    : "card-surface opacity-75 hover:opacity-100"
+                    ? "bg-[#111a33] border-[#3b82f6] shadow-xl shadow-[#3b82f6]/20 ring-1 ring-[#3b82f6]/40"
+                    : "bg-[#111a33]/90 border-white/[0.14] opacity-90 hover:opacity-100 hover:border-white/[0.3] hover:bg-[#152042]"
                 }`}
               >
                 {isActive && (
@@ -157,12 +176,12 @@ export const FiveDimensions: React.FC = () => {
 
                 <div className="flex items-center justify-between mb-3">
                   <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center border border-white/[0.1]"
-                    style={{ backgroundColor: `${dim.color}15`, color: dim.color }}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center border border-white/[0.14] shadow-inner"
+                    style={{ backgroundColor: `${dim.color}25`, color: dim.color }}
                   >
                     <DimIcon className="w-4.5 h-4.5" />
                   </div>
-                  <span className="text-[11px] font-mono text-[#94a3b8] font-semibold">
+                  <span className="text-[11px] font-mono text-[#cbd5e1] font-semibold">
                     {dim.scoreWeight}
                   </span>
                 </div>
@@ -171,20 +190,20 @@ export const FiveDimensions: React.FC = () => {
                   <span className="text-sm font-bold text-white block leading-snug">
                     {dim.shortName}
                   </span>
-                  <p className="text-[11px] text-[#94a3b8] leading-relaxed line-clamp-3">
+                  <p className="text-[11px] text-[#cbd5e1] leading-relaxed line-clamp-3">
                     {dim.shortDesc}
                   </p>
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.06]">
-                    <span className="text-[10px] font-mono text-[#94a3b8]">INDEX</span>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.1]">
+                    <span className="text-[10px] font-mono text-[#cbd5e1]">INDEX</span>
                     <span className="text-xs font-mono font-bold" style={{ color: dim.color }}>
                       {dim.sampleScore}/100
                     </span>
                   </div>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* Active Detail Panel */}
         <AnimatePresence mode="wait">
@@ -194,35 +213,35 @@ export const FiveDimensions: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25 }}
-            className="card-surface p-8 sm:p-10 grid lg:grid-cols-12 gap-8 items-center"
+            className="card-surface p-8 sm:p-10 grid lg:grid-cols-12 gap-8 items-center bg-[#111a33] border border-white/[0.18]"
           >
             {/* Left Column: Description & Verified Metrics */}
             <div className="lg:col-span-7 space-y-6">
               <div className="flex items-center gap-3">
-                <span className="text-[10px] font-mono uppercase font-bold tracking-widest px-3 py-1 rounded-md bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/20">
+                <span className="text-[10px] font-mono uppercase font-bold tracking-widest px-3 py-1 rounded-md bg-[#3b82f6]/15 text-[#60a5fa] border border-[#3b82f6]/35 shadow-[0_0_10px_rgba(59,130,246,0.15)]">
                   {active.badge}
                 </span>
-                <span className="text-xs font-mono text-[#94a3b8] font-semibold">{active.scoreWeight}</span>
+                <span className="text-xs font-mono text-[#cbd5e1] font-semibold">{active.scoreWeight}</span>
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-[#05070f] border border-white/[0.1]" style={{ color: active.color }}>
+                <div className="p-2.5 rounded-xl bg-[#0a0f1d] border border-white/[0.16] shadow-inner" style={{ color: active.color }}>
                   <ActiveIcon className="w-6 h-6" />
                 </div>
                 <span>{active.title}</span>
               </h3>
 
-              <p className="text-[#94a3b8] text-base leading-relaxed">{active.description}</p>
+              <p className="text-[#e2e8f0] text-base leading-relaxed">{active.description}</p>
 
               <div className="space-y-3 pt-2">
-                <span className="text-xs font-mono text-[#94a3b8] uppercase tracking-wider block font-semibold">
+                <span className="text-xs font-mono text-[#cbd5e1] uppercase tracking-wider block font-semibold">
                   Audited Telemetry Metrics:
                 </span>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {active.metrics.map((metric, i) => (
                     <div
                       key={i}
-                      className="flex items-start gap-2.5 p-3 rounded-xl bg-[#090d1a] border border-white/[0.08] text-xs font-medium text-white"
+                      className="flex items-start gap-2.5 p-3 rounded-xl bg-[#182447] border border-white/[0.14] text-xs font-medium text-white shadow-inner"
                     >
                       <CheckCircle2 className="w-4 h-4 text-[#10b981] shrink-0 mt-0.5" />
                       <span>{metric}</span>
@@ -233,22 +252,22 @@ export const FiveDimensions: React.FC = () => {
             </div>
 
             {/* Right Column: Score Gauge & Summary */}
-            <div className="lg:col-span-5 bg-[#090d1a] rounded-2xl p-8 border border-white/[0.08] flex flex-col items-center justify-center text-center space-y-5">
-              <span className="text-xs font-mono text-[#94a3b8] uppercase tracking-wider">DIMENSION BENCHMARK INDEX</span>
+            <div className="lg:col-span-5 bg-[#182447] rounded-2xl p-8 border border-white/[0.14] flex flex-col items-center justify-center text-center space-y-5 shadow-2xl">
+              <span className="text-xs font-mono text-[#cbd5e1] uppercase tracking-wider font-semibold">DIMENSION BENCHMARK INDEX</span>
               
-              <div className="relative w-36 h-36 rounded-full flex flex-col items-center justify-center border-4 border-white/[0.08]" style={{ borderColor: `${active.color}30` }}>
+              <div className="relative w-36 h-36 rounded-full flex flex-col items-center justify-center border-4 border-white/[0.14]" style={{ borderColor: `${active.color}50` }}>
                 <div className="text-4xl font-black font-mono text-white tracking-tight">
                   {active.sampleScore}
                 </div>
-                <span className="text-xs font-mono text-[#94a3b8]">/100</span>
+                <span className="text-xs font-mono text-[#cbd5e1]">/100</span>
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#10b981] bg-[#10b981]/10 px-3 py-1 rounded-full border border-[#10b981]/20">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#10b981] bg-[#10b981]/20 px-3 py-1 rounded-full border border-[#10b981]/35 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
                 <TrendingUp className="w-4 h-4" />
                 <span>Top Tier Performance</span>
               </div>
 
-              <p className="text-xs text-[#94a3b8] max-w-xs leading-relaxed">
+              <p className="text-xs text-[#cbd5e1] max-w-xs leading-relaxed">
                 Audited in real-time by the Human Value Engine using neural cohort benchmarks.
               </p>
             </div>

@@ -32,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-20 flex items-center ${
         scrolled
-          ? "bg-[#090d1a]/80 backdrop-blur-xl border-b border-white/[0.08] shadow-lg shadow-black/20"
+          ? "bg-[#0a0f1d]/95 backdrop-blur-md border-b border-white/[0.16] shadow-xl shadow-black/40"
           : "bg-transparent border-b border-transparent"
       }`}
     >
@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
           
           {/* Logo Left */}
           <Link href="/" className="flex items-center gap-3 group cursor-pointer">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0f1526] border border-[#3b82f6]/30 group-hover:border-[#3b82f6]/60 transition-colors shadow-[0_0_12px_rgba(59,130,246,0.15)]">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#111a33] border border-[#3b82f6]/50 group-hover:border-[#3b82f6]/80 transition-colors shadow-[0_0_15px_rgba(59,130,246,0.3)]">
               <Terminal className="w-5 h-5 text-[#3b82f6] group-hover:text-[#06b6d4] transition-colors" />
             </div>
             <span className="font-bold text-lg text-white tracking-tight">
@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
               <a
                 key={item.href}
                 href={item.href}
-                className="nav-link text-xs font-mono font-medium hover:text-white transition-colors"
+                className="nav-link text-xs font-mono font-medium text-[#cbd5e1] hover:text-white transition-colors"
               >
                 {item.label}
               </a>
@@ -66,14 +66,14 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
           <div className="hidden sm:flex items-center gap-4">
             <Link
               href="/auth/login"
-              className="text-sm font-medium text-[#94a3b8] hover:text-white transition-colors px-3 py-2"
+              className="text-sm font-medium text-[#cbd5e1] hover:text-white transition-colors px-3 py-2"
             >
               Login
             </Link>
 
             <Link
               href="/auth/signup"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#3b82f6] hover:bg-[#2563eb] active:scale-[0.98] transition-all shadow-md shadow-[#3b82f6]/20"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#2563eb] hover:bg-[#1d4ed8] active:scale-[0.98] transition-all shadow-md shadow-[#3b82f6]/30 border border-[#3b82f6]/40"
             >
               <span>Sign Up</span>
               <ArrowRight className="w-4 h-4" />
@@ -84,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
           <div className="flex lg:hidden items-center">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl bg-[#0f1526] border border-white/[0.08] text-[#94a3b8] hover:text-white transition-colors"
+              className="p-2 rounded-xl bg-[#0d1428] border border-white/[0.12] text-[#cbd5e1] hover:text-white transition-colors"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -96,32 +96,32 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-20 bg-[#090d1a]/95 border-b border-white/[0.08] backdrop-blur-2xl px-6 py-6 space-y-4 shadow-2xl">
+        <div className="lg:hidden fixed inset-x-0 top-20 bg-[#060913]/98 border-b border-white/[0.12] backdrop-blur-xl px-6 py-6 space-y-4 shadow-2xl">
           <nav className="flex flex-col space-y-3">
             {navItems.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg text-sm text-[#94a3b8] hover:bg-[#0f1526] hover:text-white transition-colors"
+                className="px-3 py-2 rounded-lg text-sm text-[#cbd5e1] hover:bg-[#0d1428] hover:text-white transition-colors"
               >
                 {item.label}
               </a>
             ))}
           </nav>
 
-          <div className="pt-4 border-t border-white/[0.08] flex items-center gap-3">
+          <div className="pt-4 border-t border-white/[0.1] flex items-center gap-3">
             <Link
               href="/auth/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 py-2.5 rounded-xl border border-white/[0.08] bg-[#0f1526] text-center text-sm font-medium text-[#94a3b8]"
+              className="flex-1 py-2.5 rounded-xl border border-white/[0.12] bg-[#0d1428] text-center text-sm font-medium text-[#cbd5e1]"
             >
               Login
             </Link>
             <Link
               href="/auth/signup"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 py-2.5 rounded-xl bg-[#3b82f6] text-center text-sm font-semibold text-white shadow-md block"
+              className="flex-1 py-2.5 rounded-xl bg-[#2563eb] text-center text-sm font-semibold text-white shadow-md block"
             >
               Sign Up
             </Link>

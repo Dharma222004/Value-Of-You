@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./motion.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { TelemetryProvider } from "@/components/providers/TelemetryProvider";
 import { ThemeProvider } from "@/context/ThemeContext";

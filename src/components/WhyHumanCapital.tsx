@@ -142,21 +142,21 @@ export default function WhyHumanCapital() {
   };
 
   return (
-    <section id="about" className="py-28 sm:py-36 relative overflow-hidden bg-[#04060e] text-white">
+    <section id="about" className="py-28 sm:py-36 relative overflow-hidden bg-[#0a0f1d] text-white">
 
       {/* Subtle Background Ambient Radial Glows */}
       <motion.div
         animate={{
           scale: [1, 1.08, 1],
-          opacity: [0.08, 0.14, 0.08],
+          opacity: [0.18, 0.28, 0.18],
         }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[520px] bg-radial from-[#3b82f6]/15 via-[#06b6d4]/05 to-transparent blur-[140px] pointer-events-none rounded-full"
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[480px] bg-radial from-[#3b82f6]/24 via-[#06b6d4]/12 to-transparent blur-[80px] pointer-events-none rounded-full"
       />
-      <div className="absolute bottom-10 right-0 w-[400px] h-[400px] bg-[#10b981]/05 blur-[120px] pointer-events-none rounded-full" />
+      <div className="absolute bottom-10 right-0 w-[380px] h-[380px] bg-[#10b981]/15 blur-[70px] pointer-events-none rounded-full" />
 
       {/* Grid Pattern overlay */}
-      <div className="absolute inset-0 bg-institutional-grid opacity-60 pointer-events-none" />
+      <div className="absolute inset-0 bg-institutional-grid opacity-75 pointer-events-none" />
 
       <div className="grid-container relative z-10 space-y-16">
 
@@ -169,20 +169,20 @@ export default function WhyHumanCapital() {
           className="text-center max-w-3xl mx-auto space-y-4"
         >
           <motion.div variants={itemVariants}>
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#3b82f6]/10 border border-[#3b82f6]/25 text-[#60a5fa] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/40 text-[#60a5fa] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.25)]">
               <Target className="w-3.5 h-3.5 text-[#06b6d4] animate-pulse" />
               <span>THE HUMAN VALUE FRAMEWORK</span>
             </span>
           </motion.div>
 
-          <motion.h2 variants={itemVariants} className="section-headline">
+          <motion.h2 variants={itemVariants} className="section-headline text-white">
             Why Human Capital <br className="hidden sm:inline" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] via-[#06b6d4] to-[#10b981] drop-shadow-sm">
               Redefines Financial Intelligence
             </span>
           </motion.h2>
 
-          <motion.p variants={itemVariants} className="body-text mx-auto text-[#94a3b8] text-base sm:text-lg">
+          <motion.p variants={itemVariants} className="body-text mx-auto text-[#e2e8f0] text-base sm:text-lg">
             Stop measuring what you've accumulated. Start measuring the potential that creates everything you'll become.
           </motion.p>
         </motion.div>
@@ -197,12 +197,12 @@ export default function WhyHumanCapital() {
             viewport={{ once: true }}
             whileHover={{ y: -6, transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] } }}
             transition={{ duration: 0.5 }}
-            className="relative rounded-2xl p-7 sm:p-8 bg-[#090d1a]/70 border border-white/[0.08] flex flex-col justify-between space-y-6 hover:border-[#f59e0b]/30 transition-colors duration-300 group shadow-xl"
+            className="relative rounded-2xl p-7 sm:p-8 bg-[#111a33] border border-white/[0.16] flex flex-col justify-between space-y-6 hover:border-[#f59e0b]/50 transition-colors duration-300 group shadow-xl"
           >
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-[#f59e0b]/10 border border-[#f59e0b]/20 flex items-center justify-center text-[#f59e0b] shadow-inner group-hover:scale-105 transition-transform">
+                  <div className="w-11 h-11 rounded-xl bg-[#f59e0b]/15 border border-[#f59e0b]/35 flex items-center justify-center text-[#f59e0b] shadow-inner group-hover:scale-105 transition-transform">
                     <AlertTriangle className="w-5.5 h-5.5" />
                   </div>
                   <div>
@@ -215,15 +215,15 @@ export default function WhyHumanCapital() {
               </div>
 
               {/* Penalty Highlight Box */}
-              <div className="p-3.5 rounded-xl bg-[#181105]/60 border border-[#f59e0b]/20 flex items-center justify-between font-mono text-xs">
-                <span className="text-[#d97706] font-medium flex items-center gap-1.5">
+              <div className="p-3.5 rounded-xl bg-[#1f1606]/80 border border-[#f59e0b]/40 flex items-center justify-between font-mono text-xs">
+                <span className="text-[#fbbf24] font-medium flex items-center gap-1.5">
                   <BarChart3 className="w-3.5 h-3.5 text-[#f59e0b]" />
                   Future Value Visibility:
                 </span>
-                <span className="text-[#f59e0b] font-bold bg-[#f59e0b]/10 px-2.5 py-0.5 rounded border border-[#f59e0b]/20">0% (Static)</span>
+                <span className="text-[#f59e0b] font-bold bg-[#f59e0b]/15 px-2.5 py-0.5 rounded border border-[#f59e0b]/30">0% (Static)</span>
               </div>
 
-              <ul className="space-y-4 text-sm text-[#94a3b8]">
+              <ul className="space-y-4 text-sm text-[#e2e8f0]">
                 <li className="flex items-start gap-3">
                   <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0 mt-1.5 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
                   <span className="leading-relaxed">Only measures existing liquid bank balances and static real estate equity.</span>
@@ -247,7 +247,7 @@ export default function WhyHumanCapital() {
             viewport={{ once: true }}
             whileHover={{ y: -6, scale: 1.01, transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] } }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="relative rounded-2xl p-7 sm:p-8 bg-[#0b1021]/90 border border-[#3b82f6]/40 flex flex-col justify-between space-y-6 shadow-2xl shadow-[#3b82f6]/10 hover:border-[#06b6d4]/70 transition-all duration-300 group"
+            className="relative rounded-2xl p-7 sm:p-8 bg-[#111a33] border border-[#3b82f6]/50 flex flex-col justify-between space-y-6 shadow-2xl shadow-[#3b82f6]/20 hover:border-[#06b6d4]/90 transition-all duration-300 group"
           >
             {/* Animated Gradient Top Highlight Bar */}
             <motion.div
@@ -259,7 +259,7 @@ export default function WhyHumanCapital() {
             />
 
             {/* Glowing backdrop mesh */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b82f6]/20 to-[#10b981]/20 rounded-2xl blur-lg opacity-40 group-hover:opacity-90 transition-opacity pointer-events-none -z-10" />
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b82f6]/20 to-[#10b981]/20 rounded-2xl blur-lg opacity-50 group-hover:opacity-90 transition-opacity pointer-events-none -z-10" />
 
             <div className="space-y-6">
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -280,7 +280,7 @@ export default function WhyHumanCapital() {
               </div>
 
               {/* Reward Highlight Box */}
-              <div className="p-3.5 rounded-xl bg-[#061e1a]/70 border border-[#10b981]/30 flex items-center justify-between font-mono text-xs shadow-inner">
+              <div className="p-3.5 rounded-xl bg-[#061e1a]/80 border border-[#10b981]/40 flex items-center justify-between font-mono text-xs shadow-inner">
                 <span className="text-[#34d399] font-medium flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5 text-[#10b981]" />
                   Future Value Visibility:
@@ -290,22 +290,22 @@ export default function WhyHumanCapital() {
 
               <ul className="space-y-4 text-sm text-white">
                 <li className="flex items-start gap-3">
-                  <div className="p-1 rounded bg-[#06b6d4]/10 border border-[#06b6d4]/20 text-[#06b6d4] shrink-0 mt-0.5 shadow-[0_0_8px_rgba(6,182,212,0.3)]">
+                  <div className="p-1 rounded bg-[#06b6d4]/15 border border-[#06b6d4]/30 text-[#06b6d4] shrink-0 mt-0.5 shadow-[0_0_8px_rgba(6,182,212,0.3)]">
                     <Sparkles className="w-3.5 h-3.5" />
                   </div>
-                  <span className="leading-relaxed">Quantifies future earning and personal growth trajectory using multidimensional models.</span>
+                  <span className="leading-relaxed text-[#f1f5f9]">Quantifies future earning and personal growth trajectory using multidimensional models.</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="p-1 rounded bg-[#06b6d4]/10 border border-[#06b6d4]/20 text-[#06b6d4] shrink-0 mt-0.5 shadow-[0_0_8px_rgba(6,182,212,0.3)]">
+                  <div className="p-1 rounded bg-[#06b6d4]/15 border border-[#06b6d4]/30 text-[#06b6d4] shrink-0 mt-0.5 shadow-[0_0_8px_rgba(6,182,212,0.3)]">
                     <Sparkles className="w-3.5 h-3.5" />
                   </div>
-                  <span className="leading-relaxed">Maps high-value skill stacks and provides personalized roadmap recommendations.</span>
+                  <span className="leading-relaxed text-[#f1f5f9]">Maps high-value skill stacks and provides personalized roadmap recommendations.</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="p-1 rounded bg-[#06b6d4]/10 border border-[#06b6d4]/20 text-[#06b6d4] shrink-0 mt-0.5 shadow-[0_0_8px_rgba(6,182,212,0.3)]">
+                  <div className="p-1 rounded bg-[#06b6d4]/15 border border-[#06b6d4]/30 text-[#06b6d4] shrink-0 mt-0.5 shadow-[0_0_8px_rgba(6,182,212,0.3)]">
                     <Sparkles className="w-3.5 h-3.5" />
                   </div>
-                  <span className="leading-relaxed">Integrates health stamina, financial literacy, and behavioral decision intelligence.</span>
+                  <span className="leading-relaxed text-[#f1f5f9]">Integrates health stamina, financial literacy, and behavioral decision intelligence.</span>
                 </li>
               </ul>
             </div>
@@ -320,7 +320,7 @@ export default function WhyHumanCapital() {
               <Cpu className="w-5 h-5 text-[#3b82f6]" />
               <span>THE 5 CAPITAL DIMENSIONS</span>
             </h3>
-            <span className="text-xs font-mono text-[#64748b] hidden sm:block">AI-POWERED HOLISTIC TELEMETRY</span>
+            <span className="text-xs font-mono text-[#cbd5e1] hidden sm:block">AI-POWERED HOLISTIC TELEMETRY</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5">
@@ -334,14 +334,14 @@ export default function WhyHumanCapital() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: idx * 0.08 }}
                   whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                  className={`relative rounded-2xl p-6 sm:p-7 border transition-all duration-300 group flex flex-col justify-between space-y-5 overflow-hidden bg-[#0a0f22]/90 backdrop-blur-xl border-white/[0.08] hover:border-white/[0.22] hover:bg-[#0d142d] shadow-xl hover:shadow-2xl ${b.colSpan}`}
+                  className={`relative rounded-2xl p-6 sm:p-7 border transition-all duration-300 group flex flex-col justify-between space-y-5 overflow-hidden bg-[#111a33] border-white/[0.16] hover:border-white/[0.32] hover:bg-[#152042] shadow-xl hover:shadow-2xl ${b.colSpan}`}
                 >
                   {/* Subtle top hover accent glow */}
                   <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${b.progressColor} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
 
                   {/* Header: Icon + Title + Tag */}
                   <div className="relative z-10 flex items-start gap-3.5">
-                    <div className={`p-3 rounded-xl border transition-transform group-hover:scale-105 ${b.iconBg} ${b.iconColor}`}>
+                    <div className={`p-3 rounded-xl border transition-transform group-hover:scale-105 ${b.iconBg} ${b.iconColor} shadow-inner`}>
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="space-y-0.5 flex-1">
@@ -362,17 +362,17 @@ export default function WhyHumanCapital() {
                   </div>
 
                   {/* Card Description */}
-                  <p className="relative z-10 text-xs sm:text-sm text-[#94a3b8] leading-relaxed line-clamp-3 font-normal">
+                  <p className="relative z-10 text-xs sm:text-sm text-[#e2e8f0] leading-relaxed line-clamp-3 font-normal">
                     {b.desc}
                   </p>
 
                   {/* Animated Progress Bar */}
                   <div className="relative z-10 space-y-2 pt-1">
                     <div className="flex justify-between items-center text-[11px] font-mono">
-                      <span className="text-[#94a3b8]">{b.metricLabel}</span>
+                      <span className="text-[#cbd5e1]">{b.metricLabel}</span>
                       <span className="text-white font-bold">{b.progress}%</span>
                     </div>
-                    <div className="h-2 w-full bg-[#050814] rounded-full overflow-hidden p-0.5 border border-white/[0.06]">
+                    <div className="h-2 w-full bg-[#0a0f1d] rounded-full overflow-hidden p-0.5 border border-white/[0.1]">
                       <motion.div
                         initial={{ width: 0 }}
                         whileInView={{ width: `${b.progress}%` }}
@@ -385,7 +385,7 @@ export default function WhyHumanCapital() {
                   </div>
 
                   {/* Bottom Footer Info */}
-                  <div className="relative z-10 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono text-[#64748b]">
+                  <div className="relative z-10 pt-3 border-t border-white/[0.1] flex items-center justify-between text-xs font-mono text-[#cbd5e1]">
                     <span className="flex items-center gap-1.5 text-[#60a5fa] font-semibold">
                       <Layers className="w-3.5 h-3.5 text-[#3b82f6]" />
                       <span>{b.dimension}</span>
