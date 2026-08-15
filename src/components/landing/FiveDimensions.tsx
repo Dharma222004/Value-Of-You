@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Briefcase,
+  GraduationCap,
   DollarSign,
-  Award,
+  Briefcase,
   HeartPulse,
   Brain,
   CheckCircle2,
@@ -15,87 +15,92 @@ import {
 
 const dimensions = [
   {
-    id: "career",
-    title: "1. Personal & Professional Trajectory",
-    shortName: "Career Profile",
-    icon: Briefcase,
+    id: "education",
+    title: "1. Academic & Education Capital",
+    shortName: "Education Capital",
+    shortDesc: "Degrees, certifications, learning velocity, and knowledge acquisition.",
+    icon: GraduationCap,
     color: "#3b82f6",
-    badge: "CAREER MOBILITY",
+    badge: "ACADEMIC CAPITAL",
     scoreWeight: "25% Weight",
-    description: "Evaluates role seniority, company leverage, domain momentum, title velocity, and executive market scarcity.",
+    description: "Evaluates formal education degrees, technical certifications, continuous learning velocity, and academic achievement trajectory.",
     metrics: [
-      "Role Seniority & Executive Authority Index",
-      "Company Growth & Capital Multiplier",
-      "Industry Disruption Shielding",
-      "Promotion & Title Velocity Telemetry",
+      "Degrees, Certifications & Credentials",
+      "Learning Velocity & Knowledge Acquisition",
+      "Skill Adaptability & Growth Mindset",
+      "Intellectual Capital Multiplier",
     ],
     sampleScore: 88,
   },
   {
     id: "finance",
-    title: "2. Financial Independence & Runway",
+    title: "2. Financial Well-being & Stability",
     shortName: "Financial Capital",
+    shortDesc: "Income stability, financial literacy, savings, and long-term financial health.",
     icon: DollarSign,
     color: "#10b981",
-    badge: "FINANCIAL INDEPENDENCE",
-    scoreWeight: "25% Weight",
-    description: "Measures unearned liquid runway, savings compounding rate, passive yield streams, and net worth growth velocity.",
+    badge: "FINANCIAL STABILITY",
+    scoreWeight: "20% Weight",
+    description: "Measures income stability, liquid financial runway, savings compounding rate, passive asset yield, and wealth protection.",
     metrics: [
-      "Net Worth Velocity & Savings Rate",
-      "Liquid Runway (Months of Independence)",
-      "Passive Asset Yield & Equity Growth",
-      "Debt Optimization & Wealth Protection",
+      "Income Stability & Savings Velocity",
+      "Financial Literacy & Asset Allocation",
+      "Passive Income & Equity Growth",
+      "Long-term Financial Runway & Security",
     ],
     sampleScore: 82,
   },
   {
     id: "skills",
-    title: "3. Skills Architecture & Tech Stack",
-    shortName: "Skills Capital",
-    icon: Award,
+    title: "3. Technical Skills & Future Employability",
+    shortName: "Skills & Employability",
+    shortDesc: "Technical expertise, practical abilities, employability, and future readiness.",
+    icon: Briefcase,
     color: "#06b6d4",
-    badge: "SKILLS ARCHITECTURE",
-    scoreWeight: "20% Weight",
-    description: "Quantifies technical mastery, AI automation tool integration, rare skill combinations, and continuous learning velocity.",
+    badge: "SKILLS & EMPLOYABILITY",
+    scoreWeight: "25% Weight",
+    description: "Quantifies technical expertise, practical tooling mastery, AI integration resilience, and long-term market employability.",
     metrics: [
-      "AI & Automation Tooling Mastery",
-      "Technical Depth & Architecture",
-      "Rare Skill Synergy Index",
-      "Continuous Upskilling Velocity",
+      "Technical Expertise & Practical Mastery",
+      "AI Tooling & Modern Tech Stack",
+      "Future Market Employability Index",
+      "Upskilling & Domain Versatility",
     ],
     sampleScore: 91,
   },
   {
     id: "health",
-    title: "4. Health & Biological Stamina",
-    shortName: "Health Capital",
+    title: "4. Physical Health & Mental Well-being",
+    shortName: "Health & Wellness",
+    shortDesc: "Physical health, mental well-being, energy, and lifestyle.",
     icon: HeartPulse,
     color: "#f59e0b",
-    badge: "HEALTH STAMINA",
+    badge: "HEALTH & WELLNESS",
     scoreWeight: "15% Weight",
-    description: "Tracks sleep optimization, physical endurance, HRV recovery resilience, and cognitive focus peak hours.",
+    description: "Tracks physical stamina, sleep architecture, HRV recovery depth, stress biomarker resilience, and overall wellness.",
     metrics: [
-      "Sleep Architecture & HRV Recovery",
-      "Metabolic Efficiency & Physical Stamina",
-      "Cognitive Endurance & Peak Hours",
-      "Stress Biomarker Resilience",
+      "Physical Fitness & Metabolic Energy",
+      "Mental Well-being & Stress Resilience",
+      "Sleep Quality & HRV Recovery",
+      "Lifestyle Balance & Vitality",
     ],
     sampleScore: 76,
   },
   {
-    id: "assessments",
-    title: "5. Mindset EQ & Psychometrics",
-    shortName: "Psychometrics",
+    id: "behavioral",
+    title: "5. Behavioral & Emotional Intelligence",
+    shortName: "Behavioral Intelligence",
+    shortDesc: "Decision-making, emotional intelligence, adaptability, and cognitive patterns.",
     icon: Brain,
     color: "#8b5cf6",
-    badge: "PSYCHOMETRIC EQ",
+    badge: "BEHAVIORAL INTELLIGENCE",
     scoreWeight: "15% Weight",
-    description: "Deep psychometric evaluation of decision-making velocity, risk tolerance matrix, leadership drive, and focus depth.",
+    description: "Deep psychometric evaluation of decision-making velocity, emotional intelligence, risk discipline, and cognitive focus patterns.",
     metrics: [
-      "Decision Velocity & Bias Shield",
-      "High-Stakes Risk Tolerance Matrix",
-      "Emotional Intelligence & Leadership",
-      "Deep Work Focus & Stamina",
+      "Decision-making Velocity & Risk Discipline",
+      "Emotional Intelligence & Leadership Drive",
+      "Cognitive Adaptability & Focus Depth",
+      "Personal Development & Habit Persistence",
     ],
     sampleScore: 85,
   },
@@ -118,21 +123,21 @@ export const FiveDimensions: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#06b6d4]/10 border border-[#06b6d4]/20 text-[#06b6d4] text-xs font-mono font-semibold uppercase tracking-wider">
             <Layers className="w-3.5 h-3.5" />
-            <span>UNIFIED 360° ARCHITECTURE</span>
+            <span>HUMAN VALUE FRAMEWORK</span>
           </div>
           <h2 className="section-headline">
             The 5 Core Dimensions of <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] via-[#06b6d4] to-[#10b981]">
-              Human Capital Intelligence
+              Human Value
             </span>
           </h2>
           <p className="body-text mx-auto">
-            An institutional synthesis combining career mobility, liquid financial runway, technical skill mastery, biological stamina, and decision psychometrics.
+            A multidimensional framework that evaluates education, financial well-being, skills, health, and behavioral intelligence to create a comprehensive Human Value Score.
           </p>
         </div>
 
         {/* Interactive Cards Nav Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {dimensions.map((dim, idx) => {
             const DimIcon = dim.icon;
             const isActive = activeTab === idx;
@@ -150,7 +155,7 @@ export const FiveDimensions: React.FC = () => {
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4]" />
                 )}
 
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center border border-white/[0.1]"
                     style={{ backgroundColor: `${dim.color}15`, color: dim.color }}
@@ -162,10 +167,13 @@ export const FiveDimensions: React.FC = () => {
                   </span>
                 </div>
 
-                <div>
-                  <span className="text-sm font-semibold text-white block truncate">
+                <div className="space-y-1.5">
+                  <span className="text-sm font-bold text-white block leading-snug">
                     {dim.shortName}
                   </span>
+                  <p className="text-[11px] text-[#94a3b8] leading-relaxed line-clamp-3">
+                    {dim.shortDesc}
+                  </p>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.06]">
                     <span className="text-[10px] font-mono text-[#94a3b8]">INDEX</span>
                     <span className="text-xs font-mono font-bold" style={{ color: dim.color }}>
@@ -241,7 +249,7 @@ export const FiveDimensions: React.FC = () => {
               </div>
 
               <p className="text-xs text-[#94a3b8] max-w-xs leading-relaxed">
-                Audited in real-time by the Human Capital AI Engine using neural cohort benchmarks.
+                Audited in real-time by the Human Value Engine using neural cohort benchmarks.
               </p>
             </div>
 

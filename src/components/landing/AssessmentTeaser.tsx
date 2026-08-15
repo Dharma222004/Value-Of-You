@@ -106,10 +106,10 @@ export const AssessmentTeaser: React.FC = () => {
   const progressPercent = Math.round(((currentStepIndex + 1) / wizardSteps.length) * 100);
 
   return (
-    <section id="wizard" className="py-32 relative bg-[#090d1a]">
+    <section id="wizard" className="section-py relative bg-[#060913] text-white overflow-hidden">
       
       {/* Background Accent */}
-      <div className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-[#06b6d4]/04 blur-[140px] pointer-events-none rounded-full" />
+      <div className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-gradient-to-tr from-[#3b82f6]/06 to-[#06b6d4]/06 blur-[140px] pointer-events-none rounded-full" />
 
       <div className="grid-container max-w-[920px] relative z-10">
         
@@ -120,7 +120,10 @@ export const AssessmentTeaser: React.FC = () => {
             <span>INTERACTIVE WIZARD</span>
           </div>
           <h2 className="section-headline">
-            Experience the Assessment Wizard
+            Experience the{" "}
+            <span className="aurora-gradient-text">
+              Assessment Engine
+            </span>
           </h2>
           <p className="body-text mx-auto">
             Test a sample 3-question evaluation. Real-time autosave persists your selections.

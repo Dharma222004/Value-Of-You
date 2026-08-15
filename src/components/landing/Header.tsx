@@ -21,10 +21,10 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
   }, []);
 
   const navItems = [
-    { label: "Why Human Capital", href: "#about" },
+    { label: "Why Human Value", href: "#about" },
     { label: "5 Dimensions", href: "#dimensions" },
-    { label: "Score Engine", href: "#visualizer" },
-    { label: "Process", href: "#process" },
+    { label: "Growth Engine", href: "#growth-dashboard" },
+    { label: "Simulator", href: "#visualizer" },
     { label: "FAQ", href: "#faq" },
   ];
 
@@ -41,11 +41,11 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
           
           {/* Logo Left */}
           <Link href="/" className="flex items-center gap-3 group cursor-pointer">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0f1526] border border-white/[0.1] group-hover:border-[#3b82f6]/50 transition-colors">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0f1526] border border-[#3b82f6]/30 group-hover:border-[#3b82f6]/60 transition-colors shadow-[0_0_12px_rgba(59,130,246,0.15)]">
               <Terminal className="w-5 h-5 text-[#3b82f6] group-hover:text-[#06b6d4] transition-colors" />
             </div>
             <span className="font-bold text-lg text-white tracking-tight">
-              Human Capital
+              Human Value
             </span>
           </Link>
 
@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
               <a
                 key={item.href}
                 href={item.href}
-                className="nav-link"
+                className="nav-link text-xs font-mono font-medium hover:text-white transition-colors"
               >
                 {item.label}
               </a>

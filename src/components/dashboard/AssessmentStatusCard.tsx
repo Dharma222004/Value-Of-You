@@ -55,16 +55,16 @@ export const AssessmentStatusCard: React.FC = () => {
 
       <div className="space-y-2.5">
         {moduleList.map((m) => {
-          let statusText = "⚪ Not Started";
+          let statusText = "Not Started";
           let statusClass = "text-slate-400 bg-slate-900 border-slate-800";
           let Icon = Circle;
 
           if (m.status === "completed") {
-            statusText = `✓ Completed (${m.completionPercentage}%)`;
+            statusText = `Completed (${m.completionPercentage}%)`;
             statusClass = "text-emerald-400 bg-emerald-500/10 border-emerald-500/30";
             Icon = CheckCircle2;
           } else if (m.status === "in-progress") {
-            statusText = `🟡 In Progress (${m.completionPercentage}%)`;
+            statusText = `In Progress (${m.completionPercentage}%)`;
             statusClass = "text-amber-400 bg-amber-500/10 border-amber-500/30";
             Icon = Clock;
           }

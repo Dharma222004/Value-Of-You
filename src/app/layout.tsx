@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { TelemetryProvider } from "@/components/providers/TelemetryProvider";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
   title: "Human Capital Platform — Measure. Improve. Grow.",
@@ -25,12 +26,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark scroll-smooth">
-      <body className="bg-[#060911] text-slate-100 antialiased selection:bg-sky-500 selection:text-white">
-        <AuthProvider>
-          <TelemetryProvider>{children}</TelemetryProvider>
-        </AuthProvider>
+      <body className="bg-[var(--bg-main)] text-[var(--text-primary)] antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-300">
+        <ThemeProvider>
+          <AuthProvider>
+            <TelemetryProvider>{children}</TelemetryProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
 }
+
 

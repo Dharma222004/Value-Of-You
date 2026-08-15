@@ -7,53 +7,53 @@ import { ListOrdered, ArrowRight, ShieldCheck, Cpu, LineChart, Award } from "luc
 const STEPS = [
   {
     step: "01",
-    title: "Complete 5-Min Audit",
-    desc: "Input your career status, liquid financial runway, skill architecture, and health metrics into our secure telemetry wizard.",
+    title: "Complete 5-Min Assessment",
+    desc: "Input your education, skills, financial habits, and wellness habits into our secure interactive assessment.",
     icon: ShieldCheck,
   },
   {
     step: "02",
-    title: "AI Neural Synthesis",
-    desc: "Our institutional machine intelligence algorithms benchmark your inputs against global top 5% talent cohort models.",
+    title: "AI Synthesis & Analysis",
+    desc: "Our machine intelligence algorithms evaluate your profile across the 5 core dimensions against cohort benchmarks.",
     icon: Cpu,
   },
   {
     step: "03",
-    title: "Compute Composite Score",
-    desc: "Receive your unified 0–100 Human Capital Index along with your estimated 10-year Net Present Value (NPV) yield.",
+    title: "Generate Human Value Score",
+    desc: "Receive your unified 0–100 Human Value Index with full dimension breakdowns and strength radar analysis.",
     icon: Award,
   },
   {
     step: "04",
-    title: "Execute Action Roadmap",
-    desc: "Deploy personalized quarterly milestones to defend against AI displacement and compound your net human asset worth.",
+    title: "Execute Growth Roadmap",
+    desc: "Deploy personalized action recommendations across 30-day, 90-day, 1-year, and 5-year milestones to compound your potential.",
     icon: LineChart,
   },
 ];
 
 export default function AssessmentProcess() {
   return (
-    <section id="process" className="py-32 relative overflow-hidden bg-[#05070f]">
+    <section id="process" className="py-24 sm:py-28 lg:py-32 relative overflow-hidden bg-[#05070f]">
       
       {/* Subtle Glowing Radial Background */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-[#3b82f6]/04 blur-[140px] pointer-events-none rounded-full" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-gradient-to-tr from-[#3b82f6]/06 via-[#06b6d4]/04 to-[#10b981]/06 blur-[160px] pointer-events-none rounded-full" />
 
       <div className="grid-container relative z-10">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-4 mb-20">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#3b82f6]/10 border border-[#3b82f6]/20 text-[#3b82f6] text-xs font-mono font-semibold uppercase tracking-wider">
-            <ListOrdered className="w-3.5 h-3.5" />
+        <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#3b82f6]/10 border border-[#3b82f6]/20 text-[#60a5fa] text-xs font-mono font-semibold uppercase tracking-wider">
+            <ListOrdered className="w-3.5 h-3.5 text-[#06b6d4]" />
             <span>STREAMLINED WORKFLOW</span>
           </div>
           <h2 className="section-headline">
-            How The Human Capital <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] via-[#06b6d4] to-[#10b981]">
-              Evaluation Engine Works
+            How The Human Value <br />
+            <span className="aurora-gradient-text">
+              Assessment Engine Works
             </span>
           </h2>
-          <p className="body-text mx-auto">
-            A frictionless 4-step path from baseline telemetry audit to quarterly asset compounding.
+          <p className="body-text mx-auto text-[#94a3b8]">
+            A seamless 4-step path from initial baseline assessment to lifelong personal growth.
           </p>
         </div>
 

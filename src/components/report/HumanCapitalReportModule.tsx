@@ -169,7 +169,7 @@ export const HumanCapitalReportModule: React.FC = () => {
             <Brain className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[var(--text-main)]">🧠 AI Executive Summary</h2>
+            <h2 className="text-xl font-bold text-[var(--text-main)]">AI Executive Summary</h2>
             <p className="text-xs text-[var(--text-muted)]">Synthesized cross-module behavioral & financial narrative</p>
           </div>
         </div>
@@ -228,7 +228,7 @@ export const HumanCapitalReportModule: React.FC = () => {
           <ul className="space-y-3 text-xs sm:text-sm text-[var(--text-main)]">
             {report.topStrengths.map((str, i) => (
               <li key={i} className="flex items-start gap-2.5">
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">✓</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <span>{str}</span>
               </li>
             ))}
@@ -244,7 +244,7 @@ export const HumanCapitalReportModule: React.FC = () => {
           <ul className="space-y-3 text-xs sm:text-sm text-[var(--text-main)]">
             {report.topWeaknesses.map((wk, i) => (
               <li key={i} className="flex items-start gap-2.5">
-                <span className="text-amber-600 dark:text-amber-400 font-bold shrink-0">⚠</span>
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <span>{wk}</span>
               </li>
             ))}

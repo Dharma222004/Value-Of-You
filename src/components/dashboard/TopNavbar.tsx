@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
+import { useTheme } from "@/context/ThemeContext";
 import Link from "next/link";
 
 interface TopNavbarProps {
@@ -20,27 +21,9 @@ interface TopNavbarProps {
 export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
   const { user: authUser, logout } = useAuth();
   const { profile } = useProfile();
-
-  const [themeMode, setThemeMode] = useState<"dark" | "light">("dark");
+  const { theme, toggleTheme } = useTheme();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedTheme = (localStorage.getItem("hc_theme_preference") as "dark" | "light") || "dark";
-      setThemeMode(savedTheme);
-      if (savedTheme === "light") {
-        document.documentElement.classList.remove("dark");
-        document.documentElement.classList.add("light");
-        document.documentElement.setAttribute("data-theme", "light");
-      } else {
-        document.documentElement.classList.remove("light");
-        document.documentElement.classList.add("dark");
-        document.documentElement.setAttribute("data-theme", "dark");
-      }
-    }
-  }, []);
-
   const displayName = profile?.full_name || authUser?.name || authUser?.email?.split("@")[0] || "User";
   const displayEmail = profile?.email || authUser?.email || "";
   const rawAvatar = profile?.avatar_url || authUser?.image || null;
@@ -56,23 +39,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
         .toUpperCase()
         .slice(0, 2)
     : "HC";
-
-  const toggleTheme = () => {
-    const nextTheme = themeMode === "dark" ? "light" : "dark";
-    setThemeMode(nextTheme);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("hc_theme_preference", nextTheme);
-      if (nextTheme === "light") {
-        document.documentElement.classList.remove("dark");
-        document.documentElement.classList.add("light");
-        document.documentElement.setAttribute("data-theme", "light");
-      } else {
-        document.documentElement.classList.remove("light");
-        document.documentElement.classList.add("dark");
-        document.documentElement.setAttribute("data-theme", "dark");
-      }
-    }
-  };
 
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between transition-colors">
@@ -101,17 +67,17 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
         <button
           type="button"
           onClick={toggleTheme}
-          title={`Switch to ${themeMode === "dark" ? "Light" : "Dark"} Mode`}
-          className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:border-indigo-500/50 transition-all flex items-center gap-1.5 text-xs font-mono"
+          title={`Switch to ${theme === "dark" ? "Avengers Doomsday Light" : "Dark"} Mode`}
+          className="p-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-emerald-500/50 transition-all flex items-center gap-1.5 text-xs font-mono"
         >
-          {themeMode === "dark" ? (
+          {theme === "dark" ? (
             <>
               <Sun className="w-4 h-4 text-amber-400" />
               <span className="hidden sm:inline">Light</span>
             </>
           ) : (
             <>
-              <Moon className="w-4 h-4 text-indigo-400" />
+              <Moon className="w-4 h-4 text-emerald-400" />
               <span className="hidden sm:inline">Dark</span>
             </>
           )}

@@ -6,28 +6,28 @@ import { HelpCircle, ChevronDown, Search } from "lucide-react";
 
 const FAQS = [
   {
-    q: "What is a Human Capital Score?",
-    a: "It is a single 0–100 score that measures your total earning potential across 5 areas: Career Momentum, Financial Runway, Skill Architecture, Health Stamina, and Mindset EQ. Think of it as a comprehensive health-and-wealth score for your career.",
+    q: "What is a Human Value Score?",
+    a: "It is a unified 0–100 score that evaluates your current position and growth potential across 5 core dimensions: Education & Career, Financial Well-Being, Skills & Employability, Health & Wellness, and Behavioral Intelligence.",
   },
   {
-    q: "How is my Lifetime Asset Value (NPV) calculated?",
-    a: "We estimate your future earning power by combining your career velocity, liquid savings runway, skill market demand, and peak high-performance years ahead into a projected Net Present Value.",
+    q: "How does the platform help me improve my score?",
+    a: "Our AI analysis identifies your highest-growth opportunities and generates personalized action plans structured into 30-day quick wins, 90-day skill development milestones, 1-year transformation goals, and 5-year mastery horizons.",
   },
   {
-    q: "Is my personal financial and biological data private?",
-    a: "100% private. Your data is encrypted on your device using bank-grade 256-bit AES encryption. We never sell your personal information to recruiters, advertisers, or third parties.",
+    q: "Is my personal data kept private and secure?",
+    a: "Yes, 100% private. Your data is encrypted during storage and transit. We operate on a privacy-first model: your data is never sold, rented, or shared with third-party advertisers or recruiters.",
   },
   {
-    q: "How often should I re-evaluate my Human Capital score?",
-    a: "We recommend a quick quarterly check-in, or whenever you change roles, master a key new skill, or significantly increase your financial savings runway.",
+    q: "How often should I retake or update my assessment?",
+    a: "We recommend updating your assessment every 30–90 days as you complete new courses, certifications, wellness milestones, or financial literacy goals.",
   },
   {
-    q: "Does Human Capital offer enterprise plans for teams?",
-    a: "Yes. Enterprise plans allow companies, venture funds, and leadership teams to map talent capabilities, identify skill gaps, and prevent executive burnout.",
+    q: "Who is the Human Value framework designed for?",
+    a: "The framework is designed for students, ambitious early-career professionals, and lifelong learners looking for structured, data-driven clarity on their growth trajectory.",
   },
   {
-    q: "How does the AI defend against skill displacement?",
-    a: "Our model audits your skill set against real-time AI automation trends, highlighting your rare, high-value skills that cannot easily be commoditized.",
+    q: "How does the AI provide personalized recommendations?",
+    a: "The scoring engine benchmarks your inputs across all 5 dimensions against holistic cohort benchmarks to pinpoint high-impact leverage points for your specific goals.",
   },
 ];
 
