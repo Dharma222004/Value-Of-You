@@ -185,13 +185,18 @@ function scoreTier(s: number): string {
 // MULTI-PROVIDER AGENT INVOKER (WITH AUTOMATIC KEY FAILOVER)
 // ====================================================================
 
-async function callGroq(model: string, systemPrompt: string, userPrompt: string, maxTokens: number): Promise<any> {
+async function callGroq(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens: number,
+  preferredKeyIndex?: number
+): Promise<any> {
   const keys = getGroqKeys();
   if (keys.length === 0) throw new Error("No Groq API keys configured");
 
   let lastErr: Error | null = null;
-  const startIdx = groqKeyIndex;
-  groqKeyIndex++;
+  const startIdx = preferredKeyIndex !== undefined ? preferredKeyIndex : groqKeyIndex++;
   const groqModel = "openai/gpt-oss-120b";
 
   for (let i = 0; i < keys.length; i++) {
@@ -216,23 +221,28 @@ async function callGroq(model: string, systemPrompt: string, userPrompt: string,
       }
 
       const errText = await res.text();
-      console.warn(`[Groq ${groqModel}] Key attempt ${i + 1}/${keys.length} returned HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      console.warn(`[Groq ${groqModel} Key ${(startIdx + i) % keys.length + 1}] returned HTTP ${res.status}: ${errText.substring(0, 150)}`);
       lastErr = new Error(`Groq ${groqModel} HTTP ${res.status}: ${errText.substring(0, 150)}`);
     } catch (err: any) {
       lastErr = err;
-      console.warn(`[Groq ${groqModel}] Key attempt ${i + 1}/${keys.length} failed: ${err.message}`);
+      console.warn(`[Groq ${groqModel} Key ${(startIdx + i) % keys.length + 1}] failed: ${err.message}`);
     }
   }
   throw lastErr || new Error(`All Groq keys failed for ${groqModel}`);
 }
 
-async function callNvidia(model: string, systemPrompt: string, userPrompt: string, maxTokens: number): Promise<any> {
+async function callNvidia(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens: number,
+  preferredKeyIndex?: number
+): Promise<any> {
   const keys = getNvidiaKeys();
   if (keys.length === 0) throw new Error("No NVIDIA API keys configured");
 
   let lastErr: Error | null = null;
-  const startIdx = nvidiaKeyIndex;
-  nvidiaKeyIndex++;
+  const startIdx = preferredKeyIndex !== undefined ? preferredKeyIndex : nvidiaKeyIndex++;
   const nvidiaModel = "nvidia/nemotron-3.5-lightning-30b-a3b";
 
   for (let i = 0; i < keys.length; i++) {
@@ -260,24 +270,29 @@ async function callNvidia(model: string, systemPrompt: string, userPrompt: strin
       }
 
       const errText = await res.text();
-      console.warn(`[NVIDIA ${nvidiaModel}] Key attempt ${i + 1}/${keys.length} returned HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      console.warn(`[NVIDIA ${nvidiaModel} Key ${(startIdx + i) % keys.length + 1}] returned HTTP ${res.status}: ${errText.substring(0, 150)}`);
       lastErr = new Error(`NVIDIA ${nvidiaModel} HTTP ${res.status}: ${errText.substring(0, 150)}`);
     } catch (err: any) {
       lastErr = err;
-      console.warn(`[NVIDIA ${nvidiaModel}] Key attempt ${i + 1}/${keys.length} failed: ${err.message}`);
+      console.warn(`[NVIDIA ${nvidiaModel} Key ${(startIdx + i) % keys.length + 1}] failed: ${err.message}`);
     }
   }
   throw lastErr || new Error(`All NVIDIA keys failed for ${nvidiaModel}`);
 }
 
-async function callGemini(model: string, systemPrompt: string, userPrompt: string, maxTokens: number): Promise<any> {
+async function callGemini(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens: number,
+  preferredKeyIndex?: number
+): Promise<any> {
   const keys = getGeminiKeys();
   if (keys.length === 0) throw new Error("No Gemini API keys configured");
 
   const geminiModel = model || "gemini-2.5-flash";
   let lastErr: Error | null = null;
-  const startIdx = geminiKeyIndex;
-  geminiKeyIndex++;
+  const startIdx = preferredKeyIndex !== undefined ? preferredKeyIndex : geminiKeyIndex++;
 
   for (let i = 0; i < keys.length; i++) {
     const key = keys[(startIdx + i) % keys.length];
@@ -303,23 +318,28 @@ async function callGemini(model: string, systemPrompt: string, userPrompt: strin
       }
 
       const errText = await res.text();
-      console.warn(`[Gemini ${geminiModel}] Key attempt ${i + 1}/${keys.length} returned HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      console.warn(`[Gemini ${geminiModel} Key ${(startIdx + i) % keys.length + 1}] returned HTTP ${res.status}: ${errText.substring(0, 150)}`);
       lastErr = new Error(`Gemini ${geminiModel} HTTP ${res.status}: ${errText.substring(0, 150)}`);
     } catch (err: any) {
       lastErr = err;
-      console.warn(`[Gemini ${geminiModel}] Key attempt ${i + 1}/${keys.length} failed: ${err.message}`);
+      console.warn(`[Gemini ${geminiModel} Key ${(startIdx + i) % keys.length + 1}] failed: ${err.message}`);
     }
   }
   throw lastErr || new Error(`All Gemini keys failed for ${geminiModel}`);
 }
 
-async function callOxlo(model: string, systemPrompt: string, userPrompt: string, maxTokens: number): Promise<any> {
+async function callOxlo(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens: number,
+  preferredKeyIndex?: number
+): Promise<any> {
   const keys = getOxloKeys();
   if (keys.length === 0) throw new Error("No Oxlo API keys configured");
 
   let lastErr: Error | null = null;
-  const startIdx = oxloKeyIndex;
-  oxloKeyIndex++;
+  const startIdx = preferredKeyIndex !== undefined ? preferredKeyIndex : oxloKeyIndex++;
 
   for (let i = 0; i < keys.length; i++) {
     const key = keys[(startIdx + i) % keys.length];
@@ -416,30 +436,31 @@ function parseJwtUserId(token: string): string | null {
   }
 }
 
-/** Unified multi-provider agent invoker with automatic fallback chain */
+/** Unified multi-provider agent invoker with automatic fallback chain & dedicated key isolation */
 async function invokeAgent(
   systemPrompt: string,
   userPrompt: string,
   models: ModelConfig[],
+  preferredKeyIndex?: number,
 ): Promise<{ result: any; modelUsed: string; provider: string } | null> {
-  const allowNvidia = process.env.ENABLE_NVIDIA_API === "true";
+  const allowNvidia = process.env.ENABLE_NVIDIA_API !== "false";
 
   for (const m of models) {
     if (m.provider === "nvidia" && !allowNvidia) {
       continue;
     }
     try {
-      console.log(`[Multi-Agent] → ${m.provider}/${m.name}`);
+      console.log(`[Multi-Agent] → ${m.provider}/${m.name} (KeySlot: ${(preferredKeyIndex ?? 0) + 1})`);
       let rawContent: string | null = null;
 
       if (m.provider === "nvidia") {
-        rawContent = await callNvidia(m.name, systemPrompt, userPrompt, m.maxTokens);
+        rawContent = await callNvidia(m.name, systemPrompt, userPrompt, m.maxTokens, preferredKeyIndex);
       } else if (m.provider === "groq") {
-        rawContent = await callGroq(m.name, systemPrompt, userPrompt, m.maxTokens);
+        rawContent = await callGroq(m.name, systemPrompt, userPrompt, m.maxTokens, preferredKeyIndex);
       } else if (m.provider === "gemini") {
-        rawContent = await callGemini(m.name, systemPrompt, userPrompt, m.maxTokens);
+        rawContent = await callGemini(m.name, systemPrompt, userPrompt, m.maxTokens, preferredKeyIndex);
       } else if (m.provider === "oxlo") {
-        rawContent = await callOxlo(m.name, systemPrompt, userPrompt, m.maxTokens);
+        rawContent = await callOxlo(m.name, systemPrompt, userPrompt, m.maxTokens, preferredKeyIndex);
       }
 
       if (!rawContent) continue;
@@ -824,35 +845,39 @@ async function runMultiAgentPipeline(
   const modelsUsed: string[] = [];
   const profileStr = JSON.stringify(cleanProfile, null, 2);
 
-  // AGENT 1: Profile & Vision Evaluator — analyzes identity, background, career stage
+  // AGENT 1: Profile & Vision Evaluator — Dedicated to Groq Key 1 (KeySlot 0)
   const a1 = invokeAgent(
     `You are Agent 1 — Senior Background & Vision Evaluator.\n${CORE_RULES}\nEvaluate ONLY what is present in the user's profile data: name, age, location, role, education (degree/CGPA/college), work experience (years/company/designation/salary band), startup details, career interests, stated goals, and Human Values Test history. Score identity maturity, career stage appropriateness, and goal clarity using EXACT values from the data. Do NOT praise if data is missing. For human values, provide evidence-based ratings only when Human Values Test history exists; otherwise set dataAvailable false and describe the missing evidence.\nOUTPUT (valid JSON): {"personalityAnalysis":{"title":"Background & Career Stage Evaluation","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"humanValuesAnalysis":{"title":"Human Values Assessment","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"...","valueScores":{"honesty":{"score":0,"interpretation":"...","strengthLevel":"Foundation|Developing|Established|Strong","explanation":"..."},"integrity":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"respect":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"empathy":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"responsibility":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"compassion":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"discipline":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"leadership":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"teamwork":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"selfAwareness":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"emotionalIntelligence":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"ethics":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."},"decisionMaking":{"score":0,"interpretation":"...","strengthLevel":"...","explanation":"..."}}},"coreStrengths":{"title":"Verified Profile Strengths","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"areasOfImprovement":{"title":"Profile Gaps & Urgent Upgrades","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
     `User profile telemetry:\n${profileStr}`,
     AGENT_MODELS.values,
+    0, // Dedicated Groq Key 1
   );
 
-  // AGENT 2: Financial Health Auditor — strict financial analysis
+  // AGENT 2: Financial Health Auditor — Dedicated to Groq Key 2 (KeySlot 1)
   const a2 = invokeAgent(
     `You are Agent 2 — Strict Financial Health Auditor & Wealth Coach.\n${CORE_RULES}\nConduct a strict financial audit using ONLY the actual numbers in the data: monthly active income, passive income, total expenses, savings amount, savings rate %, emergency fund months, total debt, EMIs, net worth, insurance coverage, investment frequency, risk appetite. If savings rate < 10% flag it clearly. If no emergency fund exists, say so directly. Score financial health 0-100 strictly based on the actual numbers — not potential.\nOUTPUT (valid JSON): {"financialIntelligence":{"title":"Financial Health Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"savingsBehaviour":{"title":"Savings Rate & Emergency Fund Status","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"moneyManagement":{"title":"Income vs Expense Control","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"riskProfile":{"title":"Insurance & Risk Protection Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"investmentBehaviour":{"title":"Investment Discipline Assessment","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
     `User financial telemetry:\n${profileStr}`,
     AGENT_MODELS.finance,
+    1, // Dedicated Groq Key 2
   );
 
-  // AGENT 3: Professional Capital & Market Value Evaluator
+  // AGENT 3: Professional Capital & Market Value Evaluator — Dedicated to Groq Key 3 (KeySlot 2)
   const a3 = invokeAgent(
     `You are Agent 3 — Corporate HR Director & Professional Capital Evaluator.\n${CORE_RULES}\nEvaluate professional capital using ONLY the skills data: technical skills (list and proficiency), certifications (list them), projects (count and quality), academic degree and GPA, AI readiness self-score, employment history, and promotion potential. If no certifications exist, say so and prescribe exactly which ones to get. Score employability 0-100 based on actual listed skills vs. market demand.\nOUTPUT (valid JSON): {"leadershipPotential":{"title":"Leadership & Promotion Readiness","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"learningStyle":{"title":"Technical Skill Depth & AI Readiness","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"careerSuitability":{"title":"Market Value & Employability Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"professionalGrowth":{"title":"Skill Gap Analysis & Career Acceleration Blueprint","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"decisionMakingStyle":{"title":"Strategic Career Decision Framework","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
     `User skills/career telemetry:\n${profileStr}`,
     AGENT_MODELS.career,
+    2, // Dedicated Groq Key 3
   );
 
-  // AGENT 4: Health & Vitality Auditor — burnout risk and lifestyle performance
+  // AGENT 4: Health & Vitality Auditor — Dedicated to Groq Key 4 (KeySlot 3)
   const a4 = invokeAgent(
     `You are Agent 4 — Lifestyle Performance & Health Capital Auditor.\n${CORE_RULES}\nEvaluate health capital using ONLY the health data: BMI (height/weight), sleep hours per night, sleep quality, weekly workout frequency, stress level (1-10 scale), diet quality, mindfulness practice (yes/no), tobacco/alcohol usage. If BMI is outside healthy range, name it. If stress level > 7, flag burnout risk explicitly. Score health capital 0-100 based on actual metrics, not aspirations.\nOUTPUT (valid JSON): {"behaviourPatterns":{"title":"Daily Health Discipline Audit","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"dailyHabitsAnalysis":{"title":"Sleep, Recovery & Workout Adherence","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"goalAlignment":{"title":"Stress Management & Burnout Risk Assessment","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"recommendations":{"title":"Health Upgrade Protocol (Immediate Actions)","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"dailyActionPlan":{"title":"Optimized Daily Health Routine","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"weeklyActionPlan":{"title":"7-Day Fitness & Recovery Protocol","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"monthlyGrowthPlan":{"title":"30-Day Health Capital Upgrade","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."},"longTermDevelopmentPlan":{"title":"12-Month Longevity & Peak Performance Roadmap","content":"...","highlights":["..."],"dataAvailable":true,"confidence":"..."}}`,
     `User health telemetry:\n${profileStr}`,
     AGENT_MODELS.habits,
+    3, // Dedicated Groq Key 4
   );
 
-  console.log("[Multi-Agent] ▶ Launching 4 domain agents concurrently...");
+  console.log("[Multi-Agent] ▶ Launching 4 domain agents concurrently across dedicated API keys...");
   const [r1, r2, r3, r4] = await Promise.allSettled([a1, a2, a3, a4]);
 
   const o1 = r1.status === "fulfilled" && r1.value ? r1.value.result : {};
@@ -911,6 +936,7 @@ OUTPUT (valid JSON): {
 }`,
     `USER TELEMETRY SUMMARY:\n${profileStr.slice(0, 3500)}\n\nCALCULATED BASELINE SCORES:\n${JSON.stringify(computedScores)}\n\nDOMAIN AGENT HIGHLIGHTS & EVALUATION:\nAgent 1 (Values & Mindset): ${JSON.stringify(o1)}\nAgent 2 (Wealth & Financial): ${JSON.stringify(o2)}\nAgent 3 (Career Capital & Skills): ${JSON.stringify(o3)}\nAgent 4 (Health & Vitality): ${JSON.stringify(o4)}`.slice(0, 14000),
     AGENT_MODELS.master,
+    0, // Dedicated Groq Key 1
   );
 
   const masterOut = masterRes?.result || {};
