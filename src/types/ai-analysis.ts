@@ -142,6 +142,20 @@ export interface AIReportSection {
   content: string;
   highlights?: string[];
   dataAvailable: boolean;
+  // Assessment PDF fields (from assessment_pdf_generator.md spec)
+  what_it_measures?: string;
+  performance_summary?: string;
+  suggestions?: string[];
+  resources?: Array<{ title: string; type: string }>;
+  subsections?: Array<{ label: string; score: number }>;
+  cefr?: string | null;
+  /** Human Values assessment detail generated from completed values assessments. */
+  valueScores?: Record<string, {
+    score: number;
+    interpretation: string;
+    strengthLevel: string;
+    explanation: string;
+  }>;
 }
 
 export interface AIAnalysisScores {
@@ -189,6 +203,14 @@ export interface AIAnalysisReport {
 
   // Scored Dimensions
   scores: AIAnalysisScores;
+
+  // Assessment PDF extra fields (assessment_pdf_generator.md)
+  responses?: Array<{
+    section_id: string;
+    question: string;
+    candidate_response: string;
+    errors?: Record<string, number>;
+  }>;
 }
 
 // ====================================================================

@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  Sun,
-  Moon,
   ChevronDown,
   User,
   LogOut,
@@ -11,7 +9,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
-import { useTheme } from "@/context/ThemeContext";
 import Link from "next/link";
 
 interface TopNavbarProps {
@@ -21,9 +18,10 @@ interface TopNavbarProps {
 export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
   const { user: authUser, logout } = useAuth();
   const { profile } = useProfile();
-  const { theme, toggleTheme } = useTheme();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
   const displayName = profile?.full_name || authUser?.name || authUser?.email?.split("@")[0] || "User";
   const displayEmail = profile?.email || authUser?.email || "";
   const rawAvatar = profile?.avatar_url || authUser?.image || null;
@@ -39,6 +37,33 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
         .toUpperCase()
         .slice(0, 2)
     : "HC";
+
+  // Close dropdown when clicking anywhere outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setUserMenuOpen(false);
+      }
+    }
+
+    if (userMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [userMenuOpen]);
 
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between transition-colors">
@@ -61,33 +86,15 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
         </div>
       </div>
 
-      {/* Right: Theme Switcher & User Dropdown */}
+      {/* Right: User Dropdown */}
       <div className="flex items-center gap-3">
-        {/* Theme Toggle Button */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          title={`Switch to ${theme === "dark" ? "Avengers Doomsday Light" : "Dark"} Mode`}
-          className="p-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-emerald-500/50 transition-all flex items-center gap-1.5 text-xs font-mono"
-        >
-          {theme === "dark" ? (
-            <>
-              <Sun className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline">Light</span>
-            </>
-          ) : (
-            <>
-              <Moon className="w-4 h-4 text-emerald-400" />
-              <span className="hidden sm:inline">Dark</span>
-            </>
-          )}
-        </button>
-
         {/* User Profile Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={userMenuRef}>
           <button
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-800 transition-all border border-slate-700 bg-slate-900"
+            onClick={() => setUserMenuOpen((prev) => !prev)}
+            aria-expanded={userMenuOpen}
+            aria-haspopup="true"
+            className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-800 transition-all border border-slate-700 bg-slate-900 cursor-pointer hover:border-indigo-500/40"
           >
             {isHttpAvatar && !imgError ? (
               <img
@@ -102,15 +109,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
               </div>
             )}
             <div className="hidden sm:block text-left pr-1">
-              <div className="text-xs font-bold text-white leading-tight">{displayName}</div>
+              <div className="text-xs font-bold text-white leading-tight max-w-[120px] truncate">{displayName}</div>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${userMenuOpen ? "rotate-180 text-indigo-400" : ""}`} />
           </button>
 
           {userMenuOpen && (
-            <div className="absolute right-0 mt-2 w-56 rounded-2xl p-2 border border-slate-800 bg-slate-900/95 backdrop-blur-xl shadow-2xl z-50 text-xs">
-              <div className="p-3 border-b border-slate-800 space-y-0.5">
-                <p className="font-bold text-white truncate">{displayName}</p>
+            <div
+              className="absolute right-0 mt-2 w-64 rounded-2xl p-2 border border-slate-700/80 bg-[#0f172a] shadow-[0_20px_50px_rgba(0,0,0,0.85)] z-[100] text-xs animate-in fade-in zoom-in-95 duration-150"
+              style={{ backgroundColor: "#0f172a" }}
+            >
+              <div className="p-3 border-b border-slate-800/80 space-y-1 bg-[#111c38] rounded-xl mb-1">
+                <p className="font-bold text-white truncate text-sm">{displayName}</p>
                 <p className="text-[11px] text-slate-400 font-mono truncate">{displayEmail}</p>
               </div>
 
@@ -118,21 +128,22 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onToggleMobileMenu }) => {
                 <Link
                   href="/dashboard/profile"
                   onClick={() => setUserMenuOpen(false)}
-                  className="w-full text-left p-2 rounded-xl text-slate-300 hover:bg-slate-800 font-medium transition-colors flex items-center gap-2"
+                  className="w-full text-left p-2.5 rounded-xl text-slate-200 hover:text-white hover:bg-slate-800 font-semibold transition-colors flex items-center gap-2.5"
                 >
                   <User className="w-4 h-4 text-indigo-400" />
-                  View Profile
+                  <span>View Profile</span>
                 </Link>
 
                 <button
+                  type="button"
                   onClick={() => {
                     setUserMenuOpen(false);
                     logout();
                   }}
-                  className="w-full text-left p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 font-medium transition-colors flex items-center gap-2"
+                  className="w-full text-left p-2.5 rounded-xl text-rose-400 hover:bg-rose-500/15 font-semibold transition-colors flex items-center gap-2.5 cursor-pointer"
                 >
                   <LogOut className="w-4 h-4 text-rose-400" />
-                  Sign Out
+                  <span>Sign Out</span>
                 </button>
               </div>
             </div>

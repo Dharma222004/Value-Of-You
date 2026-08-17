@@ -760,3 +760,147 @@ input[type="range"]::-moz-range-thumb {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Date of Birth & Calendar Picker Indicator Contrast ──────────── */
+input[type="date"] {
+  color-scheme: dark;
+}
+
+.light input[type="date"],
+[data-theme="light"] input[type="date"] {
+  color-scheme: light;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+  background-color: rgba(99, 102, 241, 0.15);
+  filter: invert(1) brightness(1.2) hue-rotate(190deg) saturate(2);
+  opacity: 0.9;
+  transition: all 0.2s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  background-color: rgba(99, 102, 241, 0.35);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.light input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  background-color: rgba(99, 102, 241, 0.1);
+  opacity: 0.85;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRINT / PDF — Institutional A4 Report
+   ═══════════════════════════════════════════════════════════════════ */
+.no-print { /* class to mark screen-only wrappers */ }
+
+@media print {
+  /* A4 page setup — zero browser margins */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  /* Force color backgrounds to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide ALL screen-only elements */
+  body > *:not(#__next),
+  .no-print,
+  header,
+  nav,
+  aside,
+  [data-sidebar],
+  [class*="TopNav"],
+  [class*="Sidebar"],
+  [class*="DashboardLayout"],
+  [class*="tab-bar"],
+  [class*="sticky"],
+  .toast,
+  .modal {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* The Next.js root */
+  #__next {
+    display: block !important;
+    background: white !important;
+  }
+
+  /* Show the hidden print-only block (class="hidden print:block") */
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Report container */
+  .institutional-report-root {
+    display: block !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Each A4 page sheet */
+  .a4-page-sheet,
+  .institutional-report-root > div {
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    background: #ffffff !important;
+    padding: 10mm 12mm 8mm 12mm !important;
+  }
+
+  .a4-page-sheet:last-child,
+  .institutional-report-root > div:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* Never clip text in print */
+  .institutional-report-root * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* SVG vector scaling */
+  .institutional-report-root svg {
+    overflow: visible !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ── Print styles for Dashboard Report ── */
+@media print {
+  body {
+    background: white !important;
+  }
+
+  .no-print,
+  .print-hidden {
+    display: none !important;
+  }
+
+  .report-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}

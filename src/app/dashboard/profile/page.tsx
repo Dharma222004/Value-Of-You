@@ -75,9 +75,9 @@ function FormField({
       <label htmlFor={id} className="text-xs font-bold text-slate-300 uppercase tracking-wider block font-mono">
         {label}
       </label>
-      <div className="relative">
+      <div className="relative group">
         {Icon && (
-          <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+          <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 pointer-events-none transition-colors group-focus-within:text-indigo-300" />
         )}
         <input
           id={id}
@@ -87,6 +87,8 @@ function FormField({
           placeholder={placeholder}
           disabled={disabled}
           className={`w-full bg-slate-950/80 text-white placeholder-slate-500 border border-slate-700/80 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-medium transition-all shadow-inner outline-none ${
+            type === "date" ? "[color-scheme:dark] cursor-pointer" : ""
+          } ${
             Icon ? "pl-10" : ""
           } ${disabled ? "opacity-60 cursor-not-allowed bg-slate-900/40" : ""}`}
         />
@@ -339,8 +341,8 @@ export default function ProfilePage() {
   // Calculate age from Date of Birth
   const calculatedAge = useMemo(() => calculateAgeFromDOB(dateOfBirth), [dateOfBirth]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setSaveError(null);
     setSaveSuccess(false);
 
@@ -439,8 +441,14 @@ export default function ProfilePage() {
       }
 
       setSaveSuccess(true);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("profile_updated"));
+        window.dispatchEvent(new CustomEvent("hc_profile_updated"));
+        window.dispatchEvent(new CustomEvent("module_data_updated"));
+        window.dispatchEvent(new CustomEvent("module_progress_updated"));
+      }
       await trackEvent("profile_updated", { role: primaryRole, fields: ["full_name", "avatar_url", "role_data"] });
-      setTimeout(() => setSaveSuccess(false), 4000);
+      setTimeout(() => setSaveSuccess(false), 4500);
     } catch (err: any) {
       setSaveError(err.message || "Failed to save profile changes.");
     } finally {
@@ -472,16 +480,37 @@ export default function ProfilePage() {
 
       {/* ── Page Header ── */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between">
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
             My Adaptive Career Profile
           </h1>
           <p className="text-xs text-slate-400 mt-1">Manage your status, academic & professional milestones, and executive telemetry</p>
         </div>
-        <Link href="/dashboard" className="px-3.5 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 text-xs font-semibold border border-white/[0.08] transition-all">
-          ← Back to Dashboard
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => handleSave()}
+            disabled={saving}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all cursor-pointer ${
+              saveSuccess
+                ? "bg-emerald-600 text-white shadow-emerald-600/30"
+                : "bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-indigo-600/25 hover:scale-[1.02] active:scale-[0.98]"
+            } disabled:opacity-50`}
+          >
+            {saving ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...</>
+            ) : saveSuccess ? (
+              <><CheckCircle2 className="w-3.5 h-3.5" /> Saved & Updated</>
+            ) : (
+              <><Save className="w-3.5 h-3.5" /> Update & Save</>
+            )}
+          </button>
+
+          <Link href="/dashboard" className="px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white text-xs font-semibold border border-white/[0.08] transition-all">
+            ← Back to Dashboard
+          </Link>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1085,12 +1114,18 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
+                className={`px-8 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer disabled:opacity-50 ${
+                  saveSuccess
+                    ? "bg-emerald-600 text-white shadow-emerald-600/30 scale-[1.02]"
+                    : "bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98]"
+                }`}
               >
                 {saving ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Synchronizing Profile...</>
+                ) : saveSuccess ? (
+                  <><CheckCircle2 className="w-4 h-4" /> Updated & Saved Successfully</>
                 ) : (
-                  <><Save className="w-4 h-4" /> Save Profile & Telemetry</>
+                  <><Save className="w-4 h-4" /> Update & Save Profile Telemetry</>
                 )}
               </button>
             </div>

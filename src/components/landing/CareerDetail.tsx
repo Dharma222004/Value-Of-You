@@ -242,7 +242,7 @@ export const CareerDetail: React.FC = () => {
   };
 
   return (
-    <section id="career-detail" className="py-28 sm:py-36 relative bg-[#0a0f1d] text-white overflow-hidden">
+    <section id="growth-dashboard" className="py-28 sm:py-36 relative bg-[#0a0f1d] text-white overflow-hidden scroll-mt-20">
       
       {/* Background Radial Glow */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[720px] h-[480px] bg-radial from-[#3b82f6]/22 via-[#06b6d4]/12 to-transparent blur-[80px] pointer-events-none rounded-full" />

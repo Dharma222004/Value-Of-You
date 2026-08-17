@@ -43,6 +43,7 @@ import {
   Zap,
   HelpCircle,
   Upload,
+  Loader2,
 } from "lucide-react";
 import {
   MasterProfileState,
@@ -450,6 +451,8 @@ export function CurrentStatusWizard() {
 
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [justSaved, setJustSaved] = useState<boolean>(false);
 
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -591,21 +594,39 @@ export function CurrentStatusWizard() {
 
   const handleSubmitProfile = async () => {
     if (!validateCurrentStep(activeStep)) return;
-    const updatedState = {
-      ...state,
-      isCompleted: true,
-      submittedAt: new Date().toISOString(),
-    };
-    setState(updatedState);
-    if (userId) {
-      await saveModuleData(userId, "master_profile", updatedState as any, true, 88);
-      await saveLearningProgress(userId, "master_profile", 100);
+    setIsSubmitting(true);
+    setSavingStatus("saving");
+
+    try {
+      const updatedState = {
+        ...state,
+        isCompleted: true,
+        submittedAt: new Date().toISOString(),
+      };
+      setState(updatedState);
+
+      const targetUserId = userId || (await getCurrentUserId());
+      if (targetUserId) {
+        await saveModuleData(targetUserId, "master_profile", updatedState as any, true, 88);
+        await saveLearningProgress(targetUserId, "master_profile", 100);
+      }
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("hc_assessment_updated"));
+        window.dispatchEvent(new CustomEvent("hc_module_completed", { detail: { module: "master_profile" } }));
+      }
+
+      setIsSubmitted(true);
+      setSavingStatus("saved");
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 4000);
+      setActiveStep(9);
+    } catch (err) {
+      console.error("[CurrentStatusWizard] Submission error:", err);
+      setValidationError("Failed to save profile. Please check connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("hc_assessment_updated"));
-    }
-    setIsSubmitted(true);
-    setActiveStep(9);
   };
 
   if (!mounted) {
@@ -862,18 +883,23 @@ export function CurrentStatusWizard() {
               {/* DOB & Auto-Age Calculation */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[var(--foreground)]">Date of Birth *</label>
-                  <input
-                    type="date"
-                    value={state.personalProfile.dateOfBirth}
-                    onChange={(e) =>
-                      setState({
-                        ...state,
-                        personalProfile: { ...state.personalProfile, dateOfBirth: e.target.value },
-                      })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs"
-                  />
+                  <label className="text-xs font-semibold text-[var(--foreground)] flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Date of Birth *</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={state.personalProfile.dateOfBirth}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          personalProfile: { ...state.personalProfile, dateOfBirth: e.target.value },
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 transition-all cursor-pointer [color-scheme:dark]"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -2062,10 +2088,10 @@ export function CurrentStatusWizard() {
                       </span>
                     </div>
                   </div>
-                  <div className="text-right font-mono text-xs text-[var(--subtext)]">
-                    <div>{state.personalProfile.city}, {state.personalProfile.country}</div>
-                    <div>Age {state.personalProfile.calculatedAge}</div>
-                  </div>
+                    <div className="text-right font-mono text-xs text-[var(--subtext)]">
+                      <div>{[state.personalProfile.city, state.personalProfile.country].filter(Boolean).join(", ") || "Location Not Specified"}</div>
+                      <div>{state.personalProfile.calculatedAge ? `Age ${state.personalProfile.calculatedAge}` : ""}</div>
+                    </div>
                 </div>
 
                 <div className="space-y-2 pt-2 border-t border-[var(--border)]">
@@ -2081,6 +2107,32 @@ export function CurrentStatusWizard() {
                     ))}
                   </ul>
                 </div>
+
+                {/* Success Notification Banner on Step 9 */}
+                {(isSubmitted || justSaved) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-emerald-400">Master Profile Saved & Synchronized</h4>
+                        <p className="text-[11px] text-slate-300">All 9 sections are active and powering your AI evaluation score.</p>
+                      </div>
+                    </div>
+                    <Link
+                      href="/dashboard/financial"
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-md transition-all hover:scale-105"
+                    >
+                      <span>Next: Financial Health</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </motion.div>
+                )}
               </div>
             </div>
           )}
@@ -2120,10 +2172,25 @@ export function CurrentStatusWizard() {
         ) : (
           <button
             onClick={handleSubmitProfile}
-            className="wizard-nav-btn bg-gradient-to-r from-emerald-600 to-teal-500 text-white text-xs shadow-lg shadow-emerald-900/25"
+            disabled={isSubmitting}
+            className="wizard-nav-btn bg-gradient-to-r from-emerald-600 to-teal-500 text-white text-xs shadow-lg shadow-emerald-900/25 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            <CheckCircle2 className="w-4 h-4" />
-            {isSubmitted ? "Update & Save Profile" : "Submit & Save Profile"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Saving Profile...</span>
+              </>
+            ) : isSubmitted ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>Update & Save Profile</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Submit & Save Profile</span>
+              </>
+            )}
           </button>
         )}
       </div>
