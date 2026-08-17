@@ -52,43 +52,36 @@ interface ModelConfig {
   maxTokens: number;
 }
 
-// STRATEGY: High-Speed Multi-Agent execution across Groq, Google Gemini & Oxlo AI
-// Diversified primary models across concurrent agents prevent rate-limit congestion:
-// Agent 1 (Values)  → Groq llama-3.3-70b-versatile → Gemini 2.5 Flash → Groq openai/gpt-oss-120b → Oxlo DeepSeek-V3.2
-// Agent 2 (Finance) → Groq openai/gpt-oss-120b → Groq llama-3.3-70b-versatile → Gemini 2.5 Flash → Oxlo DeepSeek-R1-8B
-// Agent 3 (Career)  → Gemini 2.5 Flash → Groq llama-3.3-70b-versatile → Groq openai/gpt-oss-120b → Oxlo Mistral-7B
-// Agent 4 (Habits)  → Groq llama-3.1-8b-instant → Gemini 2.5 Flash → Groq openai/gpt-oss-120b → Oxlo Gemma-3-4B
-// Master Synthesizer → Groq llama-3.3-70b-versatile → Gemini 2.5 Flash → Groq openai/gpt-oss-120b → Oxlo DeepSeek-V3.2
+// STRATEGY: High-Speed Multi-Agent execution across Groq, Google Gemini & NVIDIA NIM
+// Models:
+// - Groq:   openai/gpt-oss-120b
+// - Gemini: gemini-2.5-flash
+// - NVIDIA: nvidia/nemotron-3.5-lightning-30b-a3b
 const AGENT_MODELS: Record<string, ModelConfig[]> = {
   values: [
-    { name: "llama-3.3-70b-versatile", provider: "groq", maxTokens: 3000 },
-    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
-    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
-    { name: "deepseek-ai/DeepSeek-V3.2", provider: "oxlo", maxTokens: 3000 },
+    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 2500 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 2500 },
+    { name: "nvidia/nemotron-3.5-lightning-30b-a3b", provider: "nvidia", maxTokens: 2500 },
   ],
   finance: [
-    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
-    { name: "llama-3.3-70b-versatile", provider: "groq", maxTokens: 3000 },
-    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
-    { name: "deepseek-ai/DeepSeek-R1-8B", provider: "oxlo", maxTokens: 3000 },
+    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 2500 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 2500 },
+    { name: "nvidia/nemotron-3.5-lightning-30b-a3b", provider: "nvidia", maxTokens: 2500 },
   ],
   career: [
-    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
-    { name: "llama-3.3-70b-versatile", provider: "groq", maxTokens: 3000 },
-    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
-    { name: "mistralai/Mistral-7B-Instruct-v0.3", provider: "oxlo", maxTokens: 3000 },
+    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 2500 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 2500 },
+    { name: "nvidia/nemotron-3.5-lightning-30b-a3b", provider: "nvidia", maxTokens: 2500 },
   ],
   habits: [
-    { name: "llama-3.1-8b-instant", provider: "groq", maxTokens: 3000 },
-    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3000 },
-    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3000 },
-    { name: "google/gemma-3-4b-it", provider: "oxlo", maxTokens: 3000 },
+    { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 2500 },
+    { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 2500 },
+    { name: "nvidia/nemotron-3.5-lightning-30b-a3b", provider: "nvidia", maxTokens: 2500 },
   ],
   master: [
-    { name: "llama-3.3-70b-versatile", provider: "groq", maxTokens: 3500 },
     { name: "gemini-2.5-flash", provider: "gemini", maxTokens: 3500 },
+    { name: "nvidia/nemotron-3.5-lightning-30b-a3b", provider: "nvidia", maxTokens: 3500 },
     { name: "openai/gpt-oss-120b", provider: "groq", maxTokens: 3500 },
-    { name: "deepseek-ai/DeepSeek-V3.2", provider: "oxlo", maxTokens: 3500 },
   ],
 };
 
@@ -199,6 +192,7 @@ async function callGroq(model: string, systemPrompt: string, userPrompt: string,
   let lastErr: Error | null = null;
   const startIdx = groqKeyIndex;
   groqKeyIndex++;
+  const groqModel = "openai/gpt-oss-120b";
 
   for (let i = 0; i < keys.length; i++) {
     const key = keys[(startIdx + i) % keys.length];
@@ -207,7 +201,7 @@ async function callGroq(model: string, systemPrompt: string, userPrompt: string,
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model,
+          model: groqModel,
           messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
           temperature: 0.3,
           max_tokens: maxTokens,
@@ -222,14 +216,14 @@ async function callGroq(model: string, systemPrompt: string, userPrompt: string,
       }
 
       const errText = await res.text();
-      console.warn(`[Groq ${model}] Key attempt ${i + 1}/${keys.length} returned HTTP ${res.status}: ${errText.substring(0, 150)}`);
-      lastErr = new Error(`Groq ${model} HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      console.warn(`[Groq ${groqModel}] Key attempt ${i + 1}/${keys.length} returned HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      lastErr = new Error(`Groq ${groqModel} HTTP ${res.status}: ${errText.substring(0, 150)}`);
     } catch (err: any) {
       lastErr = err;
-      console.warn(`[Groq ${model}] Key attempt ${i + 1}/${keys.length} failed: ${err.message}`);
+      console.warn(`[Groq ${groqModel}] Key attempt ${i + 1}/${keys.length} failed: ${err.message}`);
     }
   }
-  throw lastErr || new Error(`All Groq keys failed for ${model}`);
+  throw lastErr || new Error(`All Groq keys failed for ${groqModel}`);
 }
 
 async function callNvidia(model: string, systemPrompt: string, userPrompt: string, maxTokens: number): Promise<any> {
@@ -239,6 +233,7 @@ async function callNvidia(model: string, systemPrompt: string, userPrompt: strin
   let lastErr: Error | null = null;
   const startIdx = nvidiaKeyIndex;
   nvidiaKeyIndex++;
+  const nvidiaModel = "nvidia/nemotron-3.5-lightning-30b-a3b";
 
   for (let i = 0; i < keys.length; i++) {
     const key = keys[(startIdx + i) % keys.length];
@@ -247,10 +242,14 @@ async function callNvidia(model: string, systemPrompt: string, userPrompt: strin
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model,
-          messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
-          temperature: 0.3,
-          max_tokens: maxTokens,
+          model: nvidiaModel,
+          messages: [
+            { role: "system", content: `${systemPrompt}\n\nIMPORTANT: Respond with pure, valid JSON matching the requested schema only.` },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.2,
+          top_p: 0.95,
+          max_tokens: Math.min(maxTokens || 4000, 8192),
         }),
         signal: AbortSignal.timeout(TIMEOUT_MS.nvidia),
       });
@@ -261,14 +260,14 @@ async function callNvidia(model: string, systemPrompt: string, userPrompt: strin
       }
 
       const errText = await res.text();
-      console.warn(`[NVIDIA ${model}] Key attempt ${i + 1}/${keys.length} returned HTTP ${res.status}: ${errText.substring(0, 150)}`);
-      lastErr = new Error(`NVIDIA ${model} HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      console.warn(`[NVIDIA ${nvidiaModel}] Key attempt ${i + 1}/${keys.length} returned HTTP ${res.status}: ${errText.substring(0, 150)}`);
+      lastErr = new Error(`NVIDIA ${nvidiaModel} HTTP ${res.status}: ${errText.substring(0, 150)}`);
     } catch (err: any) {
       lastErr = err;
-      console.warn(`[NVIDIA ${model}] Key attempt ${i + 1}/${keys.length} failed: ${err.message}`);
+      console.warn(`[NVIDIA ${nvidiaModel}] Key attempt ${i + 1}/${keys.length} failed: ${err.message}`);
     }
   }
-  throw lastErr || new Error(`All NVIDIA keys failed for ${model}`);
+  throw lastErr || new Error(`All NVIDIA keys failed for ${nvidiaModel}`);
 }
 
 async function callGemini(model: string, systemPrompt: string, userPrompt: string, maxTokens: number): Promise<any> {
@@ -910,7 +909,7 @@ OUTPUT (valid JSON): {
   },
   "keyMetricsToTrack": ["Metric 1: e.g., Monthly savings rate % (target: X%)", "Metric 2: ...", "Metric 3: ...", "Metric 4: ...", "Metric 5: ..."]
 }`,
-    `USER TELEMETRY:\n${profileStr}\n\nDOMAIN ENGINE SCORES:\n${JSON.stringify(computedScores)}\n\nDOMAIN AGENT OUTPUTS:\nAgent 1 (Profile): ${JSON.stringify(o1)}\nAgent 2 (Financial): ${JSON.stringify(o2)}\nAgent 3 (Skills/Career): ${JSON.stringify(o3)}\nAgent 4 (Health): ${JSON.stringify(o4)}`,
+    `USER TELEMETRY SUMMARY:\n${profileStr.slice(0, 3500)}\n\nCALCULATED BASELINE SCORES:\n${JSON.stringify(computedScores)}\n\nDOMAIN AGENT HIGHLIGHTS & EVALUATION:\nAgent 1 (Values & Mindset): ${JSON.stringify(o1)}\nAgent 2 (Wealth & Financial): ${JSON.stringify(o2)}\nAgent 3 (Career Capital & Skills): ${JSON.stringify(o3)}\nAgent 4 (Health & Vitality): ${JSON.stringify(o4)}`.slice(0, 14000),
     AGENT_MODELS.master,
   );
 
