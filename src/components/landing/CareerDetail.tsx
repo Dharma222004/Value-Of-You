@@ -242,27 +242,67 @@ export const CareerDetail: React.FC = () => {
   };
 
   return (
-    <section id="growth-dashboard" className="py-28 sm:py-36 relative bg-[#0a0f1d] text-white overflow-hidden scroll-mt-20">
+    <section
+      id="growth-dashboard"
+      className="py-28 sm:py-36 relative text-white overflow-hidden scroll-mt-20"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)",
+      }}
+    >
       
-      {/* Background Radial Glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[720px] h-[480px] bg-radial from-[#3b82f6]/22 via-[#06b6d4]/12 to-transparent blur-[80px] pointer-events-none rounded-full" />
-      <div className="absolute inset-0 bg-institutional-grid opacity-75 pointer-events-none" />
+      {/* Background Ambient Glows */}
+      <div
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[850px] h-[520px] pointer-events-none rounded-full blur-[95px]"
+        style={{
+          background: "radial-gradient(circle, rgba(0, 212, 255, 0.15), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute top-2/3 right-[5%] w-[420px] h-[420px] pointer-events-none rounded-full blur-[85px]"
+        style={{
+          background: "radial-gradient(circle, rgba(79, 124, 255, 0.15), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 bg-institutional-grid pointer-events-none"
+        style={{ opacity: 0.15 }}
+      />
 
       <div className="grid-container relative z-10 space-y-12">
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/40 text-[#60a5fa] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.25)]">
-            <Activity className="w-3.5 h-3.5 text-[#06b6d4]" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2563EB]/20 border border-[#00D4FF]/50 text-[#00D4FF] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(0,212,255,0.35)] backdrop-blur-md">
+            <Activity className="w-3.5 h-3.5 text-[#00D4FF]" />
             <span>HUMAN VALUE PROGRESS ENGINE</span>
           </div>
-          <h2 className="section-headline text-white">
+          <h2
+            className="section-headline text-white"
+            style={{
+              color: "rgba(255, 255, 255, 0.95)",
+              textShadow: "0 0 20px rgba(0, 212, 255, 0.25)",
+            }}
+          >
             Human Growth & <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] via-[#06b6d4] to-[#10b981]">
+            <span
+              style={{
+                background: "linear-gradient(135deg, #00D4FF, #4F7CFF, #B66DFF)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 30px rgba(0, 212, 255, 0.35))",
+              }}
+            >
               Progress Dashboard
             </span>
           </h2>
-          <p className="body-text mx-auto text-[#e2e8f0] text-base sm:text-lg">
+          <p
+            className="body-text mx-auto text-base sm:text-lg"
+            style={{
+              color: "rgba(255, 255, 255, 0.82)",
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
+          >
             Real-time telemetry tracking your 5 core capital dimensions, trajectory milestones, radar analysis, and AI-driven priority action plans.
           </p>
         </div>
@@ -271,13 +311,13 @@ export const CareerDetail: React.FC = () => {
         <div className="grid lg:grid-cols-12 gap-8 items-stretch">
 
           {/* Left Column: 5-Axis Pentagon Radar Chart */}
-          <div className="lg:col-span-6 bg-[#111a33] rounded-2xl p-7 border border-white/[0.18] flex flex-col justify-between space-y-6 shadow-xl">
+          <div className="lg:col-span-6 bg-gradient-to-b from-[#131f42]/95 via-[#0e1732]/98 to-[#090e20] rounded-2xl p-7 border border-[#38bdf8]/30 flex flex-col justify-between space-y-6 shadow-[0_0_40px_rgba(59,130,246,0.25)] backdrop-blur-xl">
             <div className="flex items-center justify-between font-mono text-xs">
-              <span className="text-[#e2e8f0] font-bold uppercase tracking-wider flex items-center gap-2">
-                <Target className="w-4 h-4 text-[#3b82f6]" />
+              <span className="text-[#f1f5f9] font-bold uppercase tracking-wider flex items-center gap-2">
+                <Target className="w-4 h-4 text-[#38bdf8]" />
                 5-DIMENSION RADAR CHART
               </span>
-              <span className="text-[#06b6d4] font-semibold bg-[#06b6d4]/15 px-2.5 py-1 rounded border border-[#06b6d4]/35">
+              <span className="text-[#22d3ee] font-bold bg-[#06b6d4]/20 px-3 py-1 rounded-full border border-[#06b6d4]/45 shadow-[0_0_12px_rgba(6,182,212,0.25)]">
                 Balanced Growth
               </span>
             </div>

@@ -142,21 +142,44 @@ export default function WhyHumanCapital() {
   };
 
   return (
-    <section id="about" className="py-28 sm:py-36 relative overflow-hidden bg-[#0a0f1d] text-white">
+    <section
+      id="about"
+      className="py-28 sm:py-36 relative overflow-hidden text-white"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)",
+      }}
+    >
 
-      {/* Subtle Background Ambient Radial Glows */}
+      {/* Radiant Multi-Color Ambient Glows */}
       <motion.div
         animate={{
           scale: [1, 1.08, 1],
-          opacity: [0.18, 0.28, 0.18],
+          opacity: [0.3, 0.45, 0.3],
         }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[480px] bg-radial from-[#3b82f6]/24 via-[#06b6d4]/12 to-transparent blur-[80px] pointer-events-none rounded-full"
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[520px] pointer-events-none rounded-full blur-[95px]"
+        style={{
+          background: "radial-gradient(circle, rgba(0, 212, 255, 0.15), transparent 70%)",
+        }}
       />
-      <div className="absolute bottom-10 right-0 w-[380px] h-[380px] bg-[#10b981]/15 blur-[70px] pointer-events-none rounded-full" />
+      <div
+        className="absolute bottom-10 right-[5%] w-[450px] h-[450px] pointer-events-none rounded-full blur-[85px]"
+        style={{
+          background: "radial-gradient(circle, rgba(79, 124, 255, 0.15), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute top-10 left-[5%] w-[400px] h-[400px] pointer-events-none rounded-full blur-[80px]"
+        style={{
+          background: "radial-gradient(circle, rgba(182, 109, 255, 0.15), transparent 70%)",
+        }}
+      />
 
-      {/* Grid Pattern overlay */}
-      <div className="absolute inset-0 bg-institutional-grid opacity-75 pointer-events-none" />
+      {/* Grid Pattern overlay: opacity 0.15 */}
+      <div
+        className="absolute inset-0 bg-institutional-grid pointer-events-none"
+        style={{ opacity: 0.15 }}
+      />
 
       <div className="grid-container relative z-10 space-y-16">
 
@@ -169,21 +192,43 @@ export default function WhyHumanCapital() {
           className="text-center max-w-3xl mx-auto space-y-4"
         >
           <motion.div variants={itemVariants}>
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/40 text-[#60a5fa] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.25)]">
-              <Target className="w-3.5 h-3.5 text-[#06b6d4] animate-pulse" />
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2563EB]/20 border border-[#00D4FF]/50 text-[#00D4FF] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(0,212,255,0.35)] backdrop-blur-md">
+              <Target className="w-3.5 h-3.5 text-[#00D4FF] animate-pulse" />
               <span>THE HUMAN VALUE FRAMEWORK</span>
             </span>
           </motion.div>
 
-          <motion.h2 variants={itemVariants} className="section-headline text-white">
+          <motion.h2
+            variants={itemVariants}
+            className="section-headline text-white"
+            style={{
+              color: "rgba(255, 255, 255, 0.95)",
+              textShadow: "0 0 20px rgba(0, 212, 255, 0.25)",
+            }}
+          >
             Why Human Capital <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] via-[#06b6d4] to-[#10b981] drop-shadow-sm">
+            <span
+              style={{
+                background: "linear-gradient(135deg, #00D4FF, #4F7CFF, #B66DFF)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 30px rgba(0, 212, 255, 0.35))",
+              }}
+            >
               Redefines Financial Intelligence
             </span>
           </motion.h2>
 
-          <motion.p variants={itemVariants} className="body-text mx-auto text-[#e2e8f0] text-base sm:text-lg">
-            Stop measuring what you've accumulated. Start measuring the potential that creates everything you'll become.
+          <motion.p
+            variants={itemVariants}
+            className="body-text mx-auto text-base sm:text-lg"
+            style={{
+              color: "rgba(255, 255, 255, 0.82)",
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
+          >
+            Stop measuring only what you've accumulated. Start measuring the compounding potential that powers everything you'll achieve.
           </motion.p>
         </motion.div>
 
@@ -197,7 +242,7 @@ export default function WhyHumanCapital() {
             viewport={{ once: true }}
             whileHover={{ y: -6, transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] } }}
             transition={{ duration: 0.5 }}
-            className="relative rounded-2xl p-7 sm:p-8 bg-[#111a33] border border-white/[0.16] flex flex-col justify-between space-y-6 hover:border-[#f59e0b]/50 transition-colors duration-300 group shadow-xl"
+            className="relative rounded-2xl p-7 sm:p-8 bg-gradient-to-b from-[#151c35]/90 to-[#0d1326]/95 border border-white/[0.18] flex flex-col justify-between space-y-6 hover:border-[#f59e0b]/60 transition-all duration-300 group shadow-2xl backdrop-blur-md"
           >
             <div className="space-y-6">
               <div className="flex items-center justify-between">

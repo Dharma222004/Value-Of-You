@@ -70,37 +70,72 @@ export const ScoreVisualizer: React.FC = () => {
   const radarPolygonPoints = `${ptSkills} ${ptFinance} ${ptBehavior} ${ptCareer} ${ptHealth}`;
 
   return (
-    <section id="visualizer" className="py-24 sm:py-32 relative bg-[#0a0f1d] text-white">
+    <section
+      id="visualizer"
+      className="py-24 sm:py-32 relative text-white"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)",
+      }}
+    >
       
-      {/* Ambient Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-[#3b82f6]/20 blur-[75px] pointer-events-none rounded-full" />
+      {/* Ambient Glows */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[500px] pointer-events-none rounded-full blur-[95px]"
+        style={{
+          background: "radial-gradient(circle, rgba(0, 212, 255, 0.15), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 bg-institutional-grid pointer-events-none"
+        style={{ opacity: 0.15 }}
+      />
 
       <div className="grid-container relative z-10 space-y-10">
 
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/40 text-[#60a5fa] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.25)]">
-            <Cpu className="w-3.5 h-3.5 text-[#06b6d4]" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2563EB]/20 border border-[#00D4FF]/50 text-[#00D4FF] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(0,212,255,0.35)] backdrop-blur-md">
+            <Cpu className="w-3.5 h-3.5 text-[#00D4FF]" />
             <span>HUMAN VALUE SIMULATOR</span>
           </div>
-          <h2 className="section-headline text-white">
+          <h2
+            className="section-headline text-white"
+            style={{
+              color: "rgba(255, 255, 255, 0.95)",
+              textShadow: "0 0 20px rgba(0, 212, 255, 0.25)",
+            }}
+          >
             Explore Your{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] via-[#06b6d4] to-[#10b981]">
+            <span
+              style={{
+                background: "linear-gradient(135deg, #00D4FF, #4F7CFF, #B66DFF)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 30px rgba(0, 212, 255, 0.35))",
+              }}
+            >
               Human Value Score
             </span>
           </h2>
-          <p className="body-text mx-auto text-[#e2e8f0]">
+          <p
+            className="body-text mx-auto"
+            style={{
+              color: "rgba(255, 255, 255, 0.82)",
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
+          >
             Adjust the sliders below to see how changes across dimensions influence your overall score in real time.
           </p>
         </div>
 
         {/* Showcase Glass Terminal Container */}
-        <div className="card-surface p-6 sm:p-8 space-y-8 bg-[#111a33] border border-white/[0.18]">
+        <div className="card-surface p-6 sm:p-8 space-y-8 bg-gradient-to-b from-[#131f42]/95 via-[#0e1732]/98 to-[#090e20] border border-[#38bdf8]/30 shadow-[0_0_40px_rgba(59,130,246,0.25)] backdrop-blur-xl">
 
           {/* Header Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.12] pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.14] pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-[#3b82f6]/20 border border-[#3b82f6]/40 text-[#3b82f6]">
+              <div className="p-2.5 rounded-xl bg-[#3b82f6]/20 border border-[#38bdf8]/45 text-[#38bdf8] shadow-[0_0_12px_rgba(56,189,248,0.3)]">
                 <Sliders className="w-4 h-4" />
               </div>
               <div>

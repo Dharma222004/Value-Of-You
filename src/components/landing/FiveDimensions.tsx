@@ -112,10 +112,33 @@ export const FiveDimensions: React.FC = () => {
   const ActiveIcon = active.icon;
 
   return (
-    <section id="dimensions" className="py-24 sm:py-32 relative bg-[#0a0f1d] text-white">
+    <section
+      id="dimensions"
+      className="py-24 sm:py-32 relative text-white"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)",
+      }}
+    >
 
-      {/* Ambient background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-radial from-[#3b82f6]/20 via-[#06b6d4]/10 to-transparent blur-[75px] pointer-events-none rounded-full" />
+      {/* Ambient background glows */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[500px] pointer-events-none rounded-full blur-[90px]"
+        style={{
+          background: "radial-gradient(circle, rgba(0, 212, 255, 0.15), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute top-1/4 right-[10%] w-[380px] h-[380px] pointer-events-none rounded-full blur-[75px]"
+        style={{
+          background: "radial-gradient(circle, rgba(79, 124, 255, 0.15), transparent 70%)",
+        }}
+      />
+
+      {/* Grid Overlay */}
+      <div
+        className="absolute inset-0 bg-institutional-grid pointer-events-none"
+        style={{ opacity: 0.15 }}
+      />
 
       <div className="grid-container relative z-10">
 
@@ -127,17 +150,37 @@ export const FiveDimensions: React.FC = () => {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className="text-center max-w-3xl mx-auto space-y-4 mb-16"
         >
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#06b6d4]/15 border border-[#06b6d4]/35 text-[#06b6d4] text-xs font-mono font-semibold uppercase tracking-wider shadow-[0_0_12px_rgba(6,182,212,0.2)]">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2563EB]/20 border border-[#00D4FF]/50 text-[#00D4FF] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(0,212,255,0.35)] backdrop-blur-md">
             <Layers className="w-3.5 h-3.5" />
             <span>HUMAN VALUE FRAMEWORK</span>
           </div>
-          <h2 className="section-headline text-white">
+          <h2
+            className="section-headline text-white"
+            style={{
+              color: "rgba(255, 255, 255, 0.95)",
+              textShadow: "0 0 20px rgba(0, 212, 255, 0.25)",
+            }}
+          >
             The 5 Core Dimensions of <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] via-[#06b6d4] to-[#10b981]">
+            <span
+              style={{
+                background: "linear-gradient(135deg, #00D4FF, #4F7CFF, #B66DFF)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 30px rgba(0, 212, 255, 0.35))",
+              }}
+            >
               Human Value
             </span>
           </h2>
-          <p className="body-text mx-auto text-[#e2e8f0]">
+          <p
+            className="body-text mx-auto"
+            style={{
+              color: "rgba(255, 255, 255, 0.82)",
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
+          >
             A multidimensional framework that evaluates education, financial well-being, skills, health, and behavioral intelligence to create a comprehensive Human Value Score.
           </p>
         </motion.div>
@@ -164,14 +207,14 @@ export const FiveDimensions: React.FC = () => {
                 whileHover={{ y: -4, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.25 }}
-                className={`p-5 rounded-2xl text-left border transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${
+                className={`p-5 rounded-2xl text-left border transition-all duration-200 relative overflow-hidden flex flex-col justify-between cursor-pointer backdrop-blur-md ${
                   isActive
-                    ? "bg-[#111a33] border-[#3b82f6] shadow-xl shadow-[#3b82f6]/20 ring-1 ring-[#3b82f6]/40"
-                    : "bg-[#111a33]/90 border-white/[0.14] opacity-90 hover:opacity-100 hover:border-white/[0.3] hover:bg-[#152042]"
+                    ? "bg-gradient-to-b from-[#162248] to-[#0c142c] border-[#38bdf8] shadow-[0_0_30px_rgba(56,189,248,0.35)] ring-1 ring-[#38bdf8]/60"
+                    : "bg-[#111933]/85 border-white/[0.14] hover:border-white/[0.3] hover:bg-[#162248]/90 shadow-lg"
                 }`}
               >
                 {isActive && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4]" />
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#38bdf8] via-[#818cf8] to-[#34d399]" />
                 )}
 
                 <div className="flex items-center justify-between mb-3">

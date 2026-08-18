@@ -59,7 +59,7 @@ function StatItem({
         <Icon className="w-4 h-4" />
         <span>{label}</span>
       </div>
-      <div className="text-4xl sm:text-5xl font-black font-mono text-white tracking-tight">
+      <div className="text-4xl sm:text-5xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_15px_rgba(56,189,248,0.4)]">
         {display}
       </div>
       <p className="text-xs text-[#e2e8f0] font-medium leading-relaxed">{desc}</p>
@@ -69,28 +69,40 @@ function StatItem({
 
 export const PlatformStats: React.FC = () => {
   return (
-    <section id="stats" className="py-24 sm:py-28 relative bg-[#111a33] border-y border-white/[0.18] glow-pulse-blue">
+    <section
+      id="stats"
+      className="py-24 sm:py-28 relative border-y border-[#00D4FF]/25"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)",
+        boxShadow: "0 0 50px rgba(0, 212, 255, 0.15)",
+      }}
+    >
       <div className="grid-container relative z-10">
         {/* Live indicator */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <span className="blink-dot w-2 h-2 rounded-full bg-[#3b82f6]" />
-          <span className="text-[10px] font-mono font-bold text-[#60a5fa] uppercase tracking-widest">Live Platform Metrics</span>
+        <div className="flex items-center justify-center gap-2.5 mb-10">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00D4FF] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00D4FF]" />
+          </span>
+          <span className="text-xs font-mono font-bold text-[#00D4FF] uppercase tracking-widest bg-[#2563EB]/20 px-3 py-1 rounded-full border border-[#00D4FF]/40 shadow-[0_0_15px_rgba(0,212,255,0.3)]">
+            Live Platform Telemetry Metrics
+          </span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
 
-          <StatItem Icon={Database} color="#3b82f6" label="DATA TELEMETRY" delay={0}
+          <StatItem Icon={Database} color="#4F7CFF" label="DATA TELEMETRY" delay={0}
             target={240} suffix="+"
             desc="Verified variables audited across 5 capital dimensions." />
 
-          <StatItem Icon={Award} color="#10b981" label="UNIFIED INDEX" delay={0.1}
+          <StatItem Icon={Award} color="#34d399" label="UNIFIED INDEX" delay={0.1}
             staticDisplay="0–100"
             desc="Composite Human Capital Score standard." />
 
-          <StatItem Icon={Activity} color="#06b6d4" label="AVG GROWTH GAIN" delay={0.2}
+          <StatItem Icon={Activity} color="#00D4FF" label="AVG GROWTH GAIN" delay={0.2}
             target={184} prefix="+" suffix=" pts" divide={10}
             desc="Average score improvement measured across active learner cohorts." />
 
-          <StatItem Icon={ShieldCheck} color="#f59e0b" label="PRECISION" delay={0.3}
+          <StatItem Icon={ShieldCheck} color="#fbbf24" label="PRECISION" delay={0.3}
             target={994} suffix="%" divide={10}
             desc="Benchmarked against global institutional cohort data." />
 

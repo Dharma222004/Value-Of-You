@@ -7,10 +7,25 @@ import { ShieldCheck, Lock, EyeOff, Key, Sparkles } from "lucide-react";
 
 export const SecurityPrivacy: React.FC = () => {
   return (
-    <section id="security" className="py-28 sm:py-36 relative bg-[#0a0f1d] overflow-hidden text-white">
+    <section
+      id="security"
+      className="py-28 sm:py-36 relative overflow-hidden text-white"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)",
+      }}
+    >
       
-      {/* Radial Dark Shield Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-[#10b981]/16 blur-[75px] pointer-events-none rounded-full" />
+      {/* Ambient Emerald & Cyan Shield Glows */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[500px] pointer-events-none rounded-full blur-[95px]"
+        style={{
+          background: "radial-gradient(circle, rgba(0, 212, 255, 0.15), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 bg-institutional-grid pointer-events-none"
+        style={{ opacity: 0.15 }}
+      />
 
       <div className="grid-container relative z-10 space-y-12">
         
@@ -22,16 +37,36 @@ export const SecurityPrivacy: React.FC = () => {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className="text-center max-w-3xl mx-auto space-y-4"
         >
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/35 text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/50 text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(16,185,129,0.35)] backdrop-blur-md">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>PRIVACY & DATA PROTECTION</span>
           </div>
-          <h2 className="section-headline text-white">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#10b981] via-[#06b6d4] to-[#3b82f6]">
+          <h2
+            className="section-headline text-white"
+            style={{
+              color: "rgba(255, 255, 255, 0.95)",
+              textShadow: "0 0 20px rgba(0, 212, 255, 0.25)",
+            }}
+          >
+            <span
+              style={{
+                background: "linear-gradient(135deg, #00D4FF, #4F7CFF, #B66DFF)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 30px rgba(0, 212, 255, 0.35))",
+              }}
+            >
               Your Data. Your Control.
             </span>
           </h2>
-          <p className="body-text mx-auto text-[#e2e8f0]">
+          <p
+            className="body-text mx-auto"
+            style={{
+              color: "rgba(255, 255, 255, 0.82)",
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
+          >
             We believe human value data is deeply personal. Your information remains private, secure, and completely under your control.
           </p>
         </motion.div>
@@ -45,7 +80,7 @@ export const SecurityPrivacy: React.FC = () => {
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true, margin: "0px 0px -60px 0px" }}
             transition={{ duration: 0.75, ease: [0.34, 1.56, 0.64, 1] }}
-            className="lg:col-span-5 card-surface p-8 flex flex-col items-center justify-between text-center space-y-6 h-full border-[#10b981]/50 bg-[#111a33] shadow-2xl"
+            className="lg:col-span-5 card-surface p-8 flex flex-col items-center justify-between text-center space-y-6 h-full border-[#10b981]/50 bg-gradient-to-b from-[#132822]/90 via-[#0e1d19]/95 to-[#09120f] shadow-[0_0_40px_rgba(16,185,129,0.25)] backdrop-blur-xl"
           >
             <div className="w-full flex justify-center">
               <span className="text-[10px] font-mono text-[#10b981] bg-[#10b981]/20 px-3.5 py-1 rounded-full border border-[#10b981]/35 font-bold uppercase tracking-wider">

@@ -8,10 +8,24 @@ import { ArrowRight, Sparkles, ShieldCheck } from "lucide-react";
 
 export const CallToActionBanner: React.FC = () => {
   return (
-    <section className="py-24 sm:py-28 lg:py-32 relative overflow-hidden bg-[#0a0f1d]">
+    <section
+      className="py-24 sm:py-28 lg:py-32 relative overflow-hidden text-white"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)",
+      }}
+    >
       
-      {/* Background Radial Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[400px] bg-gradient-to-tr from-[#3b82f6]/24 via-[#06b6d4]/16 to-[#10b981]/18 blur-[75px] pointer-events-none rounded-full" />
+      {/* Background Ambient Glows */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[500px] pointer-events-none rounded-full blur-[95px]"
+        style={{
+          background: "radial-gradient(circle, rgba(0, 212, 255, 0.15), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 bg-institutional-grid pointer-events-none"
+        style={{ opacity: 0.15 }}
+      />
 
       <div className="grid-container max-w-[1020px] relative z-10">
         
@@ -21,7 +35,14 @@ export const CallToActionBanner: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "0px 0px -80px 0px" }}
           transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-          className="card-surface p-10 sm:p-14 text-center space-y-8 relative overflow-hidden bg-[#111a33] border border-white/[0.18] shadow-2xl"
+          className="card-surface p-10 sm:p-14 text-center space-y-8 relative overflow-hidden"
+          style={{
+            background: "rgba(20, 40, 80, 0.7)",
+            backdropFilter: "blur(30px)",
+            WebkitBackdropFilter: "blur(30px)",
+            border: "1px solid rgba(0, 212, 255, 0.3)",
+            boxShadow: "0 25px 80px rgba(0, 212, 255, 0.25)",
+          }}
         >
           
           <motion.div
@@ -29,9 +50,9 @@ export const CallToActionBanner: React.FC = () => {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1, ease: [0.34, 1.56, 0.64, 1] }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/40 text-[#60a5fa] text-xs font-mono font-semibold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.25)]"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2563EB]/20 border border-[#00D4FF]/50 text-[#00D4FF] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(0,212,255,0.35)] backdrop-blur-md"
           >
-            <Sparkles className="w-4 h-4 text-[#06b6d4]" />
+            <Sparkles className="w-4 h-4 text-[#00D4FF]" />
             <span>START YOUR HUMAN VALUE ASSESSMENT TODAY</span>
           </motion.div>
 
@@ -41,9 +62,20 @@ export const CallToActionBanner: React.FC = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
             className="section-headline leading-[1.15] text-white"
+            style={{
+              color: "rgba(255, 255, 255, 0.95)",
+              textShadow: "0 0 20px rgba(0, 212, 255, 0.25)",
+            }}
           >
             Ready to Measure &amp; Grow <br />
-            <span className="aurora-gradient-text">
+            <span
+              style={{
+                background: "linear-gradient(135deg, #00D4FF, #4F7CFF, #B66DFF)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 30px rgba(0, 212, 255, 0.35))",
+              }}
+            >
               Your Human Value Potential?
             </span>
           </motion.h2>
@@ -53,7 +85,12 @@ export const CallToActionBanner: React.FC = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="body-text mx-auto text-base sm:text-lg text-[#e2e8f0]"
+            className="body-text mx-auto text-base sm:text-lg"
+            style={{
+              color: "rgba(255, 255, 255, 0.82)",
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
           >
             Join thousands of students, professionals, and lifelong learners using our multidimensional framework to optimize their skills, health, finances, and career growth.
           </motion.p>
@@ -65,10 +102,25 @@ export const CallToActionBanner: React.FC = () => {
             transition={{ duration: 0.6, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-wrap items-center justify-center gap-4 pt-2"
           >
-            <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 280, damping: 18 }}>
+            <motion.div
+              whileHover={{ y: -3, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+            >
               <Link
                 href="/auth/signup"
-                className="btn-spring inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-sm font-semibold text-white bg-[#2563eb] hover:bg-[#1d4ed8] shadow-xl shadow-[#3b82f6]/30 glow-pulse-blue border border-[#3b82f6]/50"
+                className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl text-base font-bold text-white border border-[#00D4FF]/60 cursor-pointer"
+                style={{
+                  background: "linear-gradient(90deg, #2563EB, #00D4FF)",
+                  boxShadow: "0 10px 40px rgba(0, 212, 255, 0.4)",
+                  transition: "filter 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.filter = "brightness(1.15)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.filter = "brightness(1.0)";
+                }}
               >
                 <span>Calculate Your Human Value Score</span>
                 <span className="arrow-bounce"><ArrowRight className="w-4 h-4" /></span>

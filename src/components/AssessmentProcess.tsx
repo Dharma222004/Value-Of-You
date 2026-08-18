@@ -33,10 +33,25 @@ const STEPS = [
 
 export default function AssessmentProcess() {
   return (
-    <section id="process" className="py-24 sm:py-28 lg:py-32 relative overflow-hidden bg-[#0a0f1d]">
+    <section
+      id="process"
+      className="py-24 sm:py-28 lg:py-32 relative overflow-hidden text-white"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)",
+      }}
+    >
       
-      {/* Subtle Glowing Radial Background */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-gradient-to-tr from-[#3b82f6]/24 via-[#06b6d4]/14 to-[#10b981]/18 blur-[75px] pointer-events-none rounded-full" />
+      {/* Ambient Glowing Background Spotlights */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[480px] pointer-events-none rounded-full blur-[95px]"
+        style={{
+          background: "radial-gradient(circle, rgba(0, 212, 255, 0.15), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 bg-institutional-grid pointer-events-none"
+        style={{ opacity: 0.15 }}
+      />
 
       <div className="grid-container relative z-10">
         
@@ -48,17 +63,37 @@ export default function AssessmentProcess() {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className="text-center max-w-3xl mx-auto space-y-4 mb-16"
         >
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/40 text-[#60a5fa] text-xs font-mono font-semibold uppercase tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.25)]">
-            <ListOrdered className="w-3.5 h-3.5 text-[#06b6d4]" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2563EB]/20 border border-[#00D4FF]/50 text-[#00D4FF] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(0,212,255,0.35)] backdrop-blur-md">
+            <ListOrdered className="w-3.5 h-3.5 text-[#00D4FF]" />
             <span>STREAMLINED WORKFLOW</span>
           </div>
-          <h2 className="section-headline text-white">
+          <h2
+            className="section-headline text-white"
+            style={{
+              color: "rgba(255, 255, 255, 0.95)",
+              textShadow: "0 0 20px rgba(0, 212, 255, 0.25)",
+            }}
+          >
             How The Human Value <br />
-            <span className="aurora-gradient-text">
+            <span
+              style={{
+                background: "linear-gradient(135deg, #00D4FF, #4F7CFF, #B66DFF)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 30px rgba(0, 212, 255, 0.35))",
+              }}
+            >
               Assessment Engine Works
             </span>
           </h2>
-          <p className="body-text mx-auto text-[#e2e8f0]">
+          <p
+            className="body-text mx-auto"
+            style={{
+              color: "rgba(255, 255, 255, 0.82)",
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
+          >
             A seamless 4-step path from initial baseline assessment to lifelong personal growth.
           </p>
         </motion.div>
@@ -75,14 +110,14 @@ export default function AssessmentProcess() {
                 viewport={{ once: true, margin: "0px 0px -60px 0px" }}
                 transition={{ duration: 0.6, delay: idx * 0.12, ease: [0.16, 1, 0.3, 1] }}
                 whileHover={{ y: -6, scale: 1.02 }}
-                className="card-surface card-hover-lift flex flex-col justify-between group cursor-default bg-[#111a33] border-white/[0.18]"
+                className="card-surface card-hover-lift flex flex-col justify-between group cursor-default bg-gradient-to-b from-[#131f42]/95 via-[#0e1732]/98 to-[#090e20] border-[#38bdf8]/30 hover:border-[#38bdf8]/70 shadow-[0_0_25px_rgba(59,130,246,0.15)] hover:shadow-[0_0_35px_rgba(56,189,248,0.3)] backdrop-blur-xl"
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-black font-mono text-[#60a5fa] group-hover:text-[#22d3ee] transition-colors">
+                    <span className="text-3xl font-black font-mono text-[#38bdf8] group-hover:text-[#22d3ee] transition-colors drop-shadow-[0_0_12px_rgba(56,189,248,0.4)]">
                       {s.step}
                     </span>
-                    <div className="p-3 rounded-xl bg-[#182447] border border-white/[0.14] text-[#60a5fa] group-hover:text-[#34d399] transition-colors shadow-inner">
+                    <div className="p-3 rounded-xl bg-[#18264d] border border-white/[0.18] text-[#38bdf8] group-hover:text-[#34d399] transition-colors shadow-inner group-hover:border-[#38bdf8]/60">
                       <Icon className="w-5 h-5" />
                     </div>
                   </div>

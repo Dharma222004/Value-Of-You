@@ -106,32 +106,67 @@ export const AssessmentTeaser: React.FC = () => {
   const progressPercent = Math.round(((currentStepIndex + 1) / wizardSteps.length) * 100);
 
   return (
-    <section id="wizard" className="py-24 sm:py-32 relative bg-[#0a0f1d]">
+    <section
+      id="wizard"
+      className="py-24 sm:py-32 relative text-white"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)",
+      }}
+    >
       
-      {/* Background Accent */}
-      <div className="absolute top-1/2 right-1/4 w-[550px] h-[420px] bg-gradient-to-tr from-[#3b82f6]/20 to-[#06b6d4]/20 blur-[75px] pointer-events-none rounded-full" />
+      {/* Background Spotlight */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[500px] pointer-events-none rounded-full blur-[95px]"
+        style={{
+          background: "radial-gradient(circle, rgba(0, 212, 255, 0.15), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 bg-institutional-grid pointer-events-none"
+        style={{ opacity: 0.15 }}
+      />
 
       <div className="grid-container max-w-[920px] relative z-10">
         
         {/* Section Header */}
         <div className="text-center space-y-4 mb-14">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/35 text-xs font-mono font-semibold uppercase tracking-wider shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/50 text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(16,185,129,0.35)] backdrop-blur-md">
             <Zap className="w-3.5 h-3.5" />
             <span>INTERACTIVE WIZARD</span>
           </div>
-          <h2 className="section-headline text-white">
+          <h2
+            className="section-headline text-white"
+            style={{
+              color: "rgba(255, 255, 255, 0.95)",
+              textShadow: "0 0 20px rgba(0, 212, 255, 0.25)",
+            }}
+          >
             Experience the{" "}
-            <span className="aurora-gradient-text">
+            <span
+              style={{
+                background: "linear-gradient(135deg, #00D4FF, #4F7CFF, #B66DFF)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 30px rgba(0, 212, 255, 0.35))",
+              }}
+            >
               Assessment Engine
             </span>
           </h2>
-          <p className="body-text mx-auto text-[#e2e8f0]">
+          <p
+            className="body-text mx-auto"
+            style={{
+              color: "rgba(255, 255, 255, 0.82)",
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
+          >
             Test a sample 3-question evaluation. Real-time autosave persists your selections.
           </p>
         </div>
 
         {/* Wizard Glass Container */}
-        <div className="card-surface p-8 sm:p-10 space-y-6 bg-[#111a33] border border-white/[0.18]">
+        <div className="card-surface p-8 sm:p-10 space-y-6 bg-gradient-to-b from-[#131f42]/95 via-[#0e1732]/98 to-[#090e20] border border-[#38bdf8]/30 shadow-[0_0_40px_rgba(59,130,246,0.25)] backdrop-blur-xl">
           
           {/* Progress & Autosave Bar */}
           <div className="space-y-3 border-b border-white/[0.12] pb-5">

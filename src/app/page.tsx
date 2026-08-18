@@ -24,7 +24,12 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0f1d] text-[#FFFFFF] relative overflow-hidden bg-institutional-grid">
+    <main
+      className="min-h-screen text-[#FFFFFF] relative overflow-hidden bg-institutional-grid"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)"
+      }}
+    >
       <Header onStartAssessment={scrollToWizard} />
       <Hero onStartAssessment={scrollToWizard} />
       <WhyHumanCapital />

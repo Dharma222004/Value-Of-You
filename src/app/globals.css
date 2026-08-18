@@ -10,24 +10,25 @@
    ==================================================================== */
 
 :root {
-  /* Core Color Palette — Elevated Brightness & High Contrast */
-  --bg-main: #0a0f1d;
-  --surface-1: #111a33;
-  --surface-2: #182447;
-  --surface-card: rgba(17, 26, 51, 0.96);
+  /* Core Color Palette — High Contrast & Elevated Brightness */
+  --bg-main: #081224;
+  --surface-1: #0C1830;
+  --surface-2: #101C36;
+  --surface-card: rgba(20, 40, 80, 0.7);
   
-  --accent-blue: #60a5fa;
-  --accent-cyan: #22d3ee;
+  --accent-blue: #4F7CFF;
+  --accent-cyan: #00D4FF;
   --accent-emerald: #34d399;
+  --accent-purple: #B66DFF;
   --accent-amber: #fbbf24;
   
-  --text-primary: #ffffff;
-  --text-secondary: #e2e8f0;
-  --text-tertiary: #cbd5e1;
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.82);
+  --text-tertiary: rgba(255, 255, 255, 0.65);
   
-  --border-subtle: rgba(255, 255, 255, 0.16);
-  --border-active: rgba(255, 255, 255, 0.32);
-  --border-focus: rgba(96, 165, 250, 0.7);
+  --border-subtle: rgba(0, 212, 255, 0.2);
+  --border-active: rgba(0, 212, 255, 0.4);
+  --border-focus: rgba(0, 212, 255, 0.7);
   
   /* 8-Point Spacing Scale System */
   --space-8: 8px;
@@ -47,33 +48,18 @@
   --card-radius: 16px;
   
   /* Glassmorphism Effect */
-  --glass-bg: rgba(17, 26, 51, 0.94);
-  --glass-blur: 8px;
+  --glass-bg: rgba(20, 40, 80, 0.7);
+  --glass-blur: 30px;
 
-  /* ── Auth Component Tokens ───────────────────────────────────────────
-     These are consumed by auth pages, AuthCard, PasswordInput, and
-     all .input-field / .btn-primary / .section-label CSS classes below.
-  ─────────────────────────────────────────────────────────────────── */
-
-  /* Page background — used as bg-[var(--bg-base)] */
-  --bg-base: #0a0f1d;
-
-  /* Input background surface */
-  --background: #111a33;
-
-  /* Primary text color for inputs and labels */
-  --foreground: #ffffff;
-
-  /* Input borders */
-  --border: rgba(255, 255, 255, 0.18);
-
-  /* Muted / secondary / placeholder text */
-  --subtext: #cbd5e1;
-
-  /* Tailwind hsl() bridge — consumed by tailwind.config.ts hsl() calls */
+  /* Auth Component Tokens */
+  --bg-base: #081224;
+  --background: #0C1830;
+  --foreground: rgba(255, 255, 255, 0.95);
+  --border: rgba(0, 212, 255, 0.25);
+  --subtext: rgba(255, 255, 255, 0.75);
   --radius: 0.75rem;
 
-  /* ── Motion Token System (Section 4.2) ─────────────────────────────── */
+  /* Motion Tokens */
   --dur-xs:  80ms;
   --dur-sm:  150ms;
   --dur-md:  300ms;
@@ -103,7 +89,7 @@ html {
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg-main);
+  background-color: #081224;
   color: var(--text-primary);
 }
 
@@ -114,11 +100,11 @@ body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, p, span, a, label
 }
 
 body {
-  background-color: var(--bg-main);
+  background: linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%);
   color: var(--text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
-  line-height: 1.5;
+  line-height: 1.7;
 }
 
 /* ── 12-Column Responsive Grid Container ── */
@@ -131,50 +117,53 @@ body {
   padding-right: var(--space-24);
 }
 
-/* ── Ultra-Subtle Background Grid ── */
+/* ── Brightened Background Grid with Subtle Glow ── */
 .bg-institutional-grid {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
-  background-size: 48px 48px;
+    radial-gradient(circle at center, rgba(0, 212, 255, 0.12), transparent 70%),
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 100% 100%, 48px 48px, 48px 48px;
 }
 
 /* ── Typography Scale & Letter Spacing Specification ── */
 
-/* Hero Heading: 64px, Weight 700, Letter Spacing -0.04em */
+/* Hero Heading */
 .hero-headline {
   font-size: clamp(42px, 5.2vw, 64px);
   line-height: 1.08;
   letter-spacing: -0.04em;
   font-weight: 700;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
 }
 
-/* Section Title: 44px, Weight 700, Letter Spacing -0.025em */
+/* Section Title */
 .section-headline {
   font-size: clamp(30px, 3.8vw, 44px);
   line-height: 1.12;
   letter-spacing: -0.025em;
   font-weight: 700;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
 }
 
-/* Card Title: 22px, Weight 600, Letter Spacing -0.015em */
+/* Card Title */
 .card-title {
   font-size: 22px;
   line-height: 1.3;
   font-weight: 600;
   letter-spacing: -0.015em;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .body-text {
   font-size: 18px;
-  line-height: 1.6;
+  line-height: 1.7;
   font-weight: 400;
   letter-spacing: 0;
-  color: var(--text-secondary);
-  max-width: 520px;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 540px;
 }
 
 /* ── Navigation Links: 15px, Weight 500 ── */
@@ -183,64 +172,15 @@ body {
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 0;
-  color: var(--text-secondary);
-  transition: color 0.2s ease;
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-/* ── Dashboard Labels: 14px, Weight 500, Letter Spacing 0.04em ── */
-.label-text, .dashboard-label {
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
-  color: var(--text-secondary);
-}
-
-/* ── Metrics & Numbers: IBM Plex Mono ── */
-.metric-number, .dashboard-metric {
-  font-weight: 600;
-  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
-}
-
-/* ── Buttons: 16px, Weight 600, Letter Spacing 0.01em ── */
-.btn-primary, .btn-secondary {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-
-/* ── Handcrafted Card Surface Specification ── */
-.card-surface {
-  background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--card-radius);
-  padding: var(--space-32);
-  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), 
-              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), 
-              transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.card-surface:hover {
-  border-color: var(--border-active);
-  box-shadow: 0 24px 48px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-/* ── Nav Hover Underline Animation ── */
-.nav-link {
-  position: relative;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  transition: color 0.2s ease;
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.2s ease;
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
 .nav-link:hover {
-  color: var(--text-primary);
+  color: #00D4FF;
+  text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
 }
 
 .nav-link::after {
@@ -250,13 +190,85 @@ body {
   left: 0;
   width: 0%;
   height: 2px;
-  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+  background: linear-gradient(90deg, #00D4FF, #4F7CFF);
   transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 2px;
 }
 
 .nav-link:hover::after {
   width: 100%;
+}
+
+/* ── Dashboard Labels ── */
+.label-text, .dashboard-label {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Metrics & Numbers: IBM Plex Mono ── */
+.metric-number, .dashboard-metric {
+  font-weight: 600;
+  font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+}
+
+/* ── Handcrafted Glassmorphism Surface Specification ── */
+.card-surface {
+  background: rgba(20, 40, 80, 0.7);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: var(--card-radius);
+  padding: var(--space-32);
+  box-shadow: 0 25px 80px rgba(0, 212, 255, 0.25);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-surface:hover {
+  border-color: rgba(0, 212, 255, 0.55);
+  box-shadow: 0 30px 90px rgba(0, 212, 255, 0.35);
+}
+
+/* ── Gradient Text Utilities ── */
+.aurora-gradient-text, .hero-gradient-text {
+  background: linear-gradient(135deg, #00D4FF, #4F7CFF, #B66DFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Primary & Secondary Buttons ── */
+.btn-primary-bright {
+  background: linear-gradient(90deg, #2563EB, #00D4FF);
+  box-shadow: 0 10px 40px rgba(0, 212, 255, 0.4);
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary-bright:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.15);
+  box-shadow: 0 14px 50px rgba(0, 212, 255, 0.55);
+}
+
+.btn-secondary-bright {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-secondary-bright:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(0, 212, 255, 0.4);
+  color: #ffffff;
+}
+
+/* ── Score Widget Glow ── */
+.score-widget-glow {
+  box-shadow: 0 0 60px rgba(0, 212, 255, 0.45);
 }
 
 /* ── Scrollbar Styling ── */

@@ -6,7 +6,14 @@ import { Terminal, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-[#060913] border-t border-white/[0.12] text-[#cbd5e1] py-16 sm:py-20 text-xs font-mono">
+    <footer
+      className="border-t py-16 sm:py-20 text-xs font-mono"
+      style={{
+        background: "#081224",
+        borderColor: "rgba(0, 212, 255, 0.2)",
+        color: "rgba(255, 255, 255, 0.8)",
+      }}
+    >
       <div className="grid-container space-y-12">
         
         {/* Top Link Grid */}
@@ -15,15 +22,20 @@ export const Footer: React.FC = () => {
           {/* Brand Column (5 Cols) */}
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#0d1428] border border-[#3b82f6]/40 flex items-center justify-center text-[#3b82f6] shadow-[0_0_15px_rgba(59,130,246,0.25)]">
-                <Terminal className="w-4 h-4" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#102046] to-[#081224] border border-[#00D4FF]/50 flex items-center justify-center text-[#00D4FF] shadow-[0_0_20px_rgba(0,212,255,0.3)]">
+                <Terminal className="w-5 h-5" />
               </div>
-              <span className="font-bold text-base text-white tracking-tight font-sans">
-                Human Value
-              </span>
+              <div className="flex flex-col">
+                <span className="font-bold text-base text-white tracking-tight font-sans leading-none">
+                  Human Value
+                </span>
+                <span className="text-[10px] font-mono text-[#00D4FF] tracking-wider uppercase font-semibold">
+                  Intelligence
+                </span>
+              </div>
             </div>
             
-            <p className="text-[#cbd5e1] text-xs max-w-sm leading-relaxed font-sans">
+            <p className="text-xs max-w-sm leading-relaxed font-sans" style={{ color: "rgba(255, 255, 255, 0.82)" }}>
               A multidimensional framework that evaluates education, skills, financial literacy, health, and behavioral intelligence to measure your position and future potential.
             </p>
           </div>
@@ -33,13 +45,13 @@ export const Footer: React.FC = () => {
             <span className="font-mono text-xs font-bold text-white uppercase tracking-wider block">
               PLATFORM
             </span>
-            <ul className="space-y-2 text-[#cbd5e1]">
+            <ul className="space-y-2" style={{ color: "rgba(255, 255, 255, 0.75)" }}>
               <li><a href="#about" className="hover:text-white transition-colors">Why Human Value</a></li>
               <li><a href="#dimensions" className="hover:text-white transition-colors">5 Dimensions</a></li>
               <li><a href="#growth-dashboard" className="hover:text-white transition-colors">Growth Engine</a></li>
               <li><a href="#visualizer" className="hover:text-white transition-colors">Score Simulator</a></li>
               <li><a href="#security" className="hover:text-white transition-colors">Privacy & Control</a></li>
-              <li><Link href="/dashboard" className="hover:text-[#60a5fa] text-[#3b82f6] transition-colors flex items-center gap-1 font-semibold"><span>Growth Dashboard</span> <Sparkles className="w-3 h-3" /></Link></li>
+              <li><Link href="/dashboard" className="hover:text-[#00D4FF] text-[#4F7CFF] transition-colors flex items-center gap-1 font-semibold"><span>Growth Dashboard</span> <Sparkles className="w-3 h-3 text-[#00D4FF]" /></Link></li>
             </ul>
           </div>
 

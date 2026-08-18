@@ -46,12 +46,27 @@ export default function FAQ() {
   );
 
   return (
-    <section id="faq" className="py-24 relative overflow-hidden bg-[#0a0f1d]">
+    <section
+      id="faq"
+      className="py-24 relative overflow-hidden text-white"
+      style={{
+        background: "linear-gradient(180deg, #081224 0%, #0C1830 50%, #101C36 100%)",
+      }}
+    >
       
       {/* Background Accent */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[320px] bg-[#3b82f6]/18 blur-[75px] pointer-events-none rounded-full" />
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] pointer-events-none rounded-full blur-[95px]"
+        style={{
+          background: "radial-gradient(circle, rgba(0, 212, 255, 0.15), transparent 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 bg-institutional-grid pointer-events-none"
+        style={{ opacity: 0.15 }}
+      />
 
-      <div className="grid-container max-w-[720px] relative z-10">
+      <div className="grid-container max-w-[760px] relative z-10">
         
         {/* Section Header */}
         <motion.div
@@ -59,35 +74,48 @@ export default function FAQ() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "0px 0px -60px 0px" }}
           transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center space-y-3 mb-10"
+          className="text-center space-y-3 mb-12"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/35 text-[#60a5fa] text-xs font-mono font-semibold uppercase tracking-wider shadow-[0_0_12px_rgba(59,130,246,0.2)]">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2563EB]/20 border border-[#00D4FF]/50 text-[#00D4FF] text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(0,212,255,0.35)] backdrop-blur-md">
             <HelpCircle className="w-3.5 h-3.5" />
             <span>FREQUENTLY ASKED QUESTIONS</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          <h2
+            className="text-2xl sm:text-3xl font-bold text-white tracking-tight"
+            style={{
+              color: "rgba(255, 255, 255, 0.95)",
+              textShadow: "0 0 20px rgba(0, 212, 255, 0.25)",
+            }}
+          >
             Frequently Asked Questions
           </h2>
-          <p className="text-sm text-[#e2e8f0] max-w-md mx-auto">
+          <p
+            className="text-sm max-w-md mx-auto"
+            style={{
+              color: "rgba(255, 255, 255, 0.82)",
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
+          >
             Everything you need to know about the platform and scoring engine.
           </p>
 
           {/* Search Bar */}
-          <div className="pt-2 max-w-sm mx-auto relative">
-            <Search className="w-4 h-4 text-[#cbd5e1] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <div className="pt-3 max-w-md mx-auto relative">
+            <Search className="w-4 h-4 text-[#00D4FF] absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search questions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#111a33] border border-white/[0.18] focus:border-[#3b82f6] rounded-xl text-xs text-white placeholder-[#cbd5e1] outline-none transition-colors shadow-inner"
+              className="w-full pl-11 pr-4 py-3 bg-[#0C1830]/90 border border-[#00D4FF]/35 focus:border-[#00D4FF] rounded-xl text-sm text-white placeholder-[rgba(255,255,255,0.5)] outline-none transition-all shadow-[0_0_20px_rgba(0,0,0,0.4)] focus:shadow-[0_0_25px_rgba(0,212,255,0.35)] backdrop-blur-md"
             />
           </div>
         </motion.div>
 
         {/* Compact Accordion Items */}
         <motion.div
-          className="space-y-2.5"
+          className="space-y-3"
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "0px 0px -60px 0px" }}
@@ -103,7 +131,7 @@ export default function FAQ() {
                     hidden: { opacity: 0, y: 16 },
                     show:   { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
                   }}
-                  className="bg-[#111a33] border border-white/[0.16] hover:border-white/[0.3] rounded-xl overflow-hidden transition-colors shadow-md"
+                  className="bg-gradient-to-b from-[#131f42]/95 to-[#0e1732]/98 border border-[#38bdf8]/25 hover:border-[#38bdf8]/60 rounded-xl overflow-hidden transition-all shadow-lg backdrop-blur-xl"
                 >
                   <button
                     onClick={() => toggle(idx)}

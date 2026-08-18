@@ -32,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-20 flex items-center ${
         scrolled
-          ? "bg-[#0a0f1d]/95 backdrop-blur-md border-b border-white/[0.16] shadow-xl shadow-black/40"
+          ? "bg-[#081224]/85 backdrop-blur-2xl border-b border-[#00D4FF]/25 shadow-2xl shadow-black/70"
           : "bg-transparent border-b border-transparent"
       }`}
     >
@@ -41,12 +41,17 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
           
           {/* Logo Left */}
           <Link href="/" className="flex items-center gap-3 group cursor-pointer">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#111a33] border border-[#3b82f6]/50 group-hover:border-[#3b82f6]/80 transition-colors shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-              <Terminal className="w-5 h-5 text-[#3b82f6] group-hover:text-[#06b6d4] transition-colors" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-[#102046] to-[#081224] border border-[#00D4FF]/50 group-hover:border-[#00D4FF] transition-all shadow-[0_0_20px_rgba(0,212,255,0.3)] group-hover:shadow-[0_0_30px_rgba(0,212,255,0.55)]">
+              <Terminal className="w-5 h-5 text-[#00D4FF] group-hover:scale-110 transition-transform" />
             </div>
-            <span className="font-bold text-lg text-white tracking-tight">
-              Human Value
-            </span>
+            <div className="flex flex-col">
+              <span className="font-bold text-lg text-white tracking-tight leading-none group-hover:text-[#00D4FF] transition-colors">
+                Human Value
+              </span>
+              <span className="text-[10px] font-mono text-[#00D4FF] tracking-wider uppercase font-semibold">
+                Intelligence
+              </span>
+            </div>
           </Link>
 
           {/* Navigation Links Perfectly Centered */}
@@ -55,7 +60,8 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
               <a
                 key={item.href}
                 href={item.href}
-                className="nav-link text-xs font-mono font-medium text-[#cbd5e1] hover:text-white transition-colors"
+                className="nav-link text-xs font-mono font-semibold transition-all"
+                style={{ color: "rgba(255, 255, 255, 0.85)" }}
               >
                 {item.label}
               </a>
@@ -66,14 +72,19 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
           <div className="hidden sm:flex items-center gap-4">
             <Link
               href="/auth/login"
-              className="text-sm font-medium text-[#cbd5e1] hover:text-white transition-colors px-3 py-2"
+              className="text-sm font-medium transition-all px-3 py-2 hover:text-[#00D4FF] hover:drop-shadow-[0_0_15px_rgba(0,212,255,0.5)]"
+              style={{ color: "rgba(255, 255, 255, 0.85)" }}
             >
               Login
             </Link>
 
             <Link
               href="/auth/signup"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#2563eb] hover:bg-[#1d4ed8] active:scale-[0.98] transition-all shadow-md shadow-[#3b82f6]/30 border border-[#3b82f6]/40"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all cursor-pointer"
+              style={{
+                background: "linear-gradient(90deg, #2563EB, #00D4FF)",
+                boxShadow: "0 10px 40px rgba(0, 212, 255, 0.4)",
+              }}
             >
               <span>Sign Up</span>
               <ArrowRight className="w-4 h-4" />
@@ -84,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({ onStartAssessment }) => {
           <div className="flex lg:hidden items-center">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl bg-[#0d1428] border border-white/[0.12] text-[#cbd5e1] hover:text-white transition-colors"
+              className="p-2 rounded-xl bg-[#101935] border border-white/[0.18] text-[#cbd5e1] hover:text-white transition-colors"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
